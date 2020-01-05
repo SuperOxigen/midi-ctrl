@@ -165,3 +165,74 @@ size_t SmartStringHexFormat(
   }
   return total_width;
 }
+
+/* Raw data encoding. */
+
+static char const *kEncodeHexCharacters = kUpperHexCharacters;
+
+void SmartStringSetHexEncodeCase(bool_t lower) {
+  if (lower) {
+    kEncodeHexCharacters = kLowerHexCharacters;
+  } else {
+    kEncodeHexCharacters = kUpperHexCharacters;
+  }
+}
+
+size_t SmartStringHexEncode(
+    void const *src, size_t src_size,
+    char *dest, size_t dest_size) {
+  if (src == NULL || dest == NULL || dest_size == 0) return 0;
+  if (src_size == 0) {
+    dest[0] = 0;
+    return 0;
+  }
+  /* The encode length must be an even number of characters.
+   * should be able to kMaxStringLength even or odd and the encode_length
+   * must still be even. */
+  size_t const encode_length = (src_size * 2 < kMaxStringLength)
+      ? src_size * 2
+      : kMaxStringLength - (kMaxStringLength & 1);
+  size_t si = 0, di = 0;
+  uint8_t const *src_data = (uint8_t const *) src;
+  while (si < src_size && (di + 1) < dest_size && (di + 1) < encode_length) {
+    dest[di++] = kEncodeHexCharacters[(src_data[si] >> 4) & 0xf];
+    dest[di++] = kEncodeHexCharacters[src_data[si++] & 0xf];
+  }
+  if (di < dest_size) {
+    dest[di] = 0;
+  } else {
+    dest[dest_size - 1] = 0;
+  }
+  return encode_length;
+}
+
+inline static uint8_t DecodeHexCharacter(char ch) {
+  if (!isxdigit(ch)) return 0;
+  if (isdigit(ch)) {
+    return (ch - '0') & 0xf;
+  }
+  if (islower(ch)) {
+    return ((ch - 'a') + 0xa) & 0xf;
+  }
+  return ((ch - 'A') + 0xa) & 0xf;
+}
+
+size_t SmartStringHexDecode(char const *src, void *dest, size_t dest_size) {
+  if (src == NULL || dest == NULL) return 0;
+  size_t const src_length = SmartStringLength(src);
+  if (src_length == 0 || (src_length & 1) != 0) return 0;
+  size_t si = 0;
+  while (si < src_length) {
+    if (!isxdigit(src[si++])) return 0;
+  }
+  uint8_t *dest_data = (uint8_t *) dest;
+  size_t const decode_length = src_length >> 1;  /* Divide by 2 */
+  si = 0;
+  size_t di = 0;
+  while ((si + 1) < src_length && di < dest_size && di < decode_length) {
+    dest_data[di] = (DecodeHexCharacter(src[si]) << 4) | DecodeHexCharacter(src[si+1]);
+    ++di;
+    si += 2;
+  }
+  return decode_length;
+}

@@ -141,7 +141,7 @@ void TestStringClear_ValidInput(void) {
   TEST_ASSERT_EQUAL_MEMORY(four_clear, buffer, sizeof(buffer));
 }
 
-/* Formatting Tesst */
+/* Formatting Test */
 
 void TestStringHexFormat_InvalidInput(void) {
   char buffer[16];
@@ -305,6 +305,69 @@ void TestStringHexFormat_LowerCase(void) {
   TEST_ASSERT_EQUAL_STRING("deadbeef", buffer);
 }
 
+/* Hex Encoding Test */
+
+void TestStringHexEncode_InvalidInput(void) {
+  char buffer[16];
+  uint8_t const data[] = {0xe5, 0x5e, 0xc3, 0x3c};
+  TEST_ASSERT_EQUAL(0, SmartStringHexEncode(NULL, sizeof(data), buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(0, SmartStringHexEncode(data, sizeof(data), NULL, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(0, SmartStringHexEncode(data, sizeof(data), buffer, 0));
+}
+
+void TestStringHexEncode_ValidInput(void) {
+  char buffer[16];
+  uint8_t const data[] = {0xe5, 0x5e, 0xc3, 0x3c};
+  /* No Data */
+  SmartStringSet('-', sizeof(buffer), buffer, sizeof(buffer));
+  TEST_ASSERT_EQUAL(0, SmartStringHexEncode(data, 0, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("", buffer);
+  /* Width data - Upper Case */
+  SmartStringSetHexEncodeCase(false);
+  TEST_ASSERT_EQUAL(8, SmartStringHexEncode(data, sizeof(data), buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("E55EC33C", buffer);
+  /* Width data - Lower Case */
+  SmartStringSetHexEncodeCase(true);
+  TEST_ASSERT_EQUAL(8, SmartStringHexEncode(data, sizeof(data), buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("e55ec33c", buffer);
+  /* Truncated */
+  SmartStringSetHexEncodeCase(false);
+  /* Whole byte */
+  TEST_ASSERT_EQUAL(8, SmartStringHexEncode(data, sizeof(data), buffer, 5));
+  TEST_ASSERT_EQUAL_STRING("E55E", buffer);
+  /* Half byte */
+  TEST_ASSERT_EQUAL(8, SmartStringHexEncode(data, sizeof(data), buffer, 6));
+  TEST_ASSERT_EQUAL_STRING("E55EC", buffer);
+}
+
+void TestStringHexDecode_InvalidInput(void) {
+  char const source[] = "E55EC33C";
+  uint8_t dest[4];
+  /* Programmatically bad input */
+  TEST_ASSERT_EQUAL(0, SmartStringHexDecode(NULL, dest, sizeof(dest)));
+  TEST_ASSERT_EQUAL(0, SmartStringHexDecode(source, NULL, sizeof(dest)));
+  /* Syntactically bad input */
+  TEST_ASSERT_EQUAL(0, SmartStringHexDecode("not hex", dest, sizeof(dest)));
+  TEST_ASSERT_EQUAL(0, SmartStringHexDecode("XXXXXX", dest, sizeof(dest)));
+  TEST_ASSERT_EQUAL(0, SmartStringHexDecode("12345s", dest, sizeof(dest)));
+  TEST_ASSERT_EQUAL(0, SmartStringHexDecode("1234567", dest, sizeof(dest)));
+}
+
+void TestStringHexDecode_ValidInput(void) {
+  char const source_upper[] = "E55EC33C";
+  char const source_lower[] = "e55ec33c";
+  uint8_t dest[4];
+  uint8_t const expected[] = {0xe5, 0x5e, 0xc3, 0x3c};
+  TEST_ASSERT_EQUAL(0, SmartStringHexDecode("", dest, sizeof(dest)));
+  TEST_ASSERT_EQUAL(4, SmartStringHexDecode(source_upper, dest, sizeof(dest)));
+  TEST_ASSERT_EQUAL_MEMORY(expected, dest, 4);
+  memset(dest, 0, sizeof(dest));
+  TEST_ASSERT_EQUAL(4, SmartStringHexDecode(source_lower, dest, sizeof(dest)));
+  TEST_ASSERT_EQUAL_MEMORY(expected, dest, 4);
+  /* Output buffer is not large enough */
+  TEST_ASSERT_EQUAL(4, SmartStringHexDecode(source_upper, dest, 0));
+}
+
 /* Test Main. */
 void main(void) {
   SetupVeryLongString();
@@ -327,5 +390,11 @@ void main(void) {
   RUN_TEST(TestStringHexFormat_AutoWidth);
   RUN_TEST(TestStringHexFormat_ZeroXPrefixed);
   RUN_TEST(TestStringHexFormat_LowerCase);
+  /* Encoding / Decoding */
+  RUN_TEST(TestStringHexEncode_InvalidInput);
+  RUN_TEST(TestStringHexEncode_ValidInput);
+  RUN_TEST(TestStringHexDecode_InvalidInput);
+  RUN_TEST(TestStringHexDecode_ValidInput);
+
   UNITY_END();
 }

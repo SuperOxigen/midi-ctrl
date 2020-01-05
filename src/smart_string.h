@@ -30,4 +30,10 @@ size_t SmartStringHexFormat(
     uint32_t value, uint8_t flags,
     char *dest, size_t dest_size);
 
+void SmartStringSetHexEncodeCase(bool_t lower);
+size_t SmartStringHexEncode(
+    void const *src, size_t src_size,
+    char *dest, size_t dest_size);
+size_t SmartStringHexDecode(char const *src, void *dest, size_t dest_size);
+
 #endif  /* _SMART_STRING_H_ */
