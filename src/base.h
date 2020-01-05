@@ -8,6 +8,7 @@
 #ifndef _MIDI_BASE_H_
 #define _MIDI_BASE_H_
 
+#include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
 
