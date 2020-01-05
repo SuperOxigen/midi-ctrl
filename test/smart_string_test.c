@@ -141,11 +141,175 @@ void TestStringClear_ValidInput(void) {
   TEST_ASSERT_EQUAL_MEMORY(four_clear, buffer, sizeof(buffer));
 }
 
+/* Formatting Tesst */
+
+void TestStringHexFormat_InvalidInput(void) {
+  char buffer[16];
+  TEST_ASSERT_EQUAL(0, SmartStringHexFormat(123, SS_SINGLE, NULL, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(0, SmartStringHexFormat(123, SS_SINGLE, buffer, 0));
+}
+
+void TestStringHexFormat_Padless(void) {
+  char buffer[16];
+  TEST_ASSERT_EQUAL(1, SmartStringHexFormat(0, SS_PADLESS, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("0", buffer);
+  TEST_ASSERT_EQUAL(1, SmartStringHexFormat(0x1, SS_PADLESS, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("1", buffer);
+  TEST_ASSERT_EQUAL(2, SmartStringHexFormat(0x10, SS_PADLESS, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("10", buffer);
+  TEST_ASSERT_EQUAL(3, SmartStringHexFormat(0x101, SS_PADLESS, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("101", buffer);
+  TEST_ASSERT_EQUAL(5, SmartStringHexFormat(0xe8e80, SS_PADLESS, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("E8E80", buffer);
+  TEST_ASSERT_EQUAL(8, SmartStringHexFormat(0x10000000, SS_PADLESS, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("10000000", buffer);
+  TEST_ASSERT_EQUAL(8, SmartStringHexFormat(0xffffffff, SS_PADLESS, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("FFFFFFFF", buffer);
+  TEST_ASSERT_EQUAL(8, SmartStringHexFormat(0xdeadbeef, SS_PADLESS, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("DEADBEEF", buffer);
+}
+
+void TestStringHexFormat_FixedWidth(void) {
+  char buffer[16];
+  /* Single Byte */
+  TEST_ASSERT_EQUAL(2, SmartStringHexFormat(0, SS_SINGLE, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("00", buffer);
+  TEST_ASSERT_EQUAL(2, SmartStringHexFormat(0x0f, SS_SINGLE, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("0F", buffer);
+  TEST_ASSERT_EQUAL(2, SmartStringHexFormat(0xf0, SS_SINGLE, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("F0", buffer);
+  TEST_ASSERT_EQUAL(2, SmartStringHexFormat(0xff, SS_SINGLE, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("FF", buffer);
+  /* Double Byte */
+  TEST_ASSERT_EQUAL(4, SmartStringHexFormat(0, SS_DOUBLE, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("0000", buffer);
+  TEST_ASSERT_EQUAL(4, SmartStringHexFormat(0xf, SS_DOUBLE, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("000F", buffer);
+  TEST_ASSERT_EQUAL(4, SmartStringHexFormat(0xf0, SS_DOUBLE, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("00F0", buffer);
+  TEST_ASSERT_EQUAL(4, SmartStringHexFormat(0xf00, SS_DOUBLE, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("0F00", buffer);
+  TEST_ASSERT_EQUAL(4, SmartStringHexFormat(0xf000, SS_DOUBLE, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("F000", buffer);
+  TEST_ASSERT_EQUAL(4, SmartStringHexFormat(0xffff, SS_DOUBLE, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("FFFF", buffer);
+  TEST_ASSERT_EQUAL(4, SmartStringHexFormat(0x0ba7, SS_DOUBLE, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("0BA7", buffer);
+  /* Quad Byte */
+  TEST_ASSERT_EQUAL(8, SmartStringHexFormat(0, SS_QUAD, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("00000000", buffer);
+  TEST_ASSERT_EQUAL(8, SmartStringHexFormat(0xf, SS_QUAD, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("0000000F", buffer);
+  TEST_ASSERT_EQUAL(8, SmartStringHexFormat(0xf0, SS_QUAD, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("000000F0", buffer);
+  TEST_ASSERT_EQUAL(8, SmartStringHexFormat(0xf00, SS_QUAD, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("00000F00", buffer);
+  TEST_ASSERT_EQUAL(8, SmartStringHexFormat(0xf000, SS_QUAD, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("0000F000", buffer);
+  TEST_ASSERT_EQUAL(8, SmartStringHexFormat(0xf0000, SS_QUAD, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("000F0000", buffer);
+  TEST_ASSERT_EQUAL(8, SmartStringHexFormat(0xf00000, SS_QUAD, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("00F00000", buffer);
+  TEST_ASSERT_EQUAL(8, SmartStringHexFormat(0xf000000, SS_QUAD, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("0F000000", buffer);
+  TEST_ASSERT_EQUAL(8, SmartStringHexFormat(0xf0000000, SS_QUAD, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("F0000000", buffer);
+  TEST_ASSERT_EQUAL(8, SmartStringHexFormat(0xffff, SS_QUAD, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("0000FFFF", buffer);
+  TEST_ASSERT_EQUAL(8, SmartStringHexFormat(0xffffffff, SS_QUAD, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("FFFFFFFF", buffer);
+  TEST_ASSERT_EQUAL(8, SmartStringHexFormat(0xdeadbeef, SS_QUAD, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("DEADBEEF", buffer);
+  /* Numeric truncations */
+  TEST_ASSERT_EQUAL(2, SmartStringHexFormat(0x1f2e3d4c, SS_SINGLE, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("4C", buffer);
+  TEST_ASSERT_EQUAL(4, SmartStringHexFormat(0x1f2e3d4c, SS_DOUBLE, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("3D4C", buffer);
+  /* String truncations */
+  TEST_ASSERT_EQUAL(2, SmartStringHexFormat(0x1f2e3d4c, SS_SINGLE, buffer, 2));
+  TEST_ASSERT_EQUAL_STRING("C", buffer);
+  TEST_ASSERT_EQUAL(4, SmartStringHexFormat(0x1f2e3d4c, SS_DOUBLE, buffer, 3));
+  TEST_ASSERT_EQUAL_STRING("4C", buffer);
+  TEST_ASSERT_EQUAL(8, SmartStringHexFormat(0x1f2e3d4c, SS_QUAD, buffer, 6));
+  TEST_ASSERT_EQUAL_STRING("E3D4C", buffer);
+}
+
+void TestStringHexFormat_AutoWidth(void) {
+  char buffer[16];
+  TEST_ASSERT_EQUAL(2, SmartStringHexFormat(0, 0, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("00", buffer);
+  TEST_ASSERT_EQUAL(2, SmartStringHexFormat(0xf, 0, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("0F", buffer);
+  TEST_ASSERT_EQUAL(2, SmartStringHexFormat(0xf0, 0, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("F0", buffer);
+  TEST_ASSERT_EQUAL(4, SmartStringHexFormat(0xf00, 0, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("0F00", buffer);
+  TEST_ASSERT_EQUAL(4, SmartStringHexFormat(0xf000, 0, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("F000", buffer);
+  TEST_ASSERT_EQUAL(8, SmartStringHexFormat(0xf0000, 0, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("000F0000", buffer);
+  TEST_ASSERT_EQUAL(8, SmartStringHexFormat(0xf00000, 0, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("00F00000", buffer);
+  TEST_ASSERT_EQUAL(8, SmartStringHexFormat(0xf000000, 0, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("0F000000", buffer);
+  TEST_ASSERT_EQUAL(8, SmartStringHexFormat(0xf0000000, 0, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("F0000000", buffer);
+}
+
+void TestStringHexFormat_ZeroXPrefixed(void) {
+  char buffer[16];
+  /* Padless */
+  TEST_ASSERT_EQUAL(3, SmartStringHexFormat(0, SS_PADLESS | SS_ZERO_X, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("0x0", buffer);
+  TEST_ASSERT_EQUAL(3, SmartStringHexFormat(1, SS_PADLESS | SS_ZERO_X, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("0x1", buffer);
+  TEST_ASSERT_EQUAL(6, SmartStringHexFormat(0x1000, SS_PADLESS | SS_ZERO_X, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("0x1000", buffer);
+  TEST_ASSERT_EQUAL(10, SmartStringHexFormat(0xff00ff00, SS_PADLESS | SS_ZERO_X, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("0xFF00FF00", buffer);
+  /* Fixed width - Single */
+  TEST_ASSERT_EQUAL(4, SmartStringHexFormat(0, SS_SINGLE | SS_ZERO_X, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("0x00", buffer);
+  TEST_ASSERT_EQUAL(4, SmartStringHexFormat(1, SS_SINGLE | SS_ZERO_X, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("0x01", buffer);
+  TEST_ASSERT_EQUAL(4, SmartStringHexFormat(0x10, SS_SINGLE | SS_ZERO_X, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("0x10", buffer);
+  /* Fixed width - Double */
+  TEST_ASSERT_EQUAL(6, SmartStringHexFormat(0, SS_DOUBLE | SS_ZERO_X, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("0x0000", buffer);
+  TEST_ASSERT_EQUAL(6, SmartStringHexFormat(0x1, SS_DOUBLE | SS_ZERO_X, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("0x0001", buffer);
+  TEST_ASSERT_EQUAL(6, SmartStringHexFormat(0x0100, SS_DOUBLE | SS_ZERO_X, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("0x0100", buffer);
+  /* Fixed width - Quad */
+  TEST_ASSERT_EQUAL(10, SmartStringHexFormat(0, SS_QUAD | SS_ZERO_X, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("0x00000000", buffer);
+  TEST_ASSERT_EQUAL(10, SmartStringHexFormat(0x1, SS_QUAD | SS_ZERO_X, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("0x00000001", buffer);
+  TEST_ASSERT_EQUAL(10, SmartStringHexFormat(0x01000000, SS_QUAD | SS_ZERO_X, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("0x01000000", buffer);
+  /* String Truncation */
+  TEST_ASSERT_EQUAL(10, SmartStringHexFormat(0x01000000, SS_QUAD | SS_ZERO_X, buffer, 3));
+  TEST_ASSERT_EQUAL_STRING("00", buffer);
+  TEST_ASSERT_EQUAL(10, SmartStringHexFormat(0x01000000, SS_QUAD | SS_ZERO_X, buffer, 9));
+  TEST_ASSERT_EQUAL_STRING("01000000", buffer);
+  TEST_ASSERT_EQUAL(10, SmartStringHexFormat(0x01000000, SS_QUAD | SS_ZERO_X, buffer, 10));
+  TEST_ASSERT_EQUAL_STRING("x01000000", buffer);
+}
+
+void TestStringHexFormat_LowerCase(void) {
+  char buffer[16];
+  TEST_ASSERT_EQUAL(8, SmartStringHexFormat(0xdeadbeef, SS_QUAD, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("DEADBEEF", buffer);
+  TEST_ASSERT_EQUAL(8, SmartStringHexFormat(0xdeadbeef, SS_QUAD | SS_LOWER_ALPHA, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("deadbeef", buffer);
+}
+
 /* Test Main. */
 void main(void) {
   SetupVeryLongString();
-
   UNITY_BEGIN();
+  /* String manipulation */
   RUN_TEST(TestStringLength_InvalidInput);
   RUN_TEST(TestStringLength_ValidInput);
   RUN_TEST(TestStringSet_InvalidInput);
@@ -156,5 +320,12 @@ void main(void) {
   RUN_TEST(TestStringAppend_ValidInput);
   RUN_TEST(TestStringClear_InvalidInput);
   RUN_TEST(TestStringClear_ValidInput);
+  /* Formatting */
+  RUN_TEST(TestStringHexFormat_InvalidInput);
+  RUN_TEST(TestStringHexFormat_Padless);
+  RUN_TEST(TestStringHexFormat_FixedWidth);
+  RUN_TEST(TestStringHexFormat_AutoWidth);
+  RUN_TEST(TestStringHexFormat_ZeroXPrefixed);
+  RUN_TEST(TestStringHexFormat_LowerCase);
   UNITY_END();
 }

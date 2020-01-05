@@ -20,7 +20,7 @@ void SmartStringClear(char *dest, size_t dest_size);
 
 #define SS_PADLESS      0x01
 #define SS_LOWER_ALPHA  0x02
-#define SS_SPACE_PAD    0x04
+/* #define SS_SPACE_PAD    0x04 */
 #define SS_ZERO_X       0x08
 #define SS_SINGLE       0x10
 #define SS_DOUBLE       0x20
