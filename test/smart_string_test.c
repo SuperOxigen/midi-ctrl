@@ -5,6 +5,7 @@
  * This project is licensed under the terms of the MIT license.
  * See LICENSE for details.
  */
+#include <string.h>
 #include <unity.h>
 
 #include "smart_string.h"
@@ -369,7 +370,7 @@ void TestStringHexDecode_ValidInput(void) {
 }
 
 /* Test Main. */
-void main(void) {
+void SmartStringTest(void) {
   SetupVeryLongString();
   UNITY_BEGIN();
   /* String manipulation */
