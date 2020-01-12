@@ -11,6 +11,8 @@
 #include "base.h"
 #include "midi_bytes.h"
 
+C_SECTION_BEGIN;
+
 typedef struct {
   uint8_t key;
   uint8_t velocity;
@@ -31,5 +33,7 @@ bool_t MidiNotePressure(midi_note_t *note, uint8_t key, uint8_t pressure);
 bool_t MidiSetNoteKey(midi_note_t *note, uint8_t key);
 bool_t MidiSetNoteVelocity(midi_note_t *note, uint8_t velocity);
 bool_t MidiSetNotePressure(midi_note_t *note, uint8_t pressure);
+
+C_SECTION_END;
 
 #endif  /* _MIDI_NOTE_H_ */
