@@ -372,7 +372,6 @@ void TestStringHexDecode_ValidInput(void) {
 /* Test Main. */
 void SmartStringTest(void) {
   SetupVeryLongString();
-  UNITY_BEGIN();
   /* String manipulation */
   RUN_TEST(TestStringLength_InvalidInput);
   RUN_TEST(TestStringLength_ValidInput);
@@ -396,6 +395,4 @@ void SmartStringTest(void) {
   RUN_TEST(TestStringHexEncode_ValidInput);
   RUN_TEST(TestStringHexDecode_InvalidInput);
   RUN_TEST(TestStringHexDecode_ValidInput);
-
-  UNITY_END();
 }

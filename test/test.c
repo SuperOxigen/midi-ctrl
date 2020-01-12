@@ -12,6 +12,7 @@
 void main(void) {
   UNITY_BEGIN();
   SmartStringTest();
-  PlatformAttributes();
+  PlatformAttributesTest();
+  MidiProgramTest();
   UNITY_END();
 }

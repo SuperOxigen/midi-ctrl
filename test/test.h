@@ -8,7 +8,8 @@
 #ifndef _TEST_H_
 #define _TEST_H_
 
+void MidiProgramTest(void);
 void SmartStringTest(void);
-void PlatformAttributes(void);
+void PlatformAttributesTest(void);
 
 #endif  /* _TEST_H_ */

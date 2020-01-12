@@ -19,6 +19,6 @@ static void TestAttributeStrings(void) {
   printf("Build time = \"%s\"\n", kBuildTimeRepr);
 }
 
-void PlatformAttributes(void) {
+void PlatformAttributesTest(void) {
   RUN_TEST(TestAttributeStrings);
 }
