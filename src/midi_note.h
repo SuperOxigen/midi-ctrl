@@ -9,6 +9,7 @@
 #define _MIDI_NOTE_H_
 
 #include "base.h"
+#include "midi_bytes.h"
 
 typedef struct {
   uint8_t key;
@@ -16,6 +17,10 @@ typedef struct {
   uint8_t pressure;
 } midi_note_t;
 
+/* Validity checks. */
+#define MidiIsValidKey(key) MidiIsDataByte(key)
+#define MidiIsValidVelocity(velocity) MidiIsDataByte(velocity)
+#define MidiIsValidPressure(pressure) MidiIsDataByte(pressure)
 bool_t MidiIsValidNote(midi_note_t const *note);
 
 /* Initialize note struct as a specific type. */
