@@ -13,6 +13,9 @@ void main(void) {
   UNITY_BEGIN();
   SmartStringTest();
   PlatformAttributesTest();
+
+  /* MIDI test. */
+  MidiBytesTest();
   MidiProgramTest();
   UNITY_END();
 }

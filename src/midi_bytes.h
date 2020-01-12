@@ -8,6 +8,8 @@
 #ifndef _MIDI_BYTES_H_
 #define _MIDI_BYTES_H_
 
+#include "base.h"
+
 C_SECTION_BEGIN;
 
 #define MidiIsStatusByte(byte) ((byte) & 0x80)    /* uint8_t -> bool_t */
