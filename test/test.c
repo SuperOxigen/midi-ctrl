@@ -5,17 +5,23 @@
  * This project is licensed under the terms of the MIT license.
  * See LICENSE for details.
  */
+#include <stdio.h>
 #include <unity.h>
 #include "test.h"
 
 /* Test Main for all test */
 void main(void) {
   UNITY_BEGIN();
+  printf("\n==== Smart Strings Test ====\n");
   SmartStringTest();
+
+  printf("\n==== Controller Test ====\n");
   PlatformAttributesTest();
 
   /* MIDI test. */
+  printf("\n==== MIDI Tests ====\n");
   MidiBytesTest();
+  MidiNoteTest();
   MidiProgramTest();
   UNITY_END();
 }
