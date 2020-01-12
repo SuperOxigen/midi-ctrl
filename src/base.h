@@ -14,16 +14,4 @@
 
 typedef bool bool_t;
 
-typedef struct {
-  uint8_t number;
-  union {
-    uint8_t velocity;
-    uint8_t pressure;
-  };
-} note_t;
-
-typedef uint8_t channel_t;
-
-typedef uint16_t pitch_t;
-
 #endif  /* _MIDI_BASE_H_ */
