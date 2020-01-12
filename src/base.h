@@ -14,4 +14,14 @@
 
 typedef bool bool_t;
 
+#ifdef __cplusplus
+#define C_SECTION_BEGIN extern "C" {
+#define C_SECTION_END }
+#define C_FUNCTION extern "C"
+#else
+#define C_SECTION_BEGIN
+#define C_SECTION_END
+#define C_FUNCTION
+#endif
+
 #endif  /* _MIDI_BASE_H_ */

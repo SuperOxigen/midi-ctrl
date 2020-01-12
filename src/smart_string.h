@@ -10,6 +10,8 @@
 
 #include "base.h"
 
+C_SECTION_BEGIN;
+
 #define SS_MAX_STRING_LENGTH 127
 
 size_t SmartStringLength(char const *src);
@@ -35,5 +37,7 @@ size_t SmartStringHexEncode(
     void const *src, size_t src_size,
     char *dest, size_t dest_size);
 size_t SmartStringHexDecode(char const *src, void *dest, size_t dest_size);
+
+C_SECTION_END;
 
 #endif  /* _SMART_STRING_H_ */

@@ -23,8 +23,10 @@
 #define __STRINIFY_MACRO_INTERNAL(X...) #X
 #define __STRINIFY_MACRO(X...) __STRINIFY_MACRO_INTERNAL(X)
 
-char const *kPlatformName;
-char const *kFrameworkName;
-char const *kBuildTimeRepr;
+C_SECTION_BEGIN;
+extern char const *kPlatformName;
+extern char const *kFrameworkName;
+extern char const *kBuildTimeRepr;
+C_SECTION_END;
 
 #endif  /* _PLATFORM_ATTRIBUTES_H_ */
