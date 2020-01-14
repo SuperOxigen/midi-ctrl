@@ -29,17 +29,17 @@ inline static void SetupVeryLongString(void) {
  *  Test Cases
  */
 
-void TestStringLength_InvalidInput(void) {
+static void TestStringLength_InvalidInput(void) {
   TEST_ASSERT_EQUAL(0, SmartStringLength(NULL));
   TEST_ASSERT_EQUAL(SS_MAX_STRING_LENGTH, SmartStringLength(gVeryLongString));
 }
 
-void TestStringLength_ValidInput(void) {
+static void TestStringLength_ValidInput(void) {
   TEST_ASSERT_EQUAL(0, SmartStringLength(""));
   TEST_ASSERT_EQUAL(13, SmartStringLength("Hello, World!"));
 }
 
-void TestStringSet_InvalidInput(void) {
+static void TestStringSet_InvalidInput(void) {
   char buffer[16];
   /* Dest must be non-null. */
   TEST_ASSERT_EQUAL(0, SmartStringSet('a', 1, NULL, sizeof(buffer)));
@@ -50,7 +50,7 @@ void TestStringSet_InvalidInput(void) {
   TEST_ASSERT_EQUAL(0, SmartStringSet(0xff, 1, buffer, sizeof(buffer)));
 }
 
-void TestStringSet_ValidInput(void) {
+static void TestStringSet_ValidInput(void) {
   char buffer[16];
   TEST_ASSERT_EQUAL(0, SmartStringSet('-', 0, buffer, sizeof(buffer)));
   TEST_ASSERT_EQUAL_STRING("", buffer);
@@ -74,7 +74,7 @@ void TestStringSet_ValidInput(void) {
   TEST_ASSERT_EQUAL('f', lbuffer[SS_MAX_STRING_LENGTH - 1]);
 }
 
-void TestStringCopy_InvalidInput(void) {
+static void TestStringCopy_InvalidInput(void) {
   char buffer[16];
   /* Source must be non-null. */
   TEST_ASSERT_EQUAL(0, SmartStringCopy(NULL, buffer, sizeof(buffer)));
@@ -84,7 +84,7 @@ void TestStringCopy_InvalidInput(void) {
   TEST_ASSERT_EQUAL(0, SmartStringCopy("Hello", buffer, 0));
 }
 
-void TestStringCopy_ValidInput(void) {
+static void TestStringCopy_ValidInput(void) {
   char buffer[16];
   /* Fitted text. */
   TEST_ASSERT_EQUAL(13, SmartStringCopy("Hello, World!", buffer, sizeof(buffer)));
@@ -101,7 +101,7 @@ void TestStringCopy_ValidInput(void) {
   TEST_ASSERT_EQUAL_STRING(gTruncatedVeryLongString, lbuffer);
 }
 
-void TestStringAppend_InvalidInput(void) {
+static void TestStringAppend_InvalidInput(void) {
   char buffer[16];
   /* Source must be non-null. */
   TEST_ASSERT_EQUAL(0, SmartStringAppend(NULL, buffer, sizeof(buffer)));
@@ -111,7 +111,7 @@ void TestStringAppend_InvalidInput(void) {
   TEST_ASSERT_EQUAL(0, SmartStringAppend("Hello", buffer, 0));
 }
 
-void TestStringAppend_ValidInput(void) {
+static void TestStringAppend_ValidInput(void) {
   char buffer[16] = {};
   TEST_ASSERT_EQUAL(0, SmartStringAppend("", buffer, sizeof(buffer)));
   TEST_ASSERT_EQUAL_STRING("", buffer);
@@ -128,13 +128,13 @@ void TestStringAppend_ValidInput(void) {
   TEST_ASSERT_EQUAL_STRING("aaaabbbbccccddd", buffer);
 }
 
-void TestStringClear_InvalidInput(void) {
+static void TestStringClear_InvalidInput(void) {
   char buffer[16];
   SmartStringClear(NULL, sizeof(buffer));
   SmartStringClear(buffer, 0);
 }
 
-void TestStringClear_ValidInput(void) {
+static void TestStringClear_ValidInput(void) {
   char buffer[16];
   SmartStringSet('a', sizeof(buffer), buffer, sizeof(buffer));
   SmartStringClear(buffer, 4);
@@ -144,13 +144,13 @@ void TestStringClear_ValidInput(void) {
 
 /* Formatting Test */
 
-void TestStringHexFormat_InvalidInput(void) {
+static void TestStringHexFormat_InvalidInput(void) {
   char buffer[16];
   TEST_ASSERT_EQUAL(0, SmartStringHexFormat(123, SS_SINGLE, NULL, sizeof(buffer)));
   TEST_ASSERT_EQUAL(0, SmartStringHexFormat(123, SS_SINGLE, buffer, 0));
 }
 
-void TestStringHexFormat_Padless(void) {
+static void TestStringHexFormat_Padless(void) {
   char buffer[16];
   TEST_ASSERT_EQUAL(1, SmartStringHexFormat(0, SS_PADLESS, buffer, sizeof(buffer)));
   TEST_ASSERT_EQUAL_STRING("0", buffer);
@@ -170,7 +170,7 @@ void TestStringHexFormat_Padless(void) {
   TEST_ASSERT_EQUAL_STRING("DEADBEEF", buffer);
 }
 
-void TestStringHexFormat_FixedWidth(void) {
+static void TestStringHexFormat_FixedWidth(void) {
   char buffer[16];
   /* Single Byte */
   TEST_ASSERT_EQUAL(2, SmartStringHexFormat(0, SS_SINGLE, buffer, sizeof(buffer)));
@@ -235,7 +235,7 @@ void TestStringHexFormat_FixedWidth(void) {
   TEST_ASSERT_EQUAL_STRING("E3D4C", buffer);
 }
 
-void TestStringHexFormat_AutoWidth(void) {
+static void TestStringHexFormat_AutoWidth(void) {
   char buffer[16];
   TEST_ASSERT_EQUAL(2, SmartStringHexFormat(0, 0, buffer, sizeof(buffer)));
   TEST_ASSERT_EQUAL_STRING("00", buffer);
@@ -257,7 +257,7 @@ void TestStringHexFormat_AutoWidth(void) {
   TEST_ASSERT_EQUAL_STRING("F0000000", buffer);
 }
 
-void TestStringHexFormat_ZeroXPrefixed(void) {
+static void TestStringHexFormat_ZeroXPrefixed(void) {
   char buffer[16];
   /* Padless */
   TEST_ASSERT_EQUAL(3, SmartStringHexFormat(0, SS_PADLESS | SS_ZERO_X, buffer, sizeof(buffer)));
@@ -298,7 +298,7 @@ void TestStringHexFormat_ZeroXPrefixed(void) {
   TEST_ASSERT_EQUAL_STRING("x01000000", buffer);
 }
 
-void TestStringHexFormat_LowerCase(void) {
+static void TestStringHexFormat_LowerCase(void) {
   char buffer[16];
   TEST_ASSERT_EQUAL(8, SmartStringHexFormat(0xdeadbeef, SS_QUAD, buffer, sizeof(buffer)));
   TEST_ASSERT_EQUAL_STRING("DEADBEEF", buffer);
@@ -308,7 +308,7 @@ void TestStringHexFormat_LowerCase(void) {
 
 /* Hex Encoding Test */
 
-void TestStringHexEncode_InvalidInput(void) {
+static void TestStringHexEncode_InvalidInput(void) {
   char buffer[16];
   uint8_t const data[] = {0xe5, 0x5e, 0xc3, 0x3c};
   TEST_ASSERT_EQUAL(0, SmartStringHexEncode(NULL, sizeof(data), buffer, sizeof(buffer)));
@@ -316,7 +316,7 @@ void TestStringHexEncode_InvalidInput(void) {
   TEST_ASSERT_EQUAL(0, SmartStringHexEncode(data, sizeof(data), buffer, 0));
 }
 
-void TestStringHexEncode_ValidInput(void) {
+static void TestStringHexEncode_ValidInput(void) {
   char buffer[16];
   uint8_t const data[] = {0xe5, 0x5e, 0xc3, 0x3c};
   /* No Data */
@@ -354,7 +354,7 @@ void TestStringHexDecode_InvalidInput(void) {
   TEST_ASSERT_EQUAL(0, SmartStringHexDecode("1234567", dest, sizeof(dest)));
 }
 
-void TestStringHexDecode_ValidInput(void) {
+static void TestStringHexDecode_ValidInput(void) {
   char const source_upper[] = "E55EC33C";
   char const source_lower[] = "e55ec33c";
   uint8_t dest[4];

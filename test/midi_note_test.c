@@ -9,7 +9,7 @@
 
 #include "midi_note.h"
 
-void TestMidiKeyIsValid(void) {
+static void TestMidiKeyIsValid(void) {
   TEST_ASSERT_FALSE(MidiIsValidNote(NULL));
   midi_note_t note = {};
   TEST_ASSERT_TRUE(MidiIsValidNote(&note));
@@ -25,7 +25,7 @@ void TestMidiKeyIsValid(void) {
   TEST_ASSERT_TRUE(MidiIsValidNote(&note));
 }
 
-void TestMidiNoteConstructor_Note(void) {
+static void TestMidiNoteConstructor_Note(void) {
   TEST_ASSERT_FALSE(MidiNote(NULL, 0, 0));
   midi_note_t note = {};
   TEST_ASSERT_TRUE(MidiNote(&note, 0, 0));
@@ -40,7 +40,7 @@ void TestMidiNoteConstructor_Note(void) {
   TEST_ASSERT_EQUAL(0x00, note.pressure);
 }
 
-void TestMidiNoteConstructor_NotePressure(void) {
+static void TestMidiNoteConstructor_NotePressure(void) {
   TEST_ASSERT_FALSE(MidiNotePressure(NULL, 0, 0));
   midi_note_t note = {};
   TEST_ASSERT_TRUE(MidiNotePressure(&note, 0, 0));
@@ -55,7 +55,7 @@ void TestMidiNoteConstructor_NotePressure(void) {
   TEST_ASSERT_EQUAL(0x2A, note.pressure);
 }
 
-void TestMidiNoteConstructor_Setters(void) {
+static void TestMidiNoteConstructor_Setters(void) {
   TEST_ASSERT_FALSE(MidiSetNoteKey(NULL, 0));
   TEST_ASSERT_FALSE(MidiSetNoteVelocity(NULL, 0));
   TEST_ASSERT_FALSE(MidiSetNotePressure(NULL, 0));

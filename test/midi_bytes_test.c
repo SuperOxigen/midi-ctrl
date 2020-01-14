@@ -9,28 +9,28 @@
 
 #include "midi_bytes.h"
 
-void TestMidiStatusByte_Validators(void) {
+static void TestMidiStatusByte_Validators(void) {
   TEST_ASSERT_TRUE(MidiIsStatusByte(0xFF));
   TEST_ASSERT_TRUE(MidiIsStatusByte(0x80));
   TEST_ASSERT_FALSE(MidiIsStatusByte(0x00));
   TEST_ASSERT_FALSE(MidiIsStatusByte(0x7F));
 }
 
-void TestMidiDataByte_Validators(void) {
+static void TestMidiDataByte_Validators(void) {
   TEST_ASSERT_FALSE(MidiIsDataByte(0xFF));
   TEST_ASSERT_FALSE(MidiIsDataByte(0x80));
   TEST_ASSERT_TRUE(MidiIsDataByte(0x00));
   TEST_ASSERT_TRUE(MidiIsDataByte(0x7F));
 }
 
-void TestMidiDataWord_Validators(void) {
+static void TestMidiDataWord_Validators(void) {
   TEST_ASSERT_FALSE(MidiIsDataWord(0xFFFF));
   TEST_ASSERT_FALSE(MidiIsDataWord(0xFF3F));
   TEST_ASSERT_TRUE(MidiIsDataWord(0x0000));
   TEST_ASSERT_TRUE(MidiIsDataWord(0x3FFF));
 }
 
-void TestMidiDataWord_Getters(void) {
+static void TestMidiDataWord_Getters(void) {
   uint16_t word = 0;
   TEST_ASSERT_EQUAL(0, MidiGetDataWordMsb(word));
   TEST_ASSERT_EQUAL(0, MidiGetDataWordLsb(word));
@@ -48,7 +48,7 @@ void TestMidiDataWord_Getters(void) {
   TEST_ASSERT_EQUAL(0x00, MidiGetDataWordLsb(word));
 }
 
-void TestMidiDataWord_Setters(void) {
+static void TestMidiDataWord_Setters(void) {
   uint16_t word = 0;
   TEST_ASSERT_TRUE(MidiSetDataWordLsb(&word,  0x7F));
   TEST_ASSERT_EQUAL(0x007F, word);

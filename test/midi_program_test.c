@@ -10,7 +10,7 @@
 #include "midi_defs.h"
 #include "midi_program.h"
 
-void MidiProgramNumberToFamilyTest(void) {
+static void MidiProgramNumberToFamilyTest(void) {
   TEST_ASSERT_EQUAL(
       MIDI_FAMILY_PIANO,
       MidiProgramNumberToFamily(MIDI_ACOUSTIC_GRAND_PIANO));

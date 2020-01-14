@@ -10,7 +10,7 @@
 #include "midi_control.h"
 #include "midi_defs.h"
 
-void TestMidiControlIsValid(void) {
+static void TestMidiControlIsValid(void) {
   TEST_ASSERT_FALSE(MidiIsValidControlChange(NULL));
   midi_control_change_t cc = {};
   TEST_ASSERT_TRUE(MidiIsValidControlChange(&cc));
@@ -24,7 +24,7 @@ void TestMidiControlIsValid(void) {
   TEST_ASSERT_TRUE(MidiIsValidControlChange(&cc));
 }
 
-void TestMidiControlChangeConstructor(void) {
+static void TestMidiControlChangeConstructor(void) {
   TEST_ASSERT_FALSE(MidiControlChange(NULL, MIDI_BANK_SELECT_LSB, 0x02));
   midi_control_change_t cc = {
     .number = MIDI_MAIN_VOLUME_LSB,
