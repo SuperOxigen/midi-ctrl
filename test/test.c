@@ -22,6 +22,7 @@ void main(void) {
   printf("\n==== MIDI Tests ====\n");
   MidiBytesTest();
   MidiNoteTest();
+  MidiControlTest();
   MidiProgramTest();
   UNITY_END();
 }

@@ -1,5 +1,5 @@
 /*
- * MIDI Controller - MIDI Control Definitions
+ * MIDI Controller - MIDI Control Change
  *
  * Copyright (c) 2020 Alex Dale
  * This project is licensed under the terms of the MIT license.
