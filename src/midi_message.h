@@ -54,7 +54,8 @@ typedef struct {
       };
     };
     /* System exclusive. */
-    uint8_t manufacture_id[3];
+    /* TODOL Complete manufacture ID
+    uint8_t manufacture_id[3]; */
     /* Non-Channel Based */
     /* TODO: Support these
     uint8_t time_code;

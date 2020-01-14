@@ -16,5 +16,6 @@ void MidiBytesTest(void);
 void MidiNoteTest(void);
 void MidiControlTest(void);
 void MidiProgramTest(void);
+void MidiMessageTest(void);
 
 #endif  /* _TEST_H_ */
