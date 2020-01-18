@@ -23,6 +23,7 @@ void main(void) {
   MidiBytesTest();
   MidiNoteTest();
   MidiControlTest();
+  MidiFrameTest();
   MidiProgramTest();
   MidiMessageTest();
   UNITY_END();
