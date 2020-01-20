@@ -64,6 +64,8 @@ typedef struct {
   };
 } midi_message_t;
 
+bool_t MidiMessageIsValid(midi_message_t const *message);
+
 /* Validators for stand along message values. */
 #define MidiIsValidChannelPressure(pressure) MidiIsDataByte(pressure)
 #define MidiIsValidPitchWheel(pitch) MidiIsDataWord(pitch)
