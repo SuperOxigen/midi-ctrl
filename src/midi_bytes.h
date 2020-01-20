@@ -19,6 +19,7 @@ C_SECTION_BEGIN;
 
 /* MIDI data word (14-bit) */
 #define MidiIsDataWord(word) (!((word) & 0xC000))  /* uint16_t -> bool_t */
+uint16_t MidiDataWordFromBytes(uint8_t msb, uint8_t lsb);
 uint8_t MidiGetDataWordMsb(uint16_t word);
 uint8_t MidiGetDataWordLsb(uint16_t word);
 bool_t MidiSetDataWordMsb(uint16_t *word, uint8_t msb);

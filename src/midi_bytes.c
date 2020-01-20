@@ -12,6 +12,12 @@
 /* Number of bytes to shift. */
 #define MIDI_WORD_MSB_OFFSET      7
 
+uint16_t MidiDataWordFromBytes(uint8_t msb, uint8_t lsb) {
+  if (!MidiIsDataByte(msb) || !MidiIsDataByte(lsb)) return 0;
+  return ((msb << MIDI_WORD_MSB_OFFSET) & MIDI_WORD_MSB_MASK) |
+         (lsb & MIDI_WORD_LSB_MASK);
+}
+
 uint8_t MidiGetDataWordMsb(uint16_t word) {
    return ((word & MIDI_WORD_MSB_MASK) >> MIDI_WORD_MSB_OFFSET)
         & MIDI_WORD_LSB_MASK;
