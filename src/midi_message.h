@@ -34,6 +34,8 @@ bool_t MidiIsChannelMessageType(midi_message_type_t message_type);
 midi_status_t MidiChannelStatusByte(
     midi_message_type_t message_type,
     midi_channel_number_t channel);
+/* Returns 0 if not a channel status type. */
+midi_channel_number_t MidiChannelFromStatusByte(midi_status_t status_byte);
 
 /* Master MIDI Message */
 typedef struct {

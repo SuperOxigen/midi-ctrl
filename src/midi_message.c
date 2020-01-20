@@ -41,6 +41,11 @@ midi_status_t MidiChannelStatusByte(
   return (message_type & 0xF0) | (channel & 0x0F);
 }
 
+midi_channel_number_t MidiChannelFromStatusByte(midi_status_t status_byte) {
+  if (!MidiIsChannelMessageType(MidiStatusToMessageType(status_byte))) return 0;
+  return status_byte & 0x0F;
+}
+
 bool_t MidiMessageIsValid(midi_message_t const *message) {
   if (message == NULL) return false;
   if (!MidiIsValidMessageType(message->type)) return false;
@@ -49,9 +54,8 @@ bool_t MidiMessageIsValid(midi_message_t const *message) {
   switch (message->type) {
     case MIDI_NOTE_OFF:
     case MIDI_NOTE_ON:
-      return MidiIsValidNote(&message->note);
     case MIDI_KEY_PRESSURE:
-      return MidiIsValidChannelPressure(message->pressure);
+      return MidiIsValidNote(&message->note);
     case MIDI_CONTROL_CHANGE:
       return MidiIsValidControlChange(&message->control);
     case MIDI_PROGRAM_CHANGE:
