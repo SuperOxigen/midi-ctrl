@@ -59,6 +59,12 @@
 #define MIDI_SYSTEM_RESET                 0xFF
 
 /*
+ *    MIDI Notes
+ */
+#define MIDI_NOTE_ON_VELOCITY             0x40
+#define MIDI_MIDDLE_C                     0x58
+
+/*
  *    MIDI Control Numbers
  */
 #define MIDI_BANK_SELECT_MSB              0x00
