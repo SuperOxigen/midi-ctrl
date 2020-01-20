@@ -26,5 +26,6 @@ void main(void) {
   MidiFrameTest();
   MidiProgramTest();
   MidiMessageTest();
+  MidiSerializeTest();
   UNITY_END();
 }

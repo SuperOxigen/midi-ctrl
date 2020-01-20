@@ -20,4 +20,6 @@ void MidiProgramTest(void);
 
 void MidiMessageTest(void);
 
+void MidiSerializeTest(void);
+
 #endif  /* _TEST_H_ */
