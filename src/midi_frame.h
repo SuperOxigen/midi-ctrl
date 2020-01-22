@@ -25,11 +25,12 @@ typedef struct {
 bool_t MidiInitializeFrameBuffer(midi_frame_buffer_t *frame);
 bool_t MidiFrameBufferFull(midi_frame_buffer_t const *frame);
 bool_t MidiFrameBufferEmpty(midi_frame_buffer_t const *frame);
+#define MidiFrameBufferSize(frame) ((size_t) (frame)->size)
 #define MidiFrameBufferCapacity(frame) ((size_t) MIDI_FRAME_BUFFER_SIZE)
 
 size_t MidiPutFrameBufferData(
     uint8_t const *data, size_t data_size, midi_frame_buffer_t *frame);
-size_t MidiPutFrameBufferByte(uint8_t byte, midi_frame_buffer_t *frame);
+bool_t MidiPutFrameBufferByte(uint8_t byte, midi_frame_buffer_t *frame);
 size_t MidiPeakFrameBufferData(
     midi_frame_buffer_t const *frame, uint8_t *data, size_t data_size);
 size_t MidiTakeFrameBufferData(

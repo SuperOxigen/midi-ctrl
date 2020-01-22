@@ -54,8 +54,8 @@ size_t MidiPutFrameBufferData(
   return data_size;
 }
 
-size_t MidiPutFrameBufferByte(uint8_t byte, midi_frame_buffer_t *frame) {
-  return MidiPutFrameBufferData(&byte, 1, frame);
+bool_t MidiPutFrameBufferByte(uint8_t byte, midi_frame_buffer_t *frame) {
+  return MidiPutFrameBufferData(&byte, 1, frame) > 0;
 }
 
 size_t MidiPeakFrameBufferData(
