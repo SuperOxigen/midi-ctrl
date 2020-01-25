@@ -14,6 +14,7 @@ void PlatformAttributesTest(void);
 /* MIDI Tests */
 void MidiBytesTest(void);
 void MidiNoteTest(void);
+void MidiTimeTest(void);
 void MidiControlTest(void);
 void MidiFrameTest(void);
 void MidiProgramTest(void);

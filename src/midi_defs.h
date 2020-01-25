@@ -423,4 +423,22 @@
 #define MIDI_MUTE_TRIANGLE                79
 #define MIDI_OPEN_TRIANLE                 80
 
+/*
+ *    MIDI Time Code
+ */
+/* Time code types.  (LSN = Lease significant nibble) */
+#define MIDI_FRAME_COUNT_LSN              0x00
+#define MIDI_FRAME_COUNT_MSN              0x10
+#define MIDI_SECONDS_COUNT_LSN            0x20
+#define MIDI_SECONDS_COUNT_MSN            0x30
+#define MIDI_MINUTES_COUNT_LSN            0x40
+#define MIDI_MINUTES_COUNT_MSN            0x50
+#define MIDI_HOURS_COUNT_LSN              0x60
+#define MIDI_HOURS_COUNT_MSN              0x70
+/* Time code value for frame rate. */
+#define MIDI_24_FPS                       0x00
+#define MIDI_25_FPS                       0x20
+#define MIDI_30_FPS_DROP_FRAME            0x40
+#define MIDI_30_FPS_NON_DROP              0x60
+
 #endif  /* _MIDI_DEFS_H_ */
