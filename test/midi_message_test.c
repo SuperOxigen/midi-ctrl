@@ -82,10 +82,42 @@ static void TestMidiStatusByte_FromChannelMessage(void) {
       MidiChannelStatusByte(MIDI_PROGRAM_CHANGE, MIDI_CHANNEL_12));
 }
 
+static void TestMidiStatusByte_FromMessage(void) {
+  midi_message_t message = {};
+  message.type = MIDI_NOTE_ON;
+  message.channel = MIDI_CHANNEL_8;
+  TEST_ASSERT_EQUAL(
+      MIDI_NOTE_ON | MIDI_CHANNEL_8,
+      MidiMessageStatus(&message));
+
+  message.type = MIDI_KEY_PRESSURE;
+  message.channel = MIDI_CHANNEL_4;
+  TEST_ASSERT_EQUAL(
+      MIDI_KEY_PRESSURE | MIDI_CHANNEL_4,
+      MidiMessageStatus(&message));
+
+  message.type = MIDI_PITCH_WHEEL;
+  message.channel = MIDI_CHANNEL_14;
+  TEST_ASSERT_EQUAL(
+      MIDI_PITCH_WHEEL | MIDI_CHANNEL_14,
+      MidiMessageStatus(&message));
+
+  message.type = MIDI_TIME_CODE;
+  MidiInitializeTimeCode(&message.time_code, MIDI_FRAME_COUNT_LSN, 0x00);
+  TEST_ASSERT_EQUAL(MIDI_TIME_CODE, MidiMessageStatus(&message));
+
+  message.type = MIDI_START;
+  TEST_ASSERT_EQUAL(MIDI_START, MidiMessageStatus(&message));
+
+  message.type = MIDI_SYSTEM_RESET;
+  TEST_ASSERT_EQUAL(MIDI_SYSTEM_RESET, MidiMessageStatus(&message));
+}
+
 void MidiMessageTest(void) {
   RUN_TEST(TestMidiStatusByte_Validator);
   RUN_TEST(TestMidiMessageType_FromStatus);
   RUN_TEST(TestMidiMessageType_Validator);
   RUN_TEST(TestMidiMessageType_ChannelValidator);
   RUN_TEST(TestMidiStatusByte_FromChannelMessage);
+  RUN_TEST(TestMidiStatusByte_FromMessage);
 }

@@ -5,6 +5,8 @@
  * This project is licensed under the terms of the MIT license.
  * See LICENSE for details.
  */
+#include <string.h>
+
 #include "midi_defs.h"
 #include "midi_message.h"
 
@@ -78,8 +80,7 @@ bool_t MidiMessageIsValid(midi_message_t const *message) {
       /* TODO: Check |manufacture_id| */
       return false;
     case MIDI_TIME_CODE:
-      /* TODO: Check |time_code| */
-      return false;
+      return MidiIsValidTimeCode(&message->time_code);
     case MIDI_SONG_POSITION_POINTER:
       /* TODO: Check |song_position| */
       return false;
@@ -90,10 +91,17 @@ bool_t MidiMessageIsValid(midi_message_t const *message) {
   return false;
 }
 
+midi_status_t MidiMessageStatus(midi_message_t const *message) {
+  if (!MidiMessageIsValid(message)) return MIDI_NONE;
+  return MidiIsChannelMessageType(message->type)
+      ? MidiChannelStatusByte(message->type, message->channel)
+      : message->type;
+}
+
 bool_t MidiNoteMessage(
     midi_message_t *message, midi_channel_number_t channel_number,
     bool_t on, midi_note_t const *note) {
-  if (message == NULL || note == NULL) return false;
+  if (message == NULL) return false;
   if (!MidiIsValidChannelNumber(channel_number)) return false;
   if (!MidiIsValidNote(note)) return false;
   message->type = on ? MIDI_NOTE_ON : MIDI_NOTE_OFF;
@@ -108,7 +116,7 @@ bool_t MidiNoteMessage(
 bool_t MidiKeyPressureMessage(
     midi_message_t *message, midi_channel_number_t channel_number,
     midi_note_t const *note) {
-  if (message == NULL || note == NULL) return false;
+  if (message == NULL) return false;
   if (!MidiIsValidChannelNumber(channel_number)) return false;
   if (!MidiIsValidNote(note)) return false;
   message->type = MIDI_KEY_PRESSURE;
@@ -123,7 +131,7 @@ bool_t MidiKeyPressureMessage(
 bool_t MidiControlChangeMessage(
     midi_message_t *message, midi_channel_number_t channel_number,
     midi_control_change_t const *control_change) {
-  if (message == NULL || control_change == NULL) return false;
+  if (message == NULL) return false;
   if (!MidiIsValidChannelNumber(channel_number)) return false;
   if (!MidiIsValidControlChange(control_change)) return false;
   message->type = MIDI_CONTROL_CHANGE;
@@ -165,5 +173,14 @@ bool_t MidiPitchWheelMessage(
   message->type = MIDI_PITCH_WHEEL;
   message->channel = channel_number;
   message->pitch = pitch;
+  return true;
+}
+
+bool_t MidiTimeCodeMessage(
+    midi_message_t *message, midi_time_code_t const *time_code) {
+  if (message == NULL) return false;
+  if (!MidiIsValidTimeCode(time_code)) return false;
+  message->type = MIDI_TIME_CODE;
+  memcpy(&message->time_code, time_code, sizeof(midi_time_code_t));
   return true;
 }

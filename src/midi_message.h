@@ -14,6 +14,7 @@
 #include "midi_control.h"
 #include "midi_note.h"
 #include "midi_program.h"
+#include "midi_time.h"
 
 C_SECTION_BEGIN;
 
@@ -56,11 +57,10 @@ typedef struct {
       };
     };
     /* System exclusive. */
-    /* TODOL Complete manufacture ID
-    uint8_t manufacture_id[3]; */
+    /* midi_sys_ex_t sys_ex; */
     /* Non-Channel Based */
+    midi_time_code_t time_code;
     /* TODO: Support these
-    uint8_t time_code;
     uint16_t song_position;
     uint8_t song_number; */
   };
@@ -73,6 +73,8 @@ bool_t MidiMessageIsValid(midi_message_t const *message);
 #define MidiIsValidPitchWheel(pitch) MidiIsDataWord(pitch)
 
 /* Message Constructions */
+
+midi_status_t MidiMessageStatus(midi_message_t const *message);
 
 bool_t MidiNoteMessage(
     midi_message_t *message, midi_channel_number_t channel_number,
@@ -101,6 +103,9 @@ bool_t MidiChannelPressureMessage(
 bool_t MidiPitchWheelMessage(
     midi_message_t *message, midi_channel_number_t channel_number,
     uint16_t pitch);
+
+bool_t MidiTimeCodeMessage(
+    midi_message_t *message, midi_time_code_t const *time_code);
 
 C_SECTION_END;
 

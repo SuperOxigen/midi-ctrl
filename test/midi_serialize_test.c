@@ -101,10 +101,14 @@ static midi_message_t const kEndSystemExclusiveMessage = {
   .type = MIDI_END_SYSTEM_EXCLUSIVE
 };
 
-static uint8_t const kTimeCodePacket[] = { MIDI_TIME_CODE, kFillerByte };
+static uint8_t const kTimeCodePacket[] = { MIDI_TIME_CODE,
+    MIDI_HOURS_COUNT_LSN | 0x05 };
 static midi_message_t const kTimeCodeMessage = {
   .type = MIDI_TIME_CODE,
-  /* .time_code = MIDI_TIME_CODE */
+  .time_code = {
+    .type = MIDI_HOURS_COUNT_LSN,
+    .value = 0x05
+  }
 };
 
 static uint8_t const kSongPositionPointerPacket[] = {
@@ -212,10 +216,10 @@ static void TestMidiSerialize_KnownMessage(void) {
   TEST_ASSERT_EQUAL_MEMORY(
       kEndSystemExclusivePacket, buffer, sizeof(kEndSystemExclusivePacket));
 
-  // TEST_ASSERT_EQUAL(
-  //     sizeof(kTimeCodePacket),
-  //     MidiSerializeMessage(&kTimeCodeMessage, false, buffer, sizeof(buffer)));
-  // TEST_ASSERT_EQUAL_MEMORY(kTimeCodePacket, buffer, sizeof(kTimeCodePacket));
+  TEST_ASSERT_EQUAL(
+      sizeof(kTimeCodePacket),
+      MidiSerializeMessage(&kTimeCodeMessage, false, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_MEMORY(kTimeCodePacket, buffer, sizeof(kTimeCodePacket));
 
   // TEST_ASSERT_EQUAL(
   //     sizeof(kSongPositionPointerPacket),
@@ -365,8 +369,10 @@ static void TestMidiDeserialize_KnownMessage(void) {
       MidiDeserializeMessage(
           kTimeCodePacket, sizeof(kTimeCodePacket),
           MIDI_NONE, &message));
-  // TEST_ASSERT_EQUAL(kTimeCodeMessage.type, message.type);
-  // TEST_ASSERT_EQUAL(kTimeCodeMessage.time_code, message.time_code);
+  TEST_ASSERT_EQUAL(kTimeCodeMessage.type, message.type);
+  TEST_ASSERT_EQUAL_MEMORY(
+      &kTimeCodeMessage.time_code, &message.time_code,
+      sizeof(midi_time_code_t));
 
   TEST_ASSERT_EQUAL(
       sizeof(kSongPositionPointerPacket),

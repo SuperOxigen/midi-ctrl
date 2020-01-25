@@ -49,9 +49,7 @@ size_t MidiSerializeMessage(
   uint8_t *message_data = message_buffer;
   if (!skip_status) {
     /* Status Byte. */
-    message_buffer[0] = MidiIsChannelMessageType(message->type)
-        ? MidiChannelStatusByte(message->type, message->channel)
-        : message->type;
+    message_buffer[0] = MidiMessageStatus(message);
     message_data = &message_buffer[1];
   }
   /* 2 is the most common value, switch will change if needed. */
@@ -83,6 +81,10 @@ size_t MidiSerializeMessage(
       message_data[0] = MidiGetDataWordLsb(message->pitch);
       message_data[1] = MidiGetDataWordMsb(message->pitch);
       break;
+    case MIDI_TIME_CODE:
+      MidiSerializeTimeCode(&message->time_code, &message_data[0]);
+      message_data_size = 1;
+      break;
     /* Data-less */
     case MIDI_TUNE_REQUEST:
     case MIDI_END_SYSTEM_EXCLUSIVE:
@@ -96,7 +98,6 @@ size_t MidiSerializeMessage(
       break;
     /* Unsupported */
     case MIDI_SYSTEM_EXCLUSIVE:
-    case MIDI_TIME_CODE:
     case MIDI_SONG_POSITION_POINTER:
     case MIDI_SONG_SELECT:
     default:
@@ -108,26 +109,6 @@ size_t MidiSerializeMessage(
     data[i] = message_buffer[i];
   }
   return message_size;
-}
-
-size_t MidiSerializeMessages(
-    midi_message_t const *messages, size_t message_count,
-    uint8_t *data, size_t data_size) {
-  if (messages == NULL || data == NULL || message_count == 0) return 0;
-  size_t mi = 0, di = 0;
-  size_t total_message_size = 0;
-  while (mi < message_count) {
-    size_t const message_size = MidiSerializeMessage(
-        &messages[mi++], false, &data[di], di - data_size);
-    if (message_size == 0) continue;
-    total_message_size += message_size;
-    if (total_message_size >= data_size) {
-      di = data_size;
-    } else {
-      di += message_size;
-    }
-  }
-  return total_message_size;
 }
 
 size_t MidiDeserializeMessage(
@@ -147,9 +128,9 @@ size_t MidiDeserializeMessage(
     message->type = MidiStatusToMessageType(status_byte);
     message->channel = MidiChannelFromStatusByte(status_byte);
   }
-  /* Check that enough data is avaliable. */
+  /* Check that enough data is available. */
   size_t const message_data_size = MidiMessageDataSize(message->type);
-  /* TODO: Handel case of manufacture ID. */
+  /* TODO: Handle case of manufacture ID. */
   if (message_data_size == 0) return data_used;
   size_t const expected_data_size = data_used + message_data_size;
   if (expected_data_size < data_size) {
@@ -193,8 +174,10 @@ size_t MidiDeserializeMessage(
       data_used += 2;
       break;
     case MIDI_TIME_CODE:
-      /* TODO: Parse |time_code| */
-      message->type = MIDI_NONE;
+      if (!MidiDeserializeTimeCode(&message->time_code, data[data_used])) {
+        /* Likely a bad time code type-value pair. */
+        message->type = MIDI_NONE;
+      }
       data_used += 1;
       break;
     case MIDI_SONG_POSITION_POINTER:
