@@ -25,6 +25,15 @@
 #define MIDI_HOURS_COUNT_MSN_MASK   0x01
 #define MIDI_FPS_MSN_MASK           0x06
 
+/* These time codes are in a specific order for FORWARD time encoding. */
+static midi_time_code_type_t const kMidiTimeCodeTypes[] = {
+  MIDI_FRAME_COUNT_LSN,   MIDI_FRAME_COUNT_MSN,
+  MIDI_SECONDS_COUNT_LSN, MIDI_SECONDS_COUNT_MSN,
+  MIDI_MINUTES_COUNT_LSN, MIDI_MINUTES_COUNT_MSN,
+  MIDI_HOURS_COUNT_LSN,   MIDI_HOURS_COUNT_MSN
+};
+static size_t const kMidiTimeCodeTypeCount = sizeof(kMidiTimeCodeTypes);
+
 /*
  *  MIDI Time Code.
  */
@@ -243,9 +252,76 @@ bool_t MidiUpdateTime(midi_time_t *time, midi_time_code_t const *time_code) {
       }
     } break;
     default:
+      /* WUT? */
       return false;
   }
   return true;
+}  /* MidiUpdateTime */
+
+bool_t MidiExtractTimeCode(
+    midi_time_t const *time, midi_time_code_type_t type,
+    midi_time_code_t *time_code) {
+  if (!MidiIsValidTime(time) || !MidiIsValidTimeCodeType(type)) return false;
+  if (time_code == NULL) return false;
+  time_code->type = type;
+  switch (type) {
+    case MIDI_FRAME_COUNT_LSN:
+      time_code->value = time->frame & MIDI_FRAME_COUNT_LSN_MASK;
+      break;
+    case MIDI_FRAME_COUNT_MSN:
+      time_code->value = (time->frame >> 4) & MIDI_FRAME_COUNT_MSN_MASK;
+      break;
+    case MIDI_SECONDS_COUNT_LSN:
+      time_code->value = time->seconds & MIDI_SECONDS_COUNT_LSN_MASK;
+      break;
+    case MIDI_SECONDS_COUNT_MSN:
+      time_code->value = (time->seconds >> 4) & MIDI_SECONDS_COUNT_MSN_MASK;
+      break;
+    case MIDI_MINUTES_COUNT_LSN:
+      time_code->value = time->minutes & MIDI_MINUTES_COUNT_LSN_MASK;
+      break;
+    case MIDI_MINUTES_COUNT_MSN:
+      time_code->value = (time->minutes >> 4) & MIDI_MINUTES_COUNT_MSN_MASK;
+      break;
+    case MIDI_HOURS_COUNT_LSN:
+      time_code->value = time->hours & MIDI_HOURS_COUNT_LSN_MASK;
+      break;
+    case MIDI_HOURS_COUNT_MSN:
+      time_code->value = ((time->hours >> 4) & MIDI_HOURS_COUNT_MSN_MASK)
+                       | ((time->fps >> 4) & MIDI_FPS_MSN_MASK);
+      break;
+    default:
+      /* WUT? */
+      return false;
+  }
+  return true;
+}
+
+size_t MidiSerializeTime(
+    midi_time_t const *time, bool_t backwards, uint8_t *data, size_t data_size) {
+  if (data ==  NULL) return 0;
+  if (!MidiIsValidTime(time)) return 0;
+  /* Time code index, data index, data used (if fully serialize) */
+  size_t tci = 0, di = 0, data_used = 0;
+  while (tci < kMidiTimeCodeTypeCount) {
+    midi_time_code_type_t const type = backwards
+        ? kMidiTimeCodeTypes[kMidiTimeCodeTypeCount - tci - 1]
+        : kMidiTimeCodeTypes[tci];
+    ++tci;
+    midi_time_code_t time_code;
+    if (!MidiExtractTimeCode(time, type, &time_code)) {
+      /* WUT? */
+      return 0;
+    }
+    if (data_used < data_size) {
+      if (!MidiSerializeTimeCode(&time_code, &data[di++])) {
+        /* WUT? */
+        return 0;
+      }
+    }
+    ++data_used;
+  }
+  return data_used;
 }
 
 bool_t MidiIncrementTimeFrame(midi_time_t *time) {

@@ -12,7 +12,7 @@
 
 /* MIDI Time Code Test */
 
-static uint8_t const kMidiTimeCodeTypes[] = {
+static midi_time_code_type_t const kMidiTimeCodeTypes[] = {
   MIDI_FRAME_COUNT_LSN,   MIDI_FRAME_COUNT_MSN,
   MIDI_SECONDS_COUNT_LSN, MIDI_SECONDS_COUNT_MSN,
   MIDI_MINUTES_COUNT_LSN, MIDI_MINUTES_COUNT_MSN,
@@ -462,6 +462,123 @@ static void TestMidiTime_Update_FrameReset(void) {
   TEST_ASSERT_EQUAL(0, time.frame);
 }
 
+static void TestMidiTime_ExtractTimeCode(void) {
+  midi_time_code_t time_code;
+  midi_time_t time;
+  MidiInitializeTime(&time);
+
+  /* Invalid input. */
+  TEST_ASSERT_FALSE(
+      MidiExtractTimeCode(NULL, MIDI_FRAME_COUNT_LSN, &time_code));
+  TEST_ASSERT_FALSE(
+      MidiExtractTimeCode(&time, 0xFF, &time_code));
+  TEST_ASSERT_FALSE(
+      MidiExtractTimeCode(&time, MIDI_FRAME_COUNT_LSN, NULL));
+
+  time.frame = /* 22 */ 0x16;
+  time.seconds = /* 41 */ 0x2A;
+  time.minutes = /* 14 */ 0x0E;
+  time.hours = /* 13 */ 0x0D;
+  time.fps = MIDI_30_FPS_NON_DROP /* 0x60 */;
+  /* Check that time is valid before continuing. */
+  TEST_ASSERT_TRUE(MidiIsValidTime(&time));
+  /* Frame. */
+  TEST_ASSERT_TRUE(MidiExtractTimeCode(
+      &time, MIDI_FRAME_COUNT_LSN, &time_code));
+  TEST_ASSERT_EQUAL(MIDI_FRAME_COUNT_LSN, time_code.type);
+  TEST_ASSERT_EQUAL(0x6, time_code.value);
+
+  TEST_ASSERT_TRUE(MidiExtractTimeCode(
+      &time, MIDI_FRAME_COUNT_MSN, &time_code));
+  TEST_ASSERT_EQUAL(MIDI_FRAME_COUNT_MSN, time_code.type);
+  TEST_ASSERT_EQUAL(0x1, time_code.value);
+  /* Seconds. */
+  TEST_ASSERT_TRUE(MidiExtractTimeCode(
+      &time, MIDI_SECONDS_COUNT_LSN, &time_code));
+  TEST_ASSERT_EQUAL(MIDI_SECONDS_COUNT_LSN, time_code.type);
+  TEST_ASSERT_EQUAL(0xA, time_code.value);
+
+  TEST_ASSERT_TRUE(MidiExtractTimeCode(
+      &time, MIDI_SECONDS_COUNT_MSN, &time_code));
+  TEST_ASSERT_EQUAL(MIDI_SECONDS_COUNT_MSN, time_code.type);
+  TEST_ASSERT_EQUAL(0x2, time_code.value);
+  /* Minutes. */
+  TEST_ASSERT_TRUE(MidiExtractTimeCode(
+      &time, MIDI_MINUTES_COUNT_LSN, &time_code));
+  TEST_ASSERT_EQUAL(MIDI_MINUTES_COUNT_LSN, time_code.type);
+  TEST_ASSERT_EQUAL(0xE, time_code.value);
+
+  TEST_ASSERT_TRUE(MidiExtractTimeCode(
+      &time, MIDI_MINUTES_COUNT_MSN, &time_code));
+  TEST_ASSERT_EQUAL(MIDI_MINUTES_COUNT_MSN, time_code.type);
+  TEST_ASSERT_EQUAL(0x0, time_code.value);
+  /* Hours. */
+  TEST_ASSERT_TRUE(MidiExtractTimeCode(
+      &time, MIDI_HOURS_COUNT_LSN, &time_code));
+  TEST_ASSERT_EQUAL(MIDI_HOURS_COUNT_LSN, time_code.type);
+  TEST_ASSERT_EQUAL(0xD, time_code.value);
+
+  TEST_ASSERT_TRUE(MidiExtractTimeCode(
+      &time, MIDI_HOURS_COUNT_MSN, &time_code));
+  TEST_ASSERT_EQUAL(MIDI_HOURS_COUNT_MSN, time_code.type);
+  TEST_ASSERT_EQUAL(0x6, time_code.value);
+}
+
+static void TestMidiTime_Serialize(void) {
+  midi_time_t time;
+  uint8_t time_data[8];
+  MidiInitializeTime(&time);
+  TEST_ASSERT_EQUAL(
+      0,
+      MidiSerializeTime(NULL, false, time_data, sizeof(time_data)));
+  TEST_ASSERT_EQUAL(
+      0,
+      MidiSerializeTime(&time, false, NULL, sizeof(time_data)));
+  time.hours = 25;
+  TEST_ASSERT_EQUAL(
+      0,
+      MidiSerializeTime(&time, false, time_data, sizeof(time_data)));
+
+  time.frame = /* 22 */ 0x16;
+  time.seconds = /* 41 */ 0x2A;
+  time.minutes = /* 14 */ 0x0E;
+  time.hours = /* 13 */ 0x0D;
+  time.fps = MIDI_30_FPS_NON_DROP /* 0x60 */;
+  static uint8_t const kForwardTimeData[] = {
+    MIDI_FRAME_COUNT_LSN | 0x6,
+    MIDI_FRAME_COUNT_MSN | 0x1,
+    MIDI_SECONDS_COUNT_LSN | 0xA,
+    MIDI_SECONDS_COUNT_MSN | 0x2,
+    MIDI_MINUTES_COUNT_LSN | 0xE,
+    MIDI_MINUTES_COUNT_MSN | 0x0,
+    MIDI_HOURS_COUNT_LSN | 0xD,
+    MIDI_HOURS_COUNT_MSN | 0x0 | 0x6
+  };
+  static uint8_t const kBackwardTimeData[] = {
+    MIDI_HOURS_COUNT_MSN | 0x0 | 0x6,
+    MIDI_HOURS_COUNT_LSN | 0xD,
+    MIDI_MINUTES_COUNT_MSN | 0x0,
+    MIDI_MINUTES_COUNT_LSN | 0xE,
+    MIDI_SECONDS_COUNT_MSN | 0x2,
+    MIDI_SECONDS_COUNT_LSN | 0xA,
+    MIDI_FRAME_COUNT_MSN | 0x1,
+    MIDI_FRAME_COUNT_LSN | 0x6
+  };
+  TEST_ASSERT_EQUAL(
+      sizeof(kForwardTimeData),
+      MidiSerializeTime(
+          &time, false /* Forward */, time_data, sizeof(time_data)));
+  TEST_ASSERT_EQUAL_MEMORY(
+      kForwardTimeData, time_data, sizeof(kForwardTimeData));
+
+  TEST_ASSERT_EQUAL(
+      sizeof(kBackwardTimeData),
+      MidiSerializeTime(
+          &time, true /* Backward */, time_data, sizeof(time_data)));
+  TEST_ASSERT_EQUAL_MEMORY(
+      kBackwardTimeData, time_data, sizeof(kBackwardTimeData));
+}
+
 static void TestMidiTime_Increment(void) {
   TEST_ASSERT_FALSE(MidiIncrementTimeFrame(NULL));
   TEST_ASSERT_FALSE(MidiIncrementTimeSeconds(NULL));
@@ -539,5 +656,7 @@ void MidiTimeTest(void) {
   RUN_TEST(TestMidiTime_Initializer);
   RUN_TEST(TestMidiTime_Update);
   RUN_TEST(TestMidiTime_Update_FrameReset);
+  RUN_TEST(TestMidiTime_ExtractTimeCode);
+  RUN_TEST(TestMidiTime_Serialize);
   RUN_TEST(TestMidiTime_Increment);
 }

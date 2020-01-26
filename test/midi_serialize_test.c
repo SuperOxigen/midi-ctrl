@@ -279,6 +279,61 @@ static void TestMidiSerialize_KnownMessage(void) {
       kSystemResetPacket, buffer, sizeof(kSystemResetPacket));
 }
 
+static void TestMidiSerialize_TimePacket(void) {
+  midi_time_t time;
+  uint8_t time_packet[12];
+  MidiInitializeTime(&time);
+  TEST_ASSERT_EQUAL(0, MidiSerializeTimeAsPacket(
+      NULL, true, time_packet,  sizeof(time_packet)));
+  TEST_ASSERT_EQUAL(0, MidiSerializeTimeAsPacket(
+      &time, false, NULL,  sizeof(time_packet)));
+  time.hours = 24;
+  TEST_ASSERT_EQUAL(0, MidiSerializeTimeAsPacket(
+      &time, true, time_packet,  sizeof(time_packet)));
+
+  MidiInitializeTime(&time);
+  time.frame = /* 22 */ 0x16;
+  time.seconds = /* 41 */ 0x2A;
+  time.minutes = /* 14 */ 0x0E;
+  time.hours = /* 13 */ 0x0D;
+  time.fps = MIDI_30_FPS_NON_DROP /* 0x60 */;
+  static uint8_t const kForwardTimePacket[] = {
+    MIDI_TIME_CODE,
+    MIDI_FRAME_COUNT_LSN | 0x6,
+    MIDI_FRAME_COUNT_MSN | 0x1,
+    MIDI_SECONDS_COUNT_LSN | 0xA,
+    MIDI_SECONDS_COUNT_MSN | 0x2,
+    MIDI_MINUTES_COUNT_LSN | 0xE,
+    MIDI_MINUTES_COUNT_MSN | 0x0,
+    MIDI_HOURS_COUNT_LSN | 0xD,
+    MIDI_HOURS_COUNT_MSN | 0x0 | 0x6
+  };
+  static uint8_t const kBackwardTimeData[] = {
+    MIDI_TIME_CODE,
+    MIDI_HOURS_COUNT_MSN | 0x0 | 0x6,
+    MIDI_HOURS_COUNT_LSN | 0xD,
+    MIDI_MINUTES_COUNT_MSN | 0x0,
+    MIDI_MINUTES_COUNT_LSN | 0xE,
+    MIDI_SECONDS_COUNT_MSN | 0x2,
+    MIDI_SECONDS_COUNT_LSN | 0xA,
+    MIDI_FRAME_COUNT_MSN | 0x1,
+    MIDI_FRAME_COUNT_LSN | 0x6
+  };
+  TEST_ASSERT_EQUAL(
+      sizeof(kForwardTimePacket),
+      MidiSerializeTimeAsPacket(
+          &time, false, time_packet,  sizeof(time_packet)));
+  TEST_ASSERT_EQUAL_MEMORY(
+      kForwardTimePacket, time_packet, sizeof(kForwardTimePacket));
+
+  TEST_ASSERT_EQUAL(
+      sizeof(kBackwardTimeData),
+      MidiSerializeTimeAsPacket(
+          &time, true, time_packet,  sizeof(time_packet)));
+  TEST_ASSERT_EQUAL_MEMORY(
+      kBackwardTimeData, time_packet, sizeof(kBackwardTimeData));
+}
+
 static void TestMidiDeserialize_Invalid(void) {
   midi_message_t message;
   TEST_ASSERT_EQUAL(
@@ -439,11 +494,12 @@ static void TestMidiDeserialize_KnownMessage(void) {
           kSystemResetPacket, sizeof(kSystemResetPacket),
           MIDI_NONE, &message));
   TEST_ASSERT_EQUAL(kSystemResetMessage.type, message.type);
-}
+}  /* TestMidiDeserialize_KnownMessage */
 
 void MidiSerializeTest(void) {
   RUN_TEST(TestMidiSerialize_Invalid);
   RUN_TEST(TestMidiSerialize_KnownMessage);
+  RUN_TEST(TestMidiSerialize_TimePacket);
   RUN_TEST(TestMidiDeserialize_Invalid);
   RUN_TEST(TestMidiDeserialize_KnownMessage);
 }

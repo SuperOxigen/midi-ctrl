@@ -51,6 +51,12 @@ bool_t MidiIsValidTime(midi_time_t const *time);
 
 bool_t MidiInitializeTime(midi_time_t *time);
 bool_t MidiUpdateTime(midi_time_t *time, midi_time_code_t const *time_code);
+bool_t MidiExtractTimeCode(
+  midi_time_t const *time, midi_time_code_type_t type,
+  midi_time_code_t *time_code);
+
+size_t MidiSerializeTime(
+  midi_time_t const *time, bool_t backwards, uint8_t *data, size_t data_size);
 
 bool_t MidiIncrementTimeFrame(midi_time_t *time);
 bool_t MidiIncrementTimeSeconds(midi_time_t *time);

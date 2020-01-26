@@ -111,6 +111,17 @@ size_t MidiSerializeMessage(
   return message_size;
 }
 
+size_t MidiSerializeTimeAsPacket(
+    midi_time_t const *time, bool_t backwards,
+    uint8_t *data, size_t data_size) {
+  if (!MidiIsValidTime(time) || data == NULL) return 0;
+  if (data_size > 0) {
+    data[0] = MIDI_TIME_CODE;
+  }
+  return MidiSerializeTime(
+      time, backwards, &data[1], data_size > 0 ? data_size - 1 : 0) + 1;
+}
+
 size_t MidiDeserializeMessage(
     uint8_t const *data, size_t data_size,
     midi_status_t status_override, midi_message_t *message) {
