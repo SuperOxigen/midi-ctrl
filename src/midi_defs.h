@@ -441,4 +441,25 @@
 #define MIDI_30_FPS_DROP_FRAME            0x40
 #define MIDI_30_FPS_NON_DROP              0x60
 
+/*
+ *  System Univeral
+ */
+#define MIDI_NON_REAL_TIME_ID             0x7E
+#define MIDI_REAL_TIME_ID                 0x7F
+
+/* Sub Id */
+#define MIDI_DUMP_HEADER                  0x01
+#define MIDI_DATA_PACKET                  0x02
+#define MIDI_DUMP_REQUEST                 0x03
+#define MIDI_SAMPLE_DUMP                  0x05
+#define MIDI_GENERAL_INFO                 0x06
+#define MIDI_FILE_DUMP                    0x07
+#define MIDI_TUNING_DUMP                  0x08
+#define MIDI_GENERAL_MIDI                 0x09
+#define MIDI_EOF                          0x7B
+#define MIDI_WAIT                         0x7C
+#define MIDI_CANCEL                       0x7D
+#define MIDI_NAK                          0x7E
+#define MIDI_ACK                          0x7F
+
 #endif  /* _MIDI_DEFS_H_ */
