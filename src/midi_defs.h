@@ -462,4 +462,9 @@
 #define MIDI_NAK                          0x7E
 #define MIDI_ACK                          0x7F
 
+/* Loop types */
+#define MIDI_LOOP_FORWARD_ONLY            0x00
+#define MIDI_LOOP_BIDIRECTIONAL           0x01
+#define MIDI_LOOP_OFF                     0x7F
+
 #endif  /* _MIDI_DEFS_H_ */

@@ -13,7 +13,7 @@
 C_SECTION_BEGIN;
 
 /* Size of the largest MIDI message. */
-#define MIDI_FRAME_BUFFER_SIZE   8
+#define MIDI_FRAME_BUFFER_SIZE   128
 
 /* A circular buffer for frame data. */
 typedef struct {
