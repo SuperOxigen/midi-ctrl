@@ -30,6 +30,22 @@ static void TestMidiDataWord_Validators(void) {
   TEST_ASSERT_TRUE(MidiIsDataWord(0x3FFF));
 }
 
+static void TestMidiTriByte_Validators(void) {
+  TEST_ASSERT_FALSE(MidiIsDataTriByte(0xFFFFFFFF));
+  TEST_ASSERT_FALSE(MidiIsDataTriByte(0xFFE00000));
+  TEST_ASSERT_FALSE(MidiIsDataTriByte(0x00200000));
+  TEST_ASSERT_TRUE(MidiIsDataTriByte(0x00000000));
+  TEST_ASSERT_TRUE(MidiIsDataTriByte(0x001FFFFF));
+}
+
+static void TestMidiQuadByte_Validators(void) {
+  TEST_ASSERT_FALSE(MidiIsDataQuadByte(0xFFFFFFFF));
+  TEST_ASSERT_FALSE(MidiIsDataQuadByte(0xF0000000));
+  TEST_ASSERT_FALSE(MidiIsDataQuadByte(0x10000000));
+  TEST_ASSERT_TRUE(MidiIsDataQuadByte(0x00000000));
+  TEST_ASSERT_TRUE(MidiIsDataQuadByte(0x0FFFFFFF));
+}
+
 static void TestMidiDataWord_Getters(void) {
   uint16_t word = 0;
   TEST_ASSERT_EQUAL(0, MidiGetDataWordMsb(word));
@@ -66,10 +82,54 @@ static void TestMidiDataWord_Setters(void) {
   TEST_ASSERT_EQUAL(0x0080, word);
 }
 
+static void TestMidiTriByte_Getters(void) {
+  TEST_ASSERT_EQUAL(0x40, MidiGetDataTriByteMsb(0x00101010));
+  TEST_ASSERT_EQUAL(0x20, MidiGetDataTriByteMid(0x00101010));
+  TEST_ASSERT_EQUAL(0x10, MidiGetDataTriByteLsb(0x00101010));
+}
+
+static void TestMidiQuadByte_Getters(void) {
+  TEST_ASSERT_EQUAL(0x08, MidiGetDataQuadByteMsb(0x01010101));
+  TEST_ASSERT_EQUAL(0x04, MidiGetDataQuadByteMMid(0x01010101));
+  TEST_ASSERT_EQUAL(0x02, MidiGetDataQuadByteLMid(0x01010101));
+  TEST_ASSERT_EQUAL(0x01, MidiGetDataQuadByteLsb(0x01010101));
+}
+
+static void TestMidiData_Creators(void) {
+  /* Words */
+  TEST_ASSERT_EQUAL(0x0000, MidiDataWordFromBytes(0x80, 0x03));
+  TEST_ASSERT_EQUAL(0x3FFF, MidiDataWordFromBytes(0x7F, 0x7F));
+  TEST_ASSERT_EQUAL(0x2020, MidiDataWordFromBytes(0x40, 0x20));
+  /* Tri Bytes */
+  TEST_ASSERT_EQUAL(0x00000000, MidiDataTriByteFromBytes(0x80, 0x03, 0x03));
+  TEST_ASSERT_EQUAL(0x00000000, MidiDataTriByteFromBytes(0x03, 0x83, 0x03));
+  TEST_ASSERT_EQUAL(0x00000000, MidiDataTriByteFromBytes(0x03, 0x03, 0x83));
+  TEST_ASSERT_EQUAL(0x001FFFFF, MidiDataTriByteFromBytes(0x7F, 0x7F, 0x7F));
+  TEST_ASSERT_EQUAL(0x00101010, MidiDataTriByteFromBytes(0x40, 0x20, 0x10));
+  /* Quad Bytes */
+  TEST_ASSERT_EQUAL(
+      0x00000000, MidiDataQuadByteFromBytes(0x83, 0x03, 0x03, 0x03));
+  TEST_ASSERT_EQUAL(
+      0x00000000, MidiDataQuadByteFromBytes(0x03, 0x83, 0x03, 0x03));
+  TEST_ASSERT_EQUAL(
+      0x00000000, MidiDataQuadByteFromBytes(0x03, 0x03, 0x83, 0x03));
+  TEST_ASSERT_EQUAL(
+      0x00000000, MidiDataQuadByteFromBytes(0x03, 0x03, 0x03, 0x83));
+  TEST_ASSERT_EQUAL(
+      0x0FFFFFFF, MidiDataQuadByteFromBytes(0x7F, 0x7F, 0x7F, 0x7F));
+  TEST_ASSERT_EQUAL(
+      0x01010101, MidiDataQuadByteFromBytes(0x08, 0x04, 0x02, 0x01));
+}
+
 void MidiBytesTest(void) {
   RUN_TEST(TestMidiStatusByte_Validators);
   RUN_TEST(TestMidiDataByte_Validators);
   RUN_TEST(TestMidiDataWord_Validators);
+  RUN_TEST(TestMidiTriByte_Validators);
+  RUN_TEST(TestMidiQuadByte_Validators);
   RUN_TEST(TestMidiDataWord_Getters);
   RUN_TEST(TestMidiDataWord_Setters);
+  RUN_TEST(TestMidiTriByte_Getters);
+  RUN_TEST(TestMidiQuadByte_Getters);
+  RUN_TEST(TestMidiData_Creators);
 }
