@@ -68,6 +68,25 @@ uint8_t MidiGetDataTriByteLsb(uint32_t tri) {
   return tri & MIDI_BYTE_MASK;
 }
 
+bool_t MidiSerializeTriByte(uint32_t tri, uint8_t *data) {
+  if (!MidiIsDataTriByte(tri)) return false;
+  if (data == NULL) return false;
+  data[0] = tri & MIDI_BYTE_MASK;
+  data[1] = (tri >> MIDI_WORD_OFFSET) & MIDI_BYTE_MASK;
+  data[2] = (tri >> MIDI_TRI_BYTE_OFFSET) & MIDI_BYTE_MASK;
+  return true;
+}
+
+bool_t MidiDeserializeTriByte(uint8_t const *data, uint32_t *tri) {
+  if (data == NULL || tri == NULL) return false;
+  if (!MidiIsDataByte(data[2]) || !MidiIsDataByte(data[1]) ||
+      !MidiIsDataByte(data[0])) return 0;
+  *tri = ((data[2] << MIDI_TRI_BYTE_OFFSET) & MIDI_TRI_BYTE_MASK) |
+         ((data[1] << MIDI_WORD_OFFSET) & MIDI_WORD_MASK) |
+         (data[0] & MIDI_BYTE_MASK);
+  return true;
+}
+
 uint32_t MidiDataQuadByteFromBytes(
     uint8_t msb, uint8_t mmid, uint8_t lmid, uint8_t lsb) {
   if (!MidiIsDataByte(msb) || !MidiIsDataByte(mmid) ||
@@ -92,4 +111,33 @@ uint8_t MidiGetDataQuadByteLMid(uint32_t quad) {
 
 uint8_t MidiGetDataQuadByteLsb(uint32_t quad) {
   return quad & MIDI_BYTE_MASK;
+}
+
+bool_t MidiSerializeQuadByte(uint32_t quad, uint8_t *data) {
+  if (!MidiIsDataQuadByte(quad)) return false;
+  if (data == NULL) return false;
+  data[0] = quad & MIDI_BYTE_MASK;
+  data[1] = (quad >> MIDI_WORD_OFFSET) & MIDI_BYTE_MASK;
+  data[2] = (quad >> MIDI_TRI_BYTE_OFFSET) & MIDI_BYTE_MASK;
+  data[3] = (quad >> MIDI_QUAD_BYTE_OFFSET) & MIDI_BYTE_MASK;
+  return true;
+}
+
+bool_t MidiDeserializeQuadByte(uint8_t const *data, uint32_t *quad) {
+  if (data == NULL || quad == NULL) return false;
+  if (!MidiIsDataByte(data[3]) || !MidiIsDataByte(data[2]) ||
+      !MidiIsDataByte(data[1]) || !MidiIsDataByte(data[0])) return 0;
+  *quad = ((data[3] << MIDI_QUAD_BYTE_OFFSET) & MIDI_QUAD_BYTE_MASK) |
+          ((data[2] << MIDI_TRI_BYTE_OFFSET) & MIDI_TRI_BYTE_MASK) |
+          ((data[1] << MIDI_WORD_OFFSET) & MIDI_WORD_MASK) |
+          (data[0] & MIDI_BYTE_MASK);
+  return true;
+}
+
+bool_t MidiIsDataArray(uint8_t const *data, size_t data_size) {
+  if (data == NULL || data_size == 0) return false;
+  for (size_t i = 0; i < data_size; ++i) {
+    if (!MidiIsDataByte(data[i])) return false;
+  }
+  return true;
 }

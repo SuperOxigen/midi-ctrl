@@ -28,6 +28,8 @@ C_SECTION_BEGIN;
 #define MidiIsDataQuadByte(quad) \
   (!((quad) & 0xF0000000))  /* uint32_t -> bool_t */
 
+bool_t MidiIsDataArray(uint8_t const *data, size_t data_size);
+
 uint16_t MidiDataWordFromBytes(uint8_t msb, uint8_t lsb);
 uint8_t MidiGetDataWordMsb(uint16_t word);
 uint8_t MidiGetDataWordLsb(uint16_t word);
@@ -38,6 +40,8 @@ uint32_t MidiDataTriByteFromBytes(uint8_t msb, uint8_t mid, uint8_t lsb);
 uint8_t MidiGetDataTriByteMsb(uint32_t tri);
 uint8_t MidiGetDataTriByteMid(uint32_t tri);
 uint8_t MidiGetDataTriByteLsb(uint32_t tri);
+bool_t MidiSerializeTriByte(uint32_t tri, uint8_t *data);
+bool_t MidiDeserializeTriByte(uint8_t const *data, uint32_t *tri);
 
 uint32_t MidiDataQuadByteFromBytes(
   uint8_t msb, uint8_t mmid, uint8_t lmid, uint8_t lsb);
@@ -45,6 +49,8 @@ uint8_t MidiGetDataQuadByteMsb(uint32_t quad);
 uint8_t MidiGetDataQuadByteMMid(uint32_t quad);
 uint8_t MidiGetDataQuadByteLMid(uint32_t quad);
 uint8_t MidiGetDataQuadByteLsb(uint32_t quad);
+bool_t MidiSerializeQuadByte(uint32_t quad, uint8_t *data);
+bool_t MidiDeserializeQuadByte(uint8_t const *data, uint32_t *quad);
 
 C_SECTION_END;
 

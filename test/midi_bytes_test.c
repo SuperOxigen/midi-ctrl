@@ -46,6 +46,18 @@ static void TestMidiQuadByte_Validators(void) {
   TEST_ASSERT_TRUE(MidiIsDataQuadByte(0x0FFFFFFF));
 }
 
+static void  TestMidiDataArray_Validators(void) {
+  static char const kShortData[] = {0x63};
+  static char const kLongData[] = {0x63, 0x77, 0x00};
+  static char const kBadData[] = {0x63, 0x77, 0x80};
+  TEST_ASSERT_FALSE(MidiIsDataArray(NULL, 1u));
+  TEST_ASSERT_FALSE(MidiIsDataArray(kShortData, 0));
+  TEST_ASSERT_FALSE(MidiIsDataArray(kBadData, sizeof(kBadData)));
+
+  TEST_ASSERT_TRUE(MidiIsDataArray(kShortData, sizeof(kShortData)));
+  TEST_ASSERT_TRUE(MidiIsDataArray(kLongData, sizeof(kLongData)));
+}
+
 static void TestMidiDataWord_Getters(void) {
   uint16_t word = 0;
   TEST_ASSERT_EQUAL(0, MidiGetDataWordMsb(word));
@@ -95,6 +107,35 @@ static void TestMidiQuadByte_Getters(void) {
   TEST_ASSERT_EQUAL(0x01, MidiGetDataQuadByteLsb(0x01010101));
 }
 
+static void TestMidiData_SerializeAndDeserialize(void) {
+  uint32_t value = 0;
+  uint8_t value_data[4] = {};
+
+  TEST_ASSERT_FALSE(MidiSerializeTriByte(0x00, NULL));
+  TEST_ASSERT_FALSE(MidiSerializeTriByte(0x10000000, value_data));
+  TEST_ASSERT_FALSE(MidiSerializeQuadByte(0x00, NULL));
+  TEST_ASSERT_FALSE(MidiSerializeQuadByte(0x10000000, value_data));
+
+  TEST_ASSERT_FALSE(MidiDeserializeTriByte(NULL, NULL));
+  TEST_ASSERT_FALSE(MidiDeserializeTriByte(NULL, &value));
+  TEST_ASSERT_FALSE(MidiDeserializeTriByte(value_data, NULL));
+  TEST_ASSERT_FALSE(MidiDeserializeQuadByte(NULL, NULL));
+  TEST_ASSERT_FALSE(MidiDeserializeQuadByte(NULL, &value));
+  TEST_ASSERT_FALSE(MidiDeserializeQuadByte(value_data, NULL));
+
+  static uint8_t const kTriValue[] = {0x04, 0x04, 0x04};
+  TEST_ASSERT_TRUE(MidiSerializeTriByte(0x00010204, value_data));
+  TEST_ASSERT_EQUAL_MEMORY(kTriValue, value_data, 3);
+  TEST_ASSERT_TRUE(MidiDeserializeTriByte(kTriValue, &value));
+  TEST_ASSERT_EQUAL(0x00010204, value);
+
+  static uint8_t const kQuadValue[] = {0x08, 0x08, 0x08, 0x08};
+  TEST_ASSERT_TRUE(MidiSerializeQuadByte(0x01020408, value_data));
+  TEST_ASSERT_EQUAL_MEMORY(kQuadValue, value_data, 4);
+  TEST_ASSERT_TRUE(MidiDeserializeQuadByte(kQuadValue, &value));
+  TEST_ASSERT_EQUAL(0x01020408, value);
+}
+
 static void TestMidiData_Creators(void) {
   /* Words */
   TEST_ASSERT_EQUAL(0x0000, MidiDataWordFromBytes(0x80, 0x03));
@@ -127,9 +168,11 @@ void MidiBytesTest(void) {
   RUN_TEST(TestMidiDataWord_Validators);
   RUN_TEST(TestMidiTriByte_Validators);
   RUN_TEST(TestMidiQuadByte_Validators);
+  RUN_TEST(TestMidiDataArray_Validators);
   RUN_TEST(TestMidiDataWord_Getters);
   RUN_TEST(TestMidiDataWord_Setters);
   RUN_TEST(TestMidiTriByte_Getters);
   RUN_TEST(TestMidiQuadByte_Getters);
+  RUN_TEST(TestMidiData_SerializeAndDeserialize);
   RUN_TEST(TestMidiData_Creators);
 }
