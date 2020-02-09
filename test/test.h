@@ -16,10 +16,12 @@ void MidiBytesTest(void);
 void MidiNoteTest(void);
 void MidiTimeTest(void);
 void MidiControlTest(void);
-void MidiManufacturerIdTest(void);
 void MidiFrameTest(void);
 
+void MidiManufacturerIdTest(void);
+void MidiSystemUniversalTest(void);
 void MidiSystemExclusiveTest(void);
+
 void MidiProgramTest(void);
 
 void MidiMessageTest(void);

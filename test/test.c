@@ -24,10 +24,12 @@ void main(void) {
   MidiNoteTest();
   MidiTimeTest();
   MidiControlTest();
-  MidiManufacturerIdTest();
   MidiFrameTest();
 
+  MidiManufacturerIdTest();
+  MidiSystemUniversalTest();
   MidiSystemExclusiveTest();
+
   MidiProgramTest();
   MidiMessageTest();
   MidiSerializeTest();

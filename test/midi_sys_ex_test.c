@@ -14,7 +14,7 @@
 static uint8_t const kAmericanOne[] = {0x01, 0x00, 0x00};
 static uint8_t const kUniversalOne[] = {MIDI_NON_REAL_TIME_ID, 0x00, 0x00};
 
-static void  TestMidiSysEx_Validator(void) {
+static void TestMidiSysEx_Validator(void) {
   TEST_ASSERT_FALSE(MidiIsValidSysEx(NULL));
   midi_sys_ex_t sys_ex = {};
   TEST_ASSERT_FALSE(MidiIsValidSysEx(&sys_ex));
@@ -22,7 +22,7 @@ static void  TestMidiSysEx_Validator(void) {
   TEST_ASSERT_TRUE(MidiIsValidSysEx(&sys_ex));
 }
 
-static void  TestMidiSysEx_Initializer(void) {
+static void TestMidiSysEx_Initializer(void) {
   midi_sys_ex_t sys_ex;
   TEST_ASSERT_FALSE(MidiInitializeSysEx(NULL, NULL));
   TEST_ASSERT_FALSE(MidiInitializeSysEx(NULL, kAmericanOne));
@@ -37,7 +37,7 @@ static void  TestMidiSysEx_Initializer(void) {
   TEST_ASSERT_EQUAL_MEMORY(kAmericanOne, sys_ex.id, sizeof(sys_ex.id));
 }
 
-static void  TestMidiSysEx_ValidatorForUniversal(void) {
+static void TestMidiSysEx_ValidatorForUniversal(void) {
   midi_sys_ex_t sys_ex;
   TEST_ASSERT_TRUE(MidiInitializeSysEx(&sys_ex, kUniversalOne));
   TEST_ASSERT_FALSE(MidiIsValidSysEx(&sys_ex));
