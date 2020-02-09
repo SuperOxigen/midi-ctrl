@@ -444,8 +444,13 @@
 /*
  *  System Univeral
  */
+/* Special Manufacturer IDs */
+#define MIDI_SPECIAL_ID                   0x7D
 #define MIDI_NON_REAL_TIME_ID             0x7E
 #define MIDI_REAL_TIME_ID                 0x7F
+
+/* Special Device ID */
+#define MIDI_ALL_CALL                     0x7F
 
 /* Sub Id */
 #define MIDI_DUMP_HEADER                  0x01
@@ -461,6 +466,14 @@
 #define MIDI_CANCEL                       0x7D
 #define MIDI_NAK                          0x7E
 #define MIDI_ACK                          0x7F
+
+/* Sample Loop Sub ID */
+#define MIDI_SAMPLE_LOOP_RESPONSE         0x01
+#define MIDI_SAMPLE_LOOP_REQUEST          0x02
+
+/* Device Inquiry Sub ID */
+#define MIDI_DEVICE_INQUIRY_RESPONSE      0x01
+#define MIDI_DEVICE_INQUIRY_REQUEST       0x02
 
 /* Loop types */
 #define MIDI_LOOP_FORWARD_ONLY            0x00
