@@ -27,7 +27,7 @@ static uint8_t const kOtherOne[] = {0x60, 0x00, 0x00};
 static uint8_t const kOtherTwo[] = {0x7C, 0x00, 0x00};
 static uint8_t const kOtherThree[] = {0x00, 0x60, 0x00};
 static uint8_t const kOtherFour[] = {0x00, 0x7F, 0x7F};
-static uint8_t const kSpecialOne[] = {0x7D, 0x00, 0x00};
+static uint8_t const kSpecialOne[] = {MIDI_SPECIAL_ID, 0x00, 0x00};
 static uint8_t const kSpecialTwo[] = {MIDI_NON_REAL_TIME_ID, 0x00, 0x00};
 static uint8_t const kSpecialThree[] = {MIDI_REAL_TIME_ID, 0x00, 0x00};
 #define kUniversalOne kSpecialTwo
@@ -151,7 +151,7 @@ static void TestMidiManufacturerId_ToString(void) {
   TEST_ASSERT_EQUAL_STRING("3F-32", id_repr);
 }
 
-static void TestMidiManufacturerId_Serial(void) {
+static void TestMidiManufacturerId_Serialize(void) {
   static uint8_t const kShort[] = {0x40, 0x00, 0x00};
   static uint8_t const kLong[] = {0x00, 0x3F, 0x32};
   static uint8_t const kBadShort[] = {0x40, 0x00, 0x10};
@@ -169,6 +169,17 @@ static void TestMidiManufacturerId_Serial(void) {
   TEST_ASSERT_EQUAL(
       0, MidiSerializeManufacturerId(kBadLong, id_data, sizeof(id_data)));
 
+  /* Incomplete serialization. */
+  TEST_ASSERT_EQUAL(1,
+      MidiSerializeManufacturerId(kShort, NULL, 0));
+  TEST_ASSERT_EQUAL(1,
+      MidiSerializeManufacturerId(kShort, id_data, 0));
+  TEST_ASSERT_EQUAL(3,
+      MidiSerializeManufacturerId(kLong, NULL, 0));
+  TEST_ASSERT_EQUAL(3,
+      MidiSerializeManufacturerId(kLong, id_data, 1));
+
+  /* Successful serialization. */
   TEST_ASSERT_EQUAL(1,
       MidiSerializeManufacturerId(kShort, id_data, sizeof(id_data)));
   TEST_ASSERT_EQUAL_MEMORY(kShort, id_data, 1);
@@ -177,18 +188,21 @@ static void TestMidiManufacturerId_Serial(void) {
       MidiSerializeManufacturerId(kLong, id_data, sizeof(id_data)));
   TEST_ASSERT_EQUAL_MEMORY(kLong, id_data, 3);
 
-  /* Truncated */
-  TEST_ASSERT_EQUAL(3,
-      MidiSerializeManufacturerId(kLong, id_data, 0));
+  /* Avoid overrun. */
   id_data[2] = 0xFF;
+  TEST_ASSERT_EQUAL(1,
+      MidiSerializeManufacturerId(kShort, id_data, 3));
+  TEST_ASSERT_EQUAL(kShort[0], id_data[0]);
+  TEST_ASSERT_EQUAL(0xFF, id_data[2]);
   TEST_ASSERT_EQUAL(3,
       MidiSerializeManufacturerId(kLong, id_data, 2));
   TEST_ASSERT_EQUAL(0xFF, id_data[2]);
   TEST_ASSERT_EQUAL_MEMORY(kLong, id_data, 2);
 }
 
-static void TestMidiManufacturerId_Deserial(void) {
+static void TestMidiManufacturerId_Deserialize(void) {
   static uint8_t const kShort[] = {0x40};
+  static uint8_t const kShortId[] = {0x40, 0x00, 0x00};
   static uint8_t const kLong[] = {0x00, 0x3F, 0x32};
   static uint8_t const kBadShort[] = {0xA0};
   static uint8_t const kBadLong[] = {0x00, 0x4F, 0x83};
@@ -196,24 +210,33 @@ static void TestMidiManufacturerId_Deserial(void) {
 
   /* Invalid input. */
   TEST_ASSERT_EQUAL(
-      0, MidiDeserializeManufacturerId(NULL, sizeof(kShort), NULL));
-  TEST_ASSERT_EQUAL(
       0, MidiDeserializeManufacturerId(kShort, sizeof(kShort), NULL));
   TEST_ASSERT_EQUAL(
       0, MidiDeserializeManufacturerId(NULL, sizeof(kShort), man_id));
-  TEST_ASSERT_EQUAL(
-      0, MidiDeserializeManufacturerId(kShort, 0, man_id));
-  TEST_ASSERT_EQUAL(
-      0, MidiDeserializeManufacturerId(kLong, 2, man_id));
   TEST_ASSERT_EQUAL(
       0, MidiDeserializeManufacturerId(kBadShort, sizeof(kBadShort), man_id));
   TEST_ASSERT_EQUAL(
       0, MidiDeserializeManufacturerId(kBadLong, sizeof(kBadLong), man_id));
 
+  /* Incomplete deserialization. */
+  /* Need at least 1 byte to determine if it is a 3 byte ID */
+  TEST_ASSERT_EQUAL(
+      1, MidiDeserializeManufacturerId(NULL, 0, man_id));
+  TEST_ASSERT_EQUAL(
+      1, MidiDeserializeManufacturerId(kShort, 0, man_id));
+  TEST_ASSERT_EQUAL(
+      1, MidiDeserializeManufacturerId(kLong, 0, man_id));
+  TEST_ASSERT_EQUAL(
+      3, MidiDeserializeManufacturerId(kLong, 1, man_id));
+
+  /* Successful deserialization. */
   TEST_ASSERT_EQUAL(
       1, MidiDeserializeManufacturerId(kShort, sizeof(kShort), man_id));
+  TEST_ASSERT_EQUAL_MEMORY(kShortId, man_id, 3);
+
   TEST_ASSERT_EQUAL(
       3, MidiDeserializeManufacturerId(kLong, sizeof(kLong), man_id));
+  TEST_ASSERT_EQUAL_MEMORY(kLong, man_id, 3);
 }
 
 void MidiManufacturerIdTest(void) {
@@ -222,6 +245,6 @@ void MidiManufacturerIdTest(void) {
   RUN_TEST(TestMidiManufacturerId_UniversalCheck);
   RUN_TEST(TestMidiManufacturerId_Region);
   RUN_TEST(TestMidiManufacturerId_ToString);
-  RUN_TEST(TestMidiManufacturerId_Serial);
-  RUN_TEST(TestMidiManufacturerId_Deserial);
+  RUN_TEST(TestMidiManufacturerId_Serialize);
+  RUN_TEST(TestMidiManufacturerId_Deserialize);
 }

@@ -85,7 +85,7 @@ size_t MidiManufacturerIdToString(
 
 size_t MidiSerializeManufacturerId(
     midi_manufacturer_id_cref_t man_id, uint8_t *data, size_t data_size) {
-  if (data == NULL) return 0;
+  if (data == NULL && data_size > 0) return 0;
   if (!MidiIsValidManufacturerId(man_id)) return 0;
   if (data_size >= 1) data[0] = man_id[0];
   if (MidiManufacturerIdIsOneByte(man_id)) return 1;
@@ -96,14 +96,16 @@ size_t MidiSerializeManufacturerId(
 
 size_t MidiDeserializeManufacturerId(
     uint8_t const *data, size_t data_size, midi_manufacturer_id_ref_t man_id) {
-  if (data == NULL || data_size == 0 || man_id == NULL) return 0;
+  if (data == NULL && data_size > 0) return 0;
+  if (man_id == NULL) return 0;
+  if (data_size == 0) return 1;
   if (!MidiIsDataByte(data[0])) return 0;
   MidiClearManufacturerId(man_id);
   if (data[0] != 0x00) {
     man_id[0] = data[0];
     return 1;
   }
-  if (data_size < 3) return 0;
+  if (data_size < 3) return 3;
   if (!MidiIsValidManufacturerId(data)) return 0;
   memcpy(man_id, data, 3);
   return 3;
