@@ -23,7 +23,6 @@ bool_t MidiClearManufacturerId(midi_manufacturer_id_ref_t man_id) {
 
 bool_t MidiIsValidManufacturerId(midi_manufacturer_id_cref_t man_id) {
   if (man_id == NULL) return false;
-  size_t i = 0;
   if (!MidiIsDataByte(man_id[0])) return false;
   if (MidiManufacturerIdIsOneByte(man_id)) {
     return (man_id[1] == 0) && (man_id[2] == 0);

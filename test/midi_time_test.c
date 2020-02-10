@@ -12,14 +12,6 @@
 
 /* MIDI Time Code Test */
 
-static midi_time_code_type_t const kMidiTimeCodeTypes[] = {
-  MIDI_FRAME_COUNT_LSN,   MIDI_FRAME_COUNT_MSN,
-  MIDI_SECONDS_COUNT_LSN, MIDI_SECONDS_COUNT_MSN,
-  MIDI_MINUTES_COUNT_LSN, MIDI_MINUTES_COUNT_MSN,
-  MIDI_HOURS_COUNT_LSN,   MIDI_HOURS_COUNT_MSN
-};
-static size_t const kMidiTimeCodeTypeCount = sizeof(kMidiTimeCodeTypes);
-
 static void TestMidiTimeCode_Validators(void) {
   TEST_ASSERT_FALSE(MidiIsValidTimeCode(NULL));
   midi_time_code_t time_code = {};

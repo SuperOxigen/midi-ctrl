@@ -10,7 +10,7 @@
 #include "test.h"
 
 /* Test Main for all test */
-void main(void) {
+int main(void) {
   UNITY_BEGIN();
   printf("\n==== Smart Strings Test ====\n");
   SmartStringTest();
@@ -34,4 +34,5 @@ void main(void) {
   MidiMessageTest();
   MidiSerializeTest();
   UNITY_END();
+  return 0;
 }

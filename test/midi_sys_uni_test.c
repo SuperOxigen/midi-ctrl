@@ -852,7 +852,6 @@ static void TestMidiSampleDump_Deserialize(void) {
 /* Device Inquiry */
 
 static uint8_t const kSmallDeviceInquiryManId[3] = {0x69, 0x00, 0x00};
-static uint8_t const kLargeDeviceInquiryManId[3] = {0x00, 0x13, 0x37};
 static uint8_t const kBadDeviceInquiryManId[3] = {0x00, 0x13, 0xF7};
 static uint8_t const kDeviceInquiryRev[4] = { 0x4D, 0x49, 0x44, 0x49 };
 
@@ -1194,6 +1193,7 @@ void MidiSystemUniversalTest(void) {
   RUN_TEST(TestMidiDumpRequest_Deserialize);
 
   RUN_TEST(TestMidiGlobalDataPacketBuffer);
+  RUN_TEST(TestMidiDataPacket_Validator);
   RUN_TEST(TestMidiDataPacket_Initialize);
   RUN_TEST(TestMidiDataPacket_Checksum);
   RUN_TEST(TestMidiDataPacket_SetData);

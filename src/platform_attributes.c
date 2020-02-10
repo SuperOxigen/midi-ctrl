@@ -7,7 +7,7 @@
  */
 #include "platform_attributes.h"
 
-static char const kUnknown[] __ROM_SECTION= "UNKNOWN";
+static char const kUnknown[] __ROM_SECTION __UNUSED = "UNKNOWN";
 
 #ifdef PLATFORM_NAME
 static char const kPlatformNameBuf[] __ROM_SECTION = __STRINIFY_MACRO(PLATFORM_NAME);

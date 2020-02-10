@@ -47,9 +47,9 @@ static void TestMidiQuadByte_Validators(void) {
 }
 
 static void  TestMidiDataArray_Validators(void) {
-  static char const kShortData[] = {0x63};
-  static char const kLongData[] = {0x63, 0x77, 0x00};
-  static char const kBadData[] = {0x63, 0x77, 0x80};
+  static uint8_t const kShortData[] = {0x63};
+  static uint8_t const kLongData[] = {0x63, 0x77, 0x00};
+  static uint8_t const kBadData[] = {0x63, 0x77, 0x80};
   TEST_ASSERT_FALSE(MidiIsDataArray(NULL, 1u));
   TEST_ASSERT_FALSE(MidiIsDataArray(kShortData, 0));
   TEST_ASSERT_FALSE(MidiIsDataArray(kBadData, sizeof(kBadData)));

@@ -15,13 +15,19 @@
 typedef bool bool_t;
 
 #ifdef __cplusplus
-#define C_SECTION_BEGIN extern "C" {
-#define C_SECTION_END }
-#define C_FUNCTION extern "C"
+# define C_SECTION_BEGIN extern "C" {
+# define C_SECTION_END }
+# define C_FUNCTION extern "C"
 #else
-#define C_SECTION_BEGIN
-#define C_SECTION_END
-#define C_FUNCTION
+# define C_SECTION_BEGIN
+# define C_SECTION_END
+# define C_FUNCTION
+#endif
+
+#if defined(__GNUC__) || defined(__clang__)
+# define __UNUSED __attribute__((unused))
+#else
+# define __UNUSED
 #endif
 
 #endif  /* _MIDI_BASE_H_ */
