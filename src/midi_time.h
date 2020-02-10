@@ -29,9 +29,9 @@ bool_t MidiIsValidTimeCode(midi_time_code_t const  *time_code);
 bool_t MidiInitializeTimeCode(
   midi_time_code_t *time_code, midi_time_code_type_t type, uint8_t value);
 
+/* Time codes are single bytes, |data_size| is always assumed to be 1. */
 bool_t MidiSerializeTimeCode(
   midi_time_code_t const *time_code, uint8_t *data);
-
 bool_t MidiDeserializeTimeCode(
   midi_time_code_t *time_code, uint8_t data);
 
@@ -55,6 +55,7 @@ bool_t MidiExtractTimeCode(
   midi_time_t const *time, midi_time_code_type_t type,
   midi_time_code_t *time_code);
 
+#define MIDI_SERIALIZED_TIME_PAYLOAD_SIZE 8
 size_t MidiSerializeTime(
   midi_time_t const *time, bool_t backwards, uint8_t *data, size_t data_size);
 

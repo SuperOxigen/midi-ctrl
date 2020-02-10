@@ -65,7 +65,7 @@ static void TestMidiTimeCode_Validators(void) {
   TEST_ASSERT_FALSE(MidiIsValidTimeCode(&time_code));
 }
 
-static void TestMidiTimeCodeInitialization_Invalid(void) {
+static void TestMidiTimeCode_Initializer_Invalid(void) {
   TEST_ASSERT_FALSE(MidiInitializeTimeCode(NULL, MIDI_FRAME_COUNT_LSN, 0x00));
   midi_time_code_t time_code = {};
   TEST_ASSERT_FALSE(MidiInitializeTimeCode(
@@ -76,7 +76,7 @@ static void TestMidiTimeCodeInitialization_Invalid(void) {
       &time_code, 0x0F /* Bad value */, 0x00));
 }
 
-static void TestMidiTimeCodeInitialization_Valid(void) {
+static void TestMidiTimeCode_Initializer_Valid(void) {
   midi_time_code_t time_code = {};
   TEST_ASSERT_TRUE(MidiInitializeTimeCode(
       &time_code, MIDI_FRAME_COUNT_LSN, 0x00));
@@ -99,7 +99,7 @@ static void TestMidiTimeCodeInitialization_Valid(void) {
   TEST_ASSERT_EQUAL(MIDI_30_FPS_DROP_FRAME >> 4, time_code.value);
 }
 
-static void TestMidiTimeCodeSerialize_Invalid(void) {
+static void TestMidiTimeCode_Serialize_Invalid(void) {
   midi_time_code_t time_code = {};
   uint8_t data;
   /* Invalid parameters. */
@@ -115,7 +115,7 @@ static void TestMidiTimeCodeSerialize_Invalid(void) {
   TEST_ASSERT_FALSE(MidiSerializeTimeCode(&time_code, &data));
 }
 
-static void TestMidiTimeCodeSerialize_Valid(void) {
+static void TestMidiTimeCode_Serialize_Valid(void) {
   midi_time_code_t time_code = {};
   uint8_t data;
   time_code.type = MIDI_SECONDS_COUNT_LSN;
@@ -130,14 +130,14 @@ static void TestMidiTimeCodeSerialize_Valid(void) {
       MIDI_HOURS_COUNT_MSN | (MIDI_30_FPS_DROP_FRAME >> 4) | 0x01, data);
 }
 
-static void TestMidiTimeCodeDeserialize_Invalid(void) {
+static void TestMidiTimeCode_Deserialize_Invalid(void) {
   midi_time_code_t time_code = {};
   TEST_ASSERT_FALSE(MidiDeserializeTimeCode(NULL, 0x00));
   TEST_ASSERT_FALSE(MidiDeserializeTimeCode(&time_code, 0x80));
   TEST_ASSERT_FALSE(MidiDeserializeTimeCode(&time_code, 0xF0));
 }
 
-static void TestMidiTimeCodeDeserialize_Valid(void) {
+static void TestMidiTimeCode_Deserialize_Valid(void) {
   midi_time_code_t time_code = {};
   TEST_ASSERT_TRUE(
       MidiDeserializeTimeCode(&time_code, MIDI_FRAME_COUNT_LSN | 0x0F));
@@ -153,7 +153,7 @@ static void TestMidiTimeCodeDeserialize_Valid(void) {
 
 /* All of the MSN time code types have some "reserved" bits that should
  * be ignored, and parsed as zero. */
-static void TestMidiTimeCodeDeserialize_IgnoreReservedBits(void) {
+static void TestMidiTimeCode_Deserialize_IgnoreReservedBits(void) {
   midi_time_code_t time_code = {};
   TEST_ASSERT_TRUE(MidiDeserializeTimeCode(
       &time_code, MIDI_FRAME_COUNT_MSN | 0x0F));
@@ -526,18 +526,25 @@ static void TestMidiTime_ExtractTimeCode(void) {
 
 static void TestMidiTime_Serialize(void) {
   midi_time_t time;
-  uint8_t time_data[8];
+  uint8_t time_data[MIDI_SERIALIZED_TIME_PAYLOAD_SIZE];
   MidiInitializeTime(&time);
-  TEST_ASSERT_EQUAL(
-      0,
-      MidiSerializeTime(NULL, false, time_data, sizeof(time_data)));
-  TEST_ASSERT_EQUAL(
-      0,
-      MidiSerializeTime(&time, false, NULL, sizeof(time_data)));
+  /* Invalid inputs. */
+  TEST_ASSERT_EQUAL(0, MidiSerializeTime(
+      NULL, false, time_data, sizeof(time_data)));
+  TEST_ASSERT_EQUAL(0, MidiSerializeTime(
+      &time, false, NULL, sizeof(time_data)));
   time.hours = 25;
-  TEST_ASSERT_EQUAL(
-      0,
-      MidiSerializeTime(&time, false, time_data, sizeof(time_data)));
+  TEST_ASSERT_EQUAL(0, MidiSerializeTime(
+      &time, false, time_data, sizeof(time_data)));
+
+  /* Incomplete serialization. */
+  MidiInitializeTime(&time);
+  TEST_ASSERT_EQUAL(MIDI_SERIALIZED_TIME_PAYLOAD_SIZE, MidiSerializeTime(
+      &time, false, NULL, 0));
+  TEST_ASSERT_EQUAL(MIDI_SERIALIZED_TIME_PAYLOAD_SIZE, MidiSerializeTime(
+      &time, false, time_data, 0));
+  TEST_ASSERT_EQUAL(MIDI_SERIALIZED_TIME_PAYLOAD_SIZE, MidiSerializeTime(
+      &time, false, time_data, MIDI_SERIALIZED_TIME_PAYLOAD_SIZE / 2));
 
   time.frame = /* 22 */ 0x16;
   time.seconds = /* 41 */ 0x2A;
@@ -644,13 +651,13 @@ static void TestMidiTime_Increment(void) {
 
 void MidiTimeTest(void) {
   RUN_TEST(TestMidiTimeCode_Validators);
-  RUN_TEST(TestMidiTimeCodeInitialization_Invalid);
-  RUN_TEST(TestMidiTimeCodeInitialization_Valid);
-  RUN_TEST(TestMidiTimeCodeSerialize_Invalid);
-  RUN_TEST(TestMidiTimeCodeSerialize_Valid);
-  RUN_TEST(TestMidiTimeCodeDeserialize_Invalid);
-  RUN_TEST(TestMidiTimeCodeDeserialize_Valid);
-  RUN_TEST(TestMidiTimeCodeDeserialize_IgnoreReservedBits);
+  RUN_TEST(TestMidiTimeCode_Initializer_Invalid);
+  RUN_TEST(TestMidiTimeCode_Initializer_Valid);
+  RUN_TEST(TestMidiTimeCode_Serialize_Invalid);
+  RUN_TEST(TestMidiTimeCode_Serialize_Valid);
+  RUN_TEST(TestMidiTimeCode_Deserialize_Invalid);
+  RUN_TEST(TestMidiTimeCode_Deserialize_Valid);
+  RUN_TEST(TestMidiTimeCode_Deserialize_IgnoreReservedBits);
 
   RUN_TEST(TestMidiTime_Validators);
   RUN_TEST(TestMidiTime_Initializer);

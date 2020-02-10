@@ -299,8 +299,10 @@ bool_t MidiExtractTimeCode(
 
 size_t MidiSerializeTime(
     midi_time_t const *time, bool_t backwards, uint8_t *data, size_t data_size) {
-  if (data ==  NULL) return 0;
+  if (data == NULL && data_size > 0) return 0;
   if (!MidiIsValidTime(time)) return 0;
+  if (data_size < MIDI_SERIALIZED_TIME_PAYLOAD_SIZE)
+    return MIDI_SERIALIZED_TIME_PAYLOAD_SIZE;
   /* Time code index, data index, data used (if fully serialize) */
   size_t tci = 0, di = 0, data_used = 0;
   while (tci < kMidiTimeCodeTypeCount) {
