@@ -42,7 +42,7 @@ static midi_dump_header_t const kGoodDumpHeader = {
   .sustain_loop_end_point = 0x00020000,
   .loop_type = MIDI_LOOP_OFF
 };
-static uint8_t const kGoodDumpHeaderData[] = {
+static uint8_t const kGoodDumpHeaderData[MIDI_DUMP_HEADER_PAYLOAD_SIZE] = {
   0x10, 0x08,
   13,
   0x00, 0x00, 0x10,
@@ -60,7 +60,7 @@ static midi_dump_header_t const kBadDumpHeader = {
   .sustain_loop_end_point = 0x00020000,
   .loop_type = MIDI_LOOP_OFF
 };
-static uint8_t const kBadDumpHeaderData[] = {
+static uint8_t const kBadDumpHeaderData[MIDI_DUMP_HEADER_PAYLOAD_SIZE] = {
   0x10, 0x08,
   13,
   0x00, 0x00, 0x10,
@@ -87,8 +87,8 @@ static void TestMidiDumpHeader_Validator(void) {
 }
 
 static void TestMidiDumpHeader_Serialize(void) {
-  uint8_t dump_header_data[MIDI_HEADER_DUMP_PAYLOAD_SIZE];
-
+  uint8_t dump_header_data[MIDI_DUMP_HEADER_PAYLOAD_SIZE];
+  /* Invalid inputs. */
   TEST_ASSERT_EQUAL(0, MidiSerializeDumpHeader(
       NULL, dump_header_data, sizeof(dump_header_data)));
   TEST_ASSERT_EQUAL(0, MidiSerializeDumpHeader(
@@ -96,33 +96,44 @@ static void TestMidiDumpHeader_Serialize(void) {
   TEST_ASSERT_EQUAL(0, MidiSerializeDumpHeader(
       &kBadDumpHeader, dump_header_data, sizeof(dump_header_data)));
 
+  /* Incomplete serialization. */
   TEST_ASSERT_EQUAL(
-      MIDI_HEADER_DUMP_PAYLOAD_SIZE,
+      MIDI_DUMP_HEADER_PAYLOAD_SIZE,
+      MidiSerializeDumpHeader(&kGoodDumpHeader, NULL, 0));
+  TEST_ASSERT_EQUAL(
+      MIDI_DUMP_HEADER_PAYLOAD_SIZE,
       MidiSerializeDumpHeader(&kGoodDumpHeader, dump_header_data, 0));
+
+  /* Successful serialization. */
   TEST_ASSERT_EQUAL(
-      MIDI_HEADER_DUMP_PAYLOAD_SIZE,
+      MIDI_DUMP_HEADER_PAYLOAD_SIZE,
       MidiSerializeDumpHeader(
           &kGoodDumpHeader, dump_header_data, sizeof(dump_header_data)));
   TEST_ASSERT_EQUAL_MEMORY(
-      kGoodDumpHeaderData, dump_header_data, MIDI_HEADER_DUMP_PAYLOAD_SIZE);
+      kGoodDumpHeaderData, dump_header_data, MIDI_DUMP_HEADER_PAYLOAD_SIZE);
 }
 
 static void TestMidiDumpHeader_Deserialize(void) {
   midi_dump_header_t dump_header;
-
+  /* Invalid inputs. */
   TEST_ASSERT_EQUAL(0, MidiDeserializeDumpHeader(
-      NULL, MIDI_HEADER_DUMP_PAYLOAD_SIZE, &dump_header));
-  TEST_ASSERT_EQUAL(MIDI_HEADER_DUMP_PAYLOAD_SIZE, MidiDeserializeDumpHeader(
+      NULL, MIDI_DUMP_HEADER_PAYLOAD_SIZE, &dump_header));
+  TEST_ASSERT_EQUAL(0, MidiDeserializeDumpHeader(
+      kGoodDumpHeaderData, MIDI_DUMP_HEADER_PAYLOAD_SIZE, NULL));
+  TEST_ASSERT_EQUAL(0, MidiDeserializeDumpHeader(
+      kBadDumpHeaderData, MIDI_DUMP_HEADER_PAYLOAD_SIZE, &dump_header));
+
+  /* Incomplete deserialization. */
+  TEST_ASSERT_EQUAL(MIDI_DUMP_HEADER_PAYLOAD_SIZE, MidiDeserializeDumpHeader(
+      NULL, 0, &dump_header));
+  TEST_ASSERT_EQUAL(MIDI_DUMP_HEADER_PAYLOAD_SIZE, MidiDeserializeDumpHeader(
       kGoodDumpHeaderData, 0, &dump_header));
-  TEST_ASSERT_EQUAL(0, MidiDeserializeDumpHeader(
-      kGoodDumpHeaderData, MIDI_HEADER_DUMP_PAYLOAD_SIZE, NULL));
-  TEST_ASSERT_EQUAL(MIDI_HEADER_DUMP_PAYLOAD_SIZE, MidiDeserializeDumpHeader(
-      kGoodDumpHeaderData, MIDI_HEADER_DUMP_PAYLOAD_SIZE / 2, &dump_header));
-  TEST_ASSERT_EQUAL(0, MidiDeserializeDumpHeader(
-      kBadDumpHeaderData, MIDI_HEADER_DUMP_PAYLOAD_SIZE, &dump_header));
+  TEST_ASSERT_EQUAL(MIDI_DUMP_HEADER_PAYLOAD_SIZE, MidiDeserializeDumpHeader(
+      kGoodDumpHeaderData, MIDI_DUMP_HEADER_PAYLOAD_SIZE / 2, &dump_header));
 
-  TEST_ASSERT_EQUAL(MIDI_HEADER_DUMP_PAYLOAD_SIZE, MidiDeserializeDumpHeader(
-      kGoodDumpHeaderData, MIDI_HEADER_DUMP_PAYLOAD_SIZE, &dump_header));
+  /* Successful deserialization. */
+  TEST_ASSERT_EQUAL(MIDI_DUMP_HEADER_PAYLOAD_SIZE, MidiDeserializeDumpHeader(
+      kGoodDumpHeaderData, MIDI_DUMP_HEADER_PAYLOAD_SIZE, &dump_header));
   TEST_ASSERT_EQUAL(kGoodDumpHeader.sample_number, dump_header.sample_number);
   TEST_ASSERT_EQUAL(kGoodDumpHeader.sample_format, dump_header.sample_format);
   TEST_ASSERT_EQUAL(kGoodDumpHeader.sample_period, dump_header.sample_period);
@@ -159,7 +170,7 @@ static void TestMidiDumpRequest_Validator(void) {
 
 static void TestMidiDumpRequest_Serialize(void) {
   uint8_t dump_request_data[MIDI_DUMP_REQUEST_PAYLOAD_SIZE];
-
+  /* Invalid inputs. */
   TEST_ASSERT_EQUAL(0, MidiSerializeDumpRequest(
       NULL, dump_request_data, sizeof(dump_request_data)));
   TEST_ASSERT_EQUAL(0, MidiSerializeDumpRequest(
@@ -167,9 +178,15 @@ static void TestMidiDumpRequest_Serialize(void) {
   TEST_ASSERT_EQUAL(0, MidiSerializeDumpRequest(
       &kBadDumpRequest, dump_request_data, sizeof(dump_request_data)));
 
+  /* Incomplete serialization. */
+  TEST_ASSERT_EQUAL(
+      MIDI_DUMP_REQUEST_PAYLOAD_SIZE,
+      MidiSerializeDumpRequest(&kGoodDumpRequest, NULL, 0));
   TEST_ASSERT_EQUAL(
       MIDI_DUMP_REQUEST_PAYLOAD_SIZE,
       MidiSerializeDumpRequest(&kGoodDumpRequest, dump_request_data, 0));
+
+  /* Successful serialization. */
   TEST_ASSERT_EQUAL(
       MIDI_DUMP_REQUEST_PAYLOAD_SIZE,
       MidiSerializeDumpRequest(
@@ -180,18 +197,23 @@ static void TestMidiDumpRequest_Serialize(void) {
 
 static void TestMidiDumpRequest_Deserialize(void) {
   midi_dump_request_t dump_request;
-
+  /* Invalid inputs. */
   TEST_ASSERT_EQUAL(0, MidiDeserializeDumpRequest(
       NULL, MIDI_DUMP_REQUEST_PAYLOAD_SIZE, &dump_request));
-  TEST_ASSERT_EQUAL(MIDI_DUMP_REQUEST_PAYLOAD_SIZE, MidiDeserializeDumpRequest(
-      kGoodDumpRequestData, 0, &dump_request));
   TEST_ASSERT_EQUAL(0, MidiDeserializeDumpRequest(
       kGoodDumpRequestData, MIDI_DUMP_REQUEST_PAYLOAD_SIZE, NULL));
-  TEST_ASSERT_EQUAL(MIDI_DUMP_REQUEST_PAYLOAD_SIZE, MidiDeserializeDumpRequest(
-      kGoodDumpRequestData, MIDI_DUMP_REQUEST_PAYLOAD_SIZE / 2, &dump_request));
   TEST_ASSERT_EQUAL(0, MidiDeserializeDumpRequest(
       kBadDumpRequestData, MIDI_DUMP_REQUEST_PAYLOAD_SIZE, &dump_request));
 
+  /* Incomplete deserialization. */
+  TEST_ASSERT_EQUAL(MIDI_DUMP_REQUEST_PAYLOAD_SIZE, MidiDeserializeDumpRequest(
+      NULL, 0, &dump_request));
+  TEST_ASSERT_EQUAL(MIDI_DUMP_REQUEST_PAYLOAD_SIZE, MidiDeserializeDumpRequest(
+      kGoodDumpRequestData, 0, &dump_request));
+  TEST_ASSERT_EQUAL(MIDI_DUMP_REQUEST_PAYLOAD_SIZE, MidiDeserializeDumpRequest(
+      kGoodDumpRequestData, MIDI_DUMP_REQUEST_PAYLOAD_SIZE / 2, &dump_request));
+
+  /* Successful deserialization. */
   TEST_ASSERT_EQUAL(MIDI_DUMP_REQUEST_PAYLOAD_SIZE, MidiDeserializeDumpRequest(
       kGoodDumpRequestData, MIDI_DUMP_REQUEST_PAYLOAD_SIZE, &dump_request));
   TEST_ASSERT_EQUAL(kGoodDumpRequest.sample_number, dump_request.sample_number);
@@ -399,28 +421,37 @@ static void TestMidiDataPacket_SetData(void) {
 }
 
 static void TestMidiDataPacket_Serialize(void) {
+  static midi_device_id_t const kBadDeviceId = 0x80;
   uint8_t packet_data[MIDI_DATA_PACKET_PAYLOAD_SIZE];
   midi_data_packet_t bad_packet = kEmptyDataPacket;
   bad_packet.length = 22;
-
+  /* Invalid inputs. */
   TEST_ASSERT_EQUAL(0, MidiSerializeDataPacket(
       NULL, NULL, packet_data, sizeof(packet_data)));
   TEST_ASSERT_EQUAL(0, MidiSerializeDataPacket(
       &kGoodDataPacket, NULL, NULL, sizeof(packet_data)));
   TEST_ASSERT_EQUAL(0, MidiSerializeDataPacket(
+      &kGoodDataPacket, &kBadDeviceId, packet_data, sizeof(packet_data)));
+  TEST_ASSERT_EQUAL(0, MidiSerializeDataPacket(
       &bad_packet, NULL, packet_data, sizeof(packet_data)));
 
-  TEST_ASSERT_EQUAL(
-      MIDI_DATA_PACKET_PAYLOAD_SIZE,
-      MidiSerializeDataPacket(&kEmptyDataPacket, NULL, packet_data, 0));
-  /* Using cached checksum - 1 */
+  /* Incomplete serialization. */
+  TEST_ASSERT_EQUAL(MIDI_DATA_PACKET_PAYLOAD_SIZE, MidiSerializeDataPacket(
+      &kEmptyDataPacket, NULL, NULL, 0));
+  TEST_ASSERT_EQUAL(MIDI_DATA_PACKET_PAYLOAD_SIZE, MidiSerializeDataPacket(
+      &kEmptyDataPacket, NULL, packet_data, 0));
+  TEST_ASSERT_EQUAL(MIDI_DATA_PACKET_PAYLOAD_SIZE, MidiSerializeDataPacket(
+      &kEmptyDataPacket, NULL, packet_data, MIDI_DATA_PACKET_PAYLOAD_SIZE / 2));
+
+  /* Successful serialization.  Empty data packet. */
+  /* Using correct cached checksum */
   TEST_ASSERT_EQUAL(
       MIDI_DATA_PACKET_PAYLOAD_SIZE,
       MidiSerializeDataPacket(
           &kEmptyDataPacket, NULL, packet_data, sizeof(packet_data)));
   TEST_ASSERT_EQUAL_MEMORY(
       kEmptyDataPacketData, packet_data, MIDI_DATA_PACKET_PAYLOAD_SIZE);
-  /* Using cached checksum - 2 */
+  /* Using incorrect cached checksum (should succeed) */
   midi_data_packet_t packet = kEmptyDataPacket;
   packet.checksum = 0x40;
   TEST_ASSERT_EQUAL(
@@ -449,12 +480,13 @@ static void TestMidiDataPacket_Serialize(void) {
           packet_data, sizeof(packet_data)));
   TEST_ASSERT_EQUAL(0x00, packet_data[MIDI_DATA_PACKET_PAYLOAD_SIZE - 1]);
 
-  /* Using cached. */
+  /* Successful serialization.  Good data packet. */
+  /* Using correct cached checksum. */
   TEST_ASSERT_EQUAL(MIDI_DATA_PACKET_PAYLOAD_SIZE, MidiSerializeDataPacket(
       &kGoodDataPacket, NULL, packet_data, MIDI_DATA_PACKET_PAYLOAD_SIZE));
   TEST_ASSERT_EQUAL_MEMORY(
       kGoodDataPacketData, packet_data, MIDI_DATA_PACKET_PAYLOAD_SIZE);
-  /* Using cached. */
+  /* Using incorrect cached (should succeed). */
   packet = kGoodDataPacket;
   packet.checksum ^= 0x55;
   TEST_ASSERT_EQUAL(
@@ -465,7 +497,7 @@ static void TestMidiDataPacket_Serialize(void) {
       kGoodDataPacketData, packet_data, MIDI_DATA_PACKET_PAYLOAD_SIZE - 1);
   TEST_ASSERT_EQUAL(
       packet.checksum, packet_data[MIDI_DATA_PACKET_PAYLOAD_SIZE - 1]);
-  /* Calculate */
+  /* Calculate checksum. */
   TEST_ASSERT_EQUAL(
       MIDI_DATA_PACKET_PAYLOAD_SIZE,
       MidiSerializeDataPacket(
@@ -477,21 +509,27 @@ static void TestMidiDataPacket_Serialize(void) {
 static void TestMidiDataPacket_Deserialize(void) {
   midi_data_packet_t packet;
 
+  /* Invalid inputs. */
   TEST_ASSERT_EQUAL(0, MidiDeserializeDataPacket(
       NULL, MIDI_DATA_PACKET_PAYLOAD_SIZE, &packet, NULL, 0u));
-  TEST_ASSERT_EQUAL(MIDI_DATA_PACKET_PAYLOAD_SIZE, MidiDeserializeDataPacket(
-      kGoodDataPacketData, 0, &packet, NULL, 0u));
   TEST_ASSERT_EQUAL(0, MidiDeserializeDataPacket(
       kGoodDataPacketData, MIDI_DATA_PACKET_PAYLOAD_SIZE, NULL, NULL, 0u));
-  TEST_ASSERT_EQUAL(MIDI_DATA_PACKET_PAYLOAD_SIZE, MidiDeserializeDataPacket(
-      kGoodDataPacketData, MIDI_DATA_PACKET_PAYLOAD_SIZE / 2,
-      &packet, NULL, 0u));
   TEST_ASSERT_EQUAL(0, MidiDeserializeDataPacket(
       kBadDataPacketData, MIDI_DATA_PACKET_PAYLOAD_SIZE, &packet, NULL, 0u));
   TEST_ASSERT_EQUAL(0, MidiDeserializeDataPacket(
       kGoodDataPacketData, MIDI_DATA_PACKET_PAYLOAD_SIZE,
-      &packet, NULL, 4u));
+      &packet, NULL, MIDI_DATA_PACKET_DATA_LENGTH));
 
+  /* Incomplete deserialization. */
+  TEST_ASSERT_EQUAL(MIDI_DATA_PACKET_PAYLOAD_SIZE, MidiDeserializeDataPacket(
+      NULL, 0, &packet, NULL, 0u));
+  TEST_ASSERT_EQUAL(MIDI_DATA_PACKET_PAYLOAD_SIZE, MidiDeserializeDataPacket(
+      kGoodDataPacketData, 0, &packet, NULL, 0u));
+  TEST_ASSERT_EQUAL(MIDI_DATA_PACKET_PAYLOAD_SIZE, MidiDeserializeDataPacket(
+      kGoodDataPacketData, MIDI_DATA_PACKET_PAYLOAD_SIZE / 2,
+      &packet, NULL, 0u));
+
+  /* Successful deserialization. */
   /* No data buffers. */
   TEST_ASSERT_EQUAL(MIDI_DATA_PACKET_PAYLOAD_SIZE, MidiDeserializeDataPacket(
       kGoodDataPacketData, MIDI_DATA_PACKET_PAYLOAD_SIZE,
@@ -681,23 +719,43 @@ static void TestMidiSampleDump_Initializer(void) {
 
 static void TestMidiSampleDump_Serialize(void) {
   uint8_t sample_dump_data[MIDI_SAMPLE_LOOP_RESPONSE_PAYLOAD_SIZE];
-
+  /* Invalid inputs. */
   TEST_ASSERT_EQUAL(0, MidiSerializeSampleDump(
       NULL, sample_dump_data, sizeof(sample_dump_data)));
   TEST_ASSERT_EQUAL(0, MidiSerializeSampleDump(
       &kGoodSampleDumpRequest, NULL, sizeof(sample_dump_data)));
   TEST_ASSERT_EQUAL(0, MidiSerializeSampleDump(
+      &kGoodSampleDumpResponse, NULL, sizeof(sample_dump_data)));
+  TEST_ASSERT_EQUAL(0, MidiSerializeSampleDump(
       &kBadSampleDumpRequest, sample_dump_data, sizeof(sample_dump_data)));
   TEST_ASSERT_EQUAL(0, MidiSerializeSampleDump(
       &kBadSampleDumpResponse, sample_dump_data, sizeof(sample_dump_data)));
 
+  /* Incomplete serialization. */
+  TEST_ASSERT_EQUAL(
+      MIDI_SAMPLE_LOOP_REQUEST_PAYLOAD_SIZE,
+      MidiSerializeSampleDump(&kGoodSampleDumpRequest, NULL, 0));
   TEST_ASSERT_EQUAL(
       MIDI_SAMPLE_LOOP_REQUEST_PAYLOAD_SIZE,
       MidiSerializeSampleDump(&kGoodSampleDumpRequest, sample_dump_data, 0));
   TEST_ASSERT_EQUAL(
+      MIDI_SAMPLE_LOOP_REQUEST_PAYLOAD_SIZE,
+      MidiSerializeSampleDump(
+          &kGoodSampleDumpRequest, sample_dump_data,
+          MIDI_SAMPLE_LOOP_REQUEST_PAYLOAD_SIZE / 2));
+  TEST_ASSERT_EQUAL(
+      MIDI_SAMPLE_LOOP_RESPONSE_PAYLOAD_SIZE,
+      MidiSerializeSampleDump(&kGoodSampleDumpResponse, NULL, 0));
+  TEST_ASSERT_EQUAL(
       MIDI_SAMPLE_LOOP_RESPONSE_PAYLOAD_SIZE,
       MidiSerializeSampleDump(&kGoodSampleDumpResponse, sample_dump_data, 0));
+  TEST_ASSERT_EQUAL(
+      MIDI_SAMPLE_LOOP_RESPONSE_PAYLOAD_SIZE,
+      MidiSerializeSampleDump(
+          &kGoodSampleDumpResponse, sample_dump_data,
+          MIDI_SAMPLE_LOOP_RESPONSE_PAYLOAD_SIZE / 2));
 
+  /* Successful serialization. */
   TEST_ASSERT_EQUAL(
       MIDI_SAMPLE_LOOP_REQUEST_PAYLOAD_SIZE,
       MidiSerializeSampleDump(
@@ -719,7 +777,6 @@ static void TestMidiSampleDump_Serialize(void) {
 
 static void TestMidiSampleDump_Deserialize(void) {
   midi_sample_dump_t sample_dump;
-
   /* Invalid input */
   TEST_ASSERT_EQUAL(0, MidiDeserializeSampleDump(
       NULL, MIDI_SAMPLE_LOOP_RESPONSE_PAYLOAD_SIZE, &sample_dump));
@@ -727,24 +784,42 @@ static void TestMidiSampleDump_Deserialize(void) {
       kGoodSampleDumpRequestData,
       MIDI_SAMPLE_LOOP_RESPONSE_PAYLOAD_SIZE, NULL));
   TEST_ASSERT_EQUAL(0, MidiDeserializeSampleDump(
-      kBadSampleDumpRequestData, MIDI_HEADER_DUMP_PAYLOAD_SIZE, &sample_dump));
+      kBadSampleDumpRequestData, MIDI_SAMPLE_LOOP_RESPONSE_PAYLOAD_SIZE,
+      &sample_dump));
   TEST_ASSERT_EQUAL(0, MidiDeserializeSampleDump(
-      kBadSampleDumpResponseData, MIDI_HEADER_DUMP_PAYLOAD_SIZE, &sample_dump));
+      kBadSampleDumpResponseData, MIDI_SAMPLE_LOOP_RESPONSE_PAYLOAD_SIZE,
+      &sample_dump));
   TEST_ASSERT_EQUAL(0, MidiDeserializeSampleDump(
-      kBadSampleDumpData, MIDI_HEADER_DUMP_PAYLOAD_SIZE, &sample_dump));
+      kBadSampleDumpData, MIDI_SAMPLE_LOOP_RESPONSE_PAYLOAD_SIZE,
+      &sample_dump));
 
-  /* Valid partial data. */
-  TEST_ASSERT_EQUAL(0, MidiDeserializeSampleDump(
+  /* Incomplete deserialization. */
+  /* Because the size is variable, at least 1 byte is required to
+   * determine the type. */
+  TEST_ASSERT_EQUAL(1, MidiDeserializeSampleDump(NULL, 0, &sample_dump));
+  TEST_ASSERT_EQUAL(1, MidiDeserializeSampleDump(
       kGoodSampleDumpRequestData, 0, &sample_dump));
-
+  /* Partial requests */
   TEST_ASSERT_EQUAL(
       MIDI_SAMPLE_LOOP_REQUEST_PAYLOAD_SIZE,
       MidiDeserializeSampleDump(kGoodSampleDumpRequestData, 1, &sample_dump));
   TEST_ASSERT_EQUAL(
+      MIDI_SAMPLE_LOOP_REQUEST_PAYLOAD_SIZE,
+      MidiDeserializeSampleDump(
+          kGoodSampleDumpRequestData,
+          MIDI_SAMPLE_LOOP_REQUEST_PAYLOAD_SIZE / 2, &sample_dump));
+  /* Partial responses */
+  TEST_ASSERT_EQUAL(
       MIDI_SAMPLE_LOOP_RESPONSE_PAYLOAD_SIZE,
       MidiDeserializeSampleDump(kGoodSampleDumpResponseData, 1, &sample_dump));
+  TEST_ASSERT_EQUAL(
+      MIDI_SAMPLE_LOOP_RESPONSE_PAYLOAD_SIZE,
+      MidiDeserializeSampleDump(
+          kGoodSampleDumpResponseData,
+          MIDI_SAMPLE_LOOP_RESPONSE_PAYLOAD_SIZE / 2, &sample_dump));
 
-  /* Successful request. */
+  /* Successful deserialization. */
+  /* Request. */
   TEST_ASSERT_EQUAL(
       MIDI_SAMPLE_LOOP_REQUEST_PAYLOAD_SIZE,
       MidiDeserializeSampleDump(
@@ -755,8 +830,7 @@ static void TestMidiSampleDump_Deserialize(void) {
       kGoodSampleDumpRequest.sample_number, sample_dump.sample_number);
   TEST_ASSERT_EQUAL(
       kGoodSampleDumpRequest.loop_number, sample_dump.loop_number);
-
-  /* Successful response. */
+  /* Response. */
   TEST_ASSERT_EQUAL(
       MIDI_SAMPLE_LOOP_RESPONSE_PAYLOAD_SIZE,
       MidiDeserializeSampleDump(
@@ -926,7 +1000,7 @@ static void TestMidiDeviceInquiry_Initializer(void) {
 
 static void TestMidiDeviceInquiry_Serialize(void) {
   uint8_t device_inquiry_data[MIDI_DEVICE_INQUIRY_RESPONSE_LARGE_PAYLOAD_SIZE];
-
+  /* Invalid inputs. */
   TEST_ASSERT_EQUAL(0, MidiSerializeDeviceInquiry(
       NULL, device_inquiry_data, sizeof(device_inquiry_data)));
   TEST_ASSERT_EQUAL(0, MidiSerializeDeviceInquiry(
@@ -940,7 +1014,11 @@ static void TestMidiDeviceInquiry_Serialize(void) {
       &kBadLargeDeviceInquiryResponse, device_inquiry_data,
       sizeof(device_inquiry_data)));
 
-  /* Size only. */
+  /* Incomplete serialization. */
+  TEST_ASSERT_EQUAL(
+      MIDI_DEVICE_INQUIRY_REQUEST_PAYLOAD_SIZE,
+      MidiSerializeDeviceInquiry(
+          &kGoodDeviceInquiryRequest, NULL, 0));
   TEST_ASSERT_EQUAL(
       MIDI_DEVICE_INQUIRY_REQUEST_PAYLOAD_SIZE,
       MidiSerializeDeviceInquiry(
@@ -948,12 +1026,32 @@ static void TestMidiDeviceInquiry_Serialize(void) {
   TEST_ASSERT_EQUAL(
       MIDI_DEVICE_INQUIRY_RESPONSE_SMALL_PAYLOAD_SIZE,
       MidiSerializeDeviceInquiry(
+          &kGoodSmallDeviceInquiryResponse, NULL, 0));
+  TEST_ASSERT_EQUAL(
+      MIDI_DEVICE_INQUIRY_RESPONSE_SMALL_PAYLOAD_SIZE,
+      MidiSerializeDeviceInquiry(
           &kGoodSmallDeviceInquiryResponse, device_inquiry_data, 0));
+  TEST_ASSERT_EQUAL(
+      MIDI_DEVICE_INQUIRY_RESPONSE_SMALL_PAYLOAD_SIZE,
+      MidiSerializeDeviceInquiry(
+          &kGoodSmallDeviceInquiryResponse, device_inquiry_data,
+          MIDI_DEVICE_INQUIRY_RESPONSE_SMALL_PAYLOAD_SIZE / 2));
+  TEST_ASSERT_EQUAL(
+      MIDI_DEVICE_INQUIRY_RESPONSE_LARGE_PAYLOAD_SIZE,
+      MidiSerializeDeviceInquiry(
+          &kGoodLargeDeviceInquiryResponse, NULL, 0));
   TEST_ASSERT_EQUAL(
       MIDI_DEVICE_INQUIRY_RESPONSE_LARGE_PAYLOAD_SIZE,
       MidiSerializeDeviceInquiry(
           &kGoodLargeDeviceInquiryResponse, device_inquiry_data, 0));
+  TEST_ASSERT_EQUAL(
+      MIDI_DEVICE_INQUIRY_RESPONSE_LARGE_PAYLOAD_SIZE,
+      MidiSerializeDeviceInquiry(
+          &kGoodLargeDeviceInquiryResponse, device_inquiry_data,
+          MIDI_DEVICE_INQUIRY_RESPONSE_LARGE_PAYLOAD_SIZE / 2));
 
+  /* Successful serialization. */
+  /* Request. */
   TEST_ASSERT_EQUAL(
       MIDI_DEVICE_INQUIRY_REQUEST_PAYLOAD_SIZE,
       MidiSerializeDeviceInquiry(
@@ -962,7 +1060,7 @@ static void TestMidiDeviceInquiry_Serialize(void) {
   TEST_ASSERT_EQUAL_MEMORY(
       kGoodDeviceInquiryRequestData, device_inquiry_data,
       MIDI_DEVICE_INQUIRY_REQUEST_PAYLOAD_SIZE);
-
+  /* Small response. */
   TEST_ASSERT_EQUAL(
       MIDI_DEVICE_INQUIRY_RESPONSE_SMALL_PAYLOAD_SIZE,
       MidiSerializeDeviceInquiry(
@@ -971,7 +1069,7 @@ static void TestMidiDeviceInquiry_Serialize(void) {
   TEST_ASSERT_EQUAL_MEMORY(
       kGoodSmallDeviceInquiryResponseData, device_inquiry_data,
       MIDI_DEVICE_INQUIRY_RESPONSE_SMALL_PAYLOAD_SIZE);
-
+  /* Large response. */
   TEST_ASSERT_EQUAL(
       MIDI_DEVICE_INQUIRY_RESPONSE_LARGE_PAYLOAD_SIZE,
       MidiSerializeDeviceInquiry(
@@ -984,13 +1082,18 @@ static void TestMidiDeviceInquiry_Serialize(void) {
 
 static void TestMidiDeviceInquiry_Deserialize(void) {
   midi_device_inquiry_t device_inquiry;
-
   /* Invalid input */
   TEST_ASSERT_EQUAL(0, MidiDeserializeDeviceInquiry(
-      NULL, MIDI_DEVICE_INQUIRY_RESPONSE_SMALL_PAYLOAD_SIZE, &device_inquiry));
+      NULL, MIDI_DEVICE_INQUIRY_REQUEST_PAYLOAD_SIZE, &device_inquiry));
   TEST_ASSERT_EQUAL(0, MidiDeserializeDeviceInquiry(
       kGoodDeviceInquiryRequestData,
+      MIDI_DEVICE_INQUIRY_REQUEST_PAYLOAD_SIZE, NULL));
+  TEST_ASSERT_EQUAL(0, MidiDeserializeDeviceInquiry(
+      kGoodSmallDeviceInquiryResponseData,
       MIDI_DEVICE_INQUIRY_RESPONSE_SMALL_PAYLOAD_SIZE, NULL));
+  TEST_ASSERT_EQUAL(0, MidiDeserializeDeviceInquiry(
+      kGoodLargeDeviceInquiryResponseData,
+      MIDI_DEVICE_INQUIRY_RESPONSE_LARGE_PAYLOAD_SIZE, NULL));
   TEST_ASSERT_EQUAL(0, MidiDeserializeDeviceInquiry(
       kBadDeviceInquiryData, MIDI_DEVICE_INQUIRY_REQUEST_PAYLOAD_SIZE,
       &device_inquiry));
@@ -1004,27 +1107,40 @@ static void TestMidiDeviceInquiry_Deserialize(void) {
       kBadLargeDeviceInquiryResponseDataTwo,
       MIDI_DEVICE_INQUIRY_RESPONSE_LARGE_PAYLOAD_SIZE, &device_inquiry));
 
-  /* Valid partial data. */
-  TEST_ASSERT_EQUAL(0, MidiDeserializeDeviceInquiry(
+  /* Incomplete deserialization. */
+  /* Variable sized, requires a sub ID (1 byte) to determine if message
+   * is a request or a response. */
+  TEST_ASSERT_EQUAL(1, MidiDeserializeDeviceInquiry(
+      NULL, 0, &device_inquiry));
+  TEST_ASSERT_EQUAL(1, MidiDeserializeDeviceInquiry(
       kGoodDeviceInquiryRequestData, 0, &device_inquiry));
+  TEST_ASSERT_EQUAL(1, MidiDeserializeDeviceInquiry(
+      kGoodSmallDeviceInquiryResponseData, 0, &device_inquiry));
+  /* Skip testing requests as they are only one byte. */
+  /* Responses can be different lengths depending on the first byte
+   * of the contained manufacturer ID (byte 2) */
+  TEST_ASSERT_EQUAL(2, MidiDeserializeDeviceInquiry(
+      kGoodSmallDeviceInquiryResponseData, 1, &device_inquiry));
+  TEST_ASSERT_EQUAL(2, MidiDeserializeDeviceInquiry(
+      kGoodLargeDeviceInquiryResponseData, 1, &device_inquiry));
   TEST_ASSERT_EQUAL(
       MIDI_DEVICE_INQUIRY_RESPONSE_SMALL_PAYLOAD_SIZE,
       MidiDeserializeDeviceInquiry(
-          kGoodSmallDeviceInquiryResponseData, 1, &device_inquiry));
+          kGoodSmallDeviceInquiryResponseData, 2, &device_inquiry));
   TEST_ASSERT_EQUAL(
       MIDI_DEVICE_INQUIRY_RESPONSE_LARGE_PAYLOAD_SIZE,
       MidiDeserializeDeviceInquiry(
-          kGoodLargeDeviceInquiryResponseData, 4, &device_inquiry));
+          kGoodLargeDeviceInquiryResponseData, 2, &device_inquiry));
 
-  /* Successful request. */
+  /* Successful deserialization. */
+  /* Request. */
   TEST_ASSERT_EQUAL(
       MIDI_DEVICE_INQUIRY_REQUEST_PAYLOAD_SIZE,
       MidiDeserializeDeviceInquiry(
           kGoodDeviceInquiryRequestData,
           MIDI_DEVICE_INQUIRY_REQUEST_PAYLOAD_SIZE, &device_inquiry));
   TEST_ASSERT_EQUAL(kGoodDeviceInquiryRequest.sub_id, device_inquiry.sub_id);
-
-  /* Successful response. */
+  /* Small response. */
   TEST_ASSERT_EQUAL(
       MIDI_DEVICE_INQUIRY_RESPONSE_SMALL_PAYLOAD_SIZE,
       MidiDeserializeDeviceInquiry(
@@ -1044,7 +1160,7 @@ static void TestMidiDeviceInquiry_Deserialize(void) {
   TEST_ASSERT_EQUAL_MEMORY(
       kGoodSmallDeviceInquiryResponse.software_revision_level,
       device_inquiry.software_revision_level, MIDI_SOFTWARE_REVISION_SIZE);
-
+  /* Large response. */
   TEST_ASSERT_EQUAL(
       MIDI_DEVICE_INQUIRY_RESPONSE_LARGE_PAYLOAD_SIZE,
       MidiDeserializeDeviceInquiry(

@@ -28,7 +28,7 @@ typedef uint8_t midi_packet_number_t;
 #define MidiIsValidPacketNumber(packet_number) MidiIsDataByte(packet_number)
 
 /* Dump Header Message. */
-#define MIDI_HEADER_DUMP_PAYLOAD_SIZE 16
+#define MIDI_DUMP_HEADER_PAYLOAD_SIZE 16
 typedef struct {
   uint16_t sample_number;
   uint8_t sample_format;  /* Number of significant bits (8-28) */

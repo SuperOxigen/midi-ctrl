@@ -95,8 +95,8 @@ size_t MidiSerializeDumpHeader(
     uint8_t *data, size_t data_size) {
   if (data == NULL && data_size > 0) return 0;
   if (!MidiIsValidDumpHeader(header)) return 0;
-  if (data == NULL || data_size < MIDI_HEADER_DUMP_PAYLOAD_SIZE)
-      return MIDI_HEADER_DUMP_PAYLOAD_SIZE;
+  if (data == NULL || data_size < MIDI_DUMP_HEADER_PAYLOAD_SIZE)
+      return MIDI_DUMP_HEADER_PAYLOAD_SIZE;
   data[0] = MidiGetDataWordLsb(header->sample_number);
   data[1] = MidiGetDataWordMsb(header->sample_number);
   data[2] = header->sample_format;
@@ -105,16 +105,17 @@ size_t MidiSerializeDumpHeader(
   MidiSerializeTriByte(header->sustain_loop_start_point, &data[9]);
   MidiSerializeTriByte(header->sustain_loop_end_point, &data[12]);
   data[15] = header->loop_type;
-  return MIDI_HEADER_DUMP_PAYLOAD_SIZE;
+  return MIDI_DUMP_HEADER_PAYLOAD_SIZE;
 }
 
 size_t MidiDeserializeDumpHeader(
     uint8_t const *data, size_t data_size,
     midi_dump_header_t *header) {
-  if (data == NULL || header == NULL) return 0;
-  if (data_size < MIDI_HEADER_DUMP_PAYLOAD_SIZE)
-    return MIDI_HEADER_DUMP_PAYLOAD_SIZE;
-  if (!MidiIsDataArray(data, MIDI_HEADER_DUMP_PAYLOAD_SIZE)) return 0;
+  if (header == NULL) return 0;
+  if (data == NULL && data_size > 0) return 0;
+  if (data_size < MIDI_DUMP_HEADER_PAYLOAD_SIZE)
+    return MIDI_DUMP_HEADER_PAYLOAD_SIZE;
+  if (!MidiIsDataArray(data, MIDI_DUMP_HEADER_PAYLOAD_SIZE)) return 0;
   header->sample_number = MidiDataWordFromBytes(data[1], data[0]);
   header->sample_format = data[2];
   if (!MidiIsValidSampleFormat(header->sample_format)) return 0;
@@ -124,7 +125,7 @@ size_t MidiDeserializeDumpHeader(
   MidiDeserializeTriByte(&data[12], &header->sustain_loop_end_point);
   header->loop_type = data[15];
   if (!MidiIsValidLoopType(header->loop_type)) return 0;
-  return MIDI_HEADER_DUMP_PAYLOAD_SIZE;
+  return MIDI_DUMP_HEADER_PAYLOAD_SIZE;
 }
 
 /*
@@ -149,7 +150,7 @@ bool_t MidiInitializeDumpRequest(
 size_t MidiSerializeDumpRequest(
     midi_dump_request_t const *request,
     uint8_t *data, size_t data_size) {
-  if (data == NULL) return 0;
+  if (data == NULL && data_size > 0) return 0;
   if (!MidiIsValidDumpRequest(request)) return 0;
   if (data_size >= MIDI_DUMP_REQUEST_PAYLOAD_SIZE) {
     data[0] = MidiGetDataWordLsb(request->sample_number);
@@ -161,11 +162,12 @@ size_t MidiSerializeDumpRequest(
 size_t MidiDeserializeDumpRequest(
     uint8_t const *data, size_t data_size,
     midi_dump_request_t *request) {
-  if (data == NULL || request == NULL) return 0;
-  if (data_size >= MIDI_DUMP_REQUEST_PAYLOAD_SIZE) {
-    if (!MidiIsDataArray(data, MIDI_DUMP_REQUEST_PAYLOAD_SIZE)) return 0;
-    request->sample_number = MidiDataWordFromBytes(data[1], data[0]);
-  }
+  if (request == NULL) return 0;
+  if (data == NULL && data_size > 0) return 0;
+  if (data_size < MIDI_DUMP_REQUEST_PAYLOAD_SIZE)
+    return MIDI_DUMP_REQUEST_PAYLOAD_SIZE;
+  if (!MidiIsDataArray(data, MIDI_DUMP_REQUEST_PAYLOAD_SIZE)) return 0;
+  request->sample_number = MidiDataWordFromBytes(data[1], data[0]);
   return MIDI_DUMP_REQUEST_PAYLOAD_SIZE;
 }
 
@@ -254,9 +256,9 @@ size_t MidiSerializeDataPacket(
     midi_data_packet_t const *packet,
     midi_device_id_t const *device_id,
     uint8_t *data, size_t data_size) {
+  if (data == NULL && data_size > 0) return 0;
   if (!MidiIsValidDataPacket(packet)) return 0;
   if (device_id != NULL && !MidiIsValidDeviceId(*device_id)) return 0;
-  if (data == NULL) return 0;
   if (data_size < MIDI_DATA_PACKET_PAYLOAD_SIZE)
     return MIDI_DATA_PACKET_PAYLOAD_SIZE;
   data[0] = packet->number;
@@ -281,7 +283,8 @@ size_t MidiDeserializeDataPacket(
     uint8_t const *data, size_t data_size,
     midi_data_packet_t *packet,
     uint8_t *buffer, size_t buffer_size) {
-  if (data == NULL || packet == NULL) return 0;
+  if (packet == NULL) return 0;
+  if (data == NULL && data_size > 0) return 0;
   if (buffer == NULL && buffer_size > 0) return 0;
   if (data_size < MIDI_DATA_PACKET_PAYLOAD_SIZE)
     return MIDI_DATA_PACKET_PAYLOAD_SIZE;
@@ -382,7 +385,8 @@ bool_t MidiInitializeSampleDumpResponse(
 size_t MidiSerializeSampleDump(
     midi_sample_dump_t const *sample_dump,
     uint8_t *data, size_t data_size) {
-  if (data == NULL || !MidiIsValidSampleDump(sample_dump)) return 0;
+  if (data == NULL && data_size > 0) return 0;
+  if (!MidiIsValidSampleDump(sample_dump)) return 0;
   size_t const expected_size =
       (sample_dump->sub_id == MIDI_SAMPLE_LOOP_RESPONSE)
       ? MIDI_SAMPLE_LOOP_RESPONSE_PAYLOAD_SIZE
@@ -404,7 +408,9 @@ size_t MidiSerializeSampleDump(
 size_t MidiDeserializeSampleDump(
     uint8_t const *data, size_t data_size,
     midi_sample_dump_t *sample_dump) {
-  if (data == NULL || sample_dump == NULL || data_size == 0) return 0;
+  if (data == NULL && data_size > 0) return 0;
+  if (sample_dump == NULL) return 0;
+  if (data_size == 0) return 1;
   sample_dump->sub_id = MIDI_NONE;
   if (!MidiIsValidSampleDumpSubId(data[0])) return 0;
   uint8_t const sub_id = data[0];
@@ -412,7 +418,7 @@ size_t MidiDeserializeSampleDump(
       (sub_id == MIDI_SAMPLE_LOOP_RESPONSE) ?
       MIDI_SAMPLE_LOOP_RESPONSE_PAYLOAD_SIZE :
       MIDI_SAMPLE_LOOP_REQUEST_PAYLOAD_SIZE;
-  if (data_size < expected_size) expected_size;
+  if (data_size < expected_size) return expected_size;
   if (!MidiIsDataArray(&data[1], expected_size - 1)) return 0;
   sample_dump->sample_number = MidiDataWordFromBytes(data[2], data[1]);
   sample_dump->loop_number = MidiDataWordFromBytes(data[4], data[3]);
@@ -490,7 +496,7 @@ bool_t MidiInitializeDeviceInquiryResponse(
 size_t MidiSerializeDeviceInquiry(
     midi_device_inquiry_t const *device_inquiry,
     uint8_t *data, size_t data_size) {
-  if (data == NULL) return 0;
+  if (data == NULL && data_size > 0) return 0;
   if (!MidiIsValidDeviceInquiry(device_inquiry)) return 0;
   size_t const expected_size =
       (device_inquiry->sub_id == MIDI_DEVICE_INQUIRY_REQUEST) ?
@@ -518,23 +524,22 @@ size_t MidiSerializeDeviceInquiry(
 size_t MidiDeserializeDeviceInquiry(
     uint8_t const *data, size_t data_size,
     midi_device_inquiry_t *device_inquiry) {
-  if (data == NULL || data_size == 0 || device_inquiry == NULL) return 0;
+  if (data == NULL && data_size > 0) return 0;
+  if (device_inquiry == NULL) return 0;
+  if (data_size == 0) return 1;
   if (!MidiIsValidInquiryDeviceSubId(data[0])) return 0;
   if (data[0] == MIDI_DEVICE_INQUIRY_REQUEST) {
     MidiInitializeDeviceInquiryRequest(device_inquiry);
     return MIDI_DEVICE_INQUIRY_REQUEST_PAYLOAD_SIZE;
   }
-  if (data_size < 2) return MIDI_DEVICE_INQUIRY_RESPONSE_SMALL_PAYLOAD_SIZE;
+  if (data_size < 2) return 2;
   if (!MidiIsDataByte(data[1])) return 0;
   /* Check if it is a 1 or 3 byte manufacture ID. */
   size_t const expected_size =
       (data[1] == 0x00) ?
       MIDI_DEVICE_INQUIRY_RESPONSE_LARGE_PAYLOAD_SIZE :
       MIDI_DEVICE_INQUIRY_RESPONSE_SMALL_PAYLOAD_SIZE;
-  if (data_size < expected_size) {
-    if (!MidiIsDataArray(data, data_size)) return 0;
-    return expected_size;
-  }
+  if (data_size < expected_size) return expected_size;
   device_inquiry->sub_id = data[0];
   if (!MidiIsDataArray(data, expected_size)) return 0;
   size_t const offset = MidiDeserializeManufacturerId(
