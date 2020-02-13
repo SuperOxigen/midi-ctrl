@@ -12,8 +12,10 @@
 #include "midi_bytes.h"
 #include "midi_channel.h"
 #include "midi_control.h"
+#include "midi_man_id.h"
 #include "midi_note.h"
 #include "midi_program.h"
+#include "midi_sys_ex.h"
 #include "midi_time.h"
 
 C_SECTION_BEGIN;
@@ -33,8 +35,8 @@ bool_t MidiIsChannelMessageType(midi_message_type_t message_type);
  * channel number.  Will return MIDI_NONE if |message_type| does not
  * specify a channel-based message. */
 midi_status_t MidiChannelStatusByte(
-    midi_message_type_t message_type,
-    midi_channel_number_t channel);
+  midi_message_type_t message_type,
+  midi_channel_number_t channel);
 /* Returns 0 if not a channel status type. */
 midi_channel_number_t MidiChannelFromStatusByte(midi_status_t status_byte);
 
@@ -57,7 +59,7 @@ typedef struct {
       };
     };
     /* System exclusive. */
-    /* midi_sys_ex_t sys_ex; */
+    midi_sys_ex_t sys_ex;
     /* Non-Channel Based */
     midi_time_code_t time_code;
     /* TODO: Support these
@@ -77,35 +79,38 @@ bool_t MidiMessageIsValid(midi_message_t const *message);
 midi_status_t MidiMessageStatus(midi_message_t const *message);
 
 bool_t MidiNoteMessage(
-    midi_message_t *message, midi_channel_number_t channel_number,
-    bool_t on, midi_note_t const *note);
+  midi_message_t *message, midi_channel_number_t channel_number,
+  bool_t on, midi_note_t const *note);
 #define MidiNoteOnMessage(message, channel_number, note) \
     MidiNoteMessage(message, channel_number, true, note)
 #define MidiNoteOffMessage(message, channel_number, note) \
     MidiNoteMessage(message, channel_number, false, note)
 
 bool_t MidiKeyPressureMessage(
-    midi_message_t *message, midi_channel_number_t channel_number,
-    midi_note_t const *note);
+  midi_message_t *message, midi_channel_number_t channel_number,
+  midi_note_t const *note);
 
 bool_t MidiControlChangeMessage(
-    midi_message_t *message, midi_channel_number_t channel_number,
-    midi_control_change_t const *control_change);
+  midi_message_t *message, midi_channel_number_t channel_number,
+  midi_control_change_t const *control_change);
 
 bool_t MidiProgramChangeMessage(
-    midi_message_t *message, midi_channel_number_t channel_number,
-    midi_program_number_t program);
+  midi_message_t *message, midi_channel_number_t channel_number,
+  midi_program_number_t program);
 
 bool_t MidiChannelPressureMessage(
-    midi_message_t *message, midi_channel_number_t channel_number,
-    uint8_t channel_pressure);
+  midi_message_t *message, midi_channel_number_t channel_number,
+  uint8_t channel_pressure);
 
 bool_t MidiPitchWheelMessage(
-    midi_message_t *message, midi_channel_number_t channel_number,
-    uint16_t pitch);
+  midi_message_t *message, midi_channel_number_t channel_number,
+  uint16_t pitch);
+
+bool_t MidiSystemExclusiveMessage(
+  midi_message_t *message, midi_manufacturer_id_cref_t man_id);
 
 bool_t MidiTimeCodeMessage(
-    midi_message_t *message, midi_time_code_t const *time_code);
+  midi_message_t *message, midi_time_code_t const *time_code);
 
 C_SECTION_END;
 

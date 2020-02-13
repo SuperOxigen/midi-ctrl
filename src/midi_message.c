@@ -77,8 +77,7 @@ bool_t MidiMessageIsValid(midi_message_t const *message) {
     case MIDI_SYSTEM_RESET:
       return true;
     case MIDI_SYSTEM_EXCLUSIVE:
-      /* TODO: Check |manufacture_id| */
-      return false;
+      return MidiIsValidSysEx(&message->sys_ex);
     case MIDI_TIME_CODE:
       return MidiIsValidTimeCode(&message->time_code);
     case MIDI_SONG_POSITION_POINTER:
@@ -98,10 +97,16 @@ midi_status_t MidiMessageStatus(midi_message_t const *message) {
       : message->type;
 }
 
+static bool_t MidiInitializeMessage(midi_message_t *message) {
+  if (message == NULL) return false;
+  memset(message, 0, sizeof(midi_message_t));
+  return true;
+}
+
 bool_t MidiNoteMessage(
     midi_message_t *message, midi_channel_number_t channel_number,
     bool_t on, midi_note_t const *note) {
-  if (message == NULL) return false;
+  if (!MidiInitializeMessage(message)) return false;
   if (!MidiIsValidChannelNumber(channel_number)) return false;
   if (!MidiIsValidNote(note)) return false;
   message->type = on ? MIDI_NOTE_ON : MIDI_NOTE_OFF;
@@ -116,7 +121,7 @@ bool_t MidiNoteMessage(
 bool_t MidiKeyPressureMessage(
     midi_message_t *message, midi_channel_number_t channel_number,
     midi_note_t const *note) {
-  if (message == NULL) return false;
+  if (!MidiInitializeMessage(message)) return false;
   if (!MidiIsValidChannelNumber(channel_number)) return false;
   if (!MidiIsValidNote(note)) return false;
   message->type = MIDI_KEY_PRESSURE;
@@ -131,7 +136,7 @@ bool_t MidiKeyPressureMessage(
 bool_t MidiControlChangeMessage(
     midi_message_t *message, midi_channel_number_t channel_number,
     midi_control_change_t const *control_change) {
-  if (message == NULL) return false;
+  if (!MidiInitializeMessage(message)) return false;
   if (!MidiIsValidChannelNumber(channel_number)) return false;
   if (!MidiIsValidControlChange(control_change)) return false;
   message->type = MIDI_CONTROL_CHANGE;
@@ -143,7 +148,7 @@ bool_t MidiControlChangeMessage(
 bool_t MidiProgramChangeMessage(
     midi_message_t *message, midi_channel_number_t channel_number,
     midi_program_number_t program) {
-  if (message == NULL) return false;
+  if (!MidiInitializeMessage(message)) return false;
   if (!MidiIsValidChannelNumber(channel_number)) return false;
   if (!MidiIsValidProgramNumber(program)) return false;
   message->type = MIDI_PROGRAM_CHANGE;
@@ -155,7 +160,7 @@ bool_t MidiProgramChangeMessage(
 bool_t MidiChannelPressureMessage(
     midi_message_t *message, midi_channel_number_t channel_number,
     uint8_t channel_pressure) {
-  if (message == NULL) return false;
+  if (!MidiInitializeMessage(message)) return false;
   if (!MidiIsValidChannelNumber(channel_number)) return false;
   if (!MidiIsValidChannelPressure(channel_pressure)) return false;
   message->type = MIDI_CHANNEL_PRESSURE;
@@ -167,7 +172,7 @@ bool_t MidiChannelPressureMessage(
 bool_t MidiPitchWheelMessage(
     midi_message_t *message, midi_channel_number_t channel_number,
     uint16_t pitch) {
-  if (message == NULL) return false;
+  if (!MidiInitializeMessage(message)) return false;
   if (!MidiIsValidChannelNumber(channel_number)) return false;
   if (!MidiIsValidPitchWheel(pitch)) return false;
   message->type = MIDI_PITCH_WHEEL;
@@ -176,9 +181,17 @@ bool_t MidiPitchWheelMessage(
   return true;
 }
 
+bool_t MidiSystemExclusiveMessage(
+    midi_message_t *message, midi_manufacturer_id_cref_t man_id) {
+  if (!MidiInitializeMessage(message)) return false;
+  if (!MidiInitializeSysEx(&message->sys_ex, man_id)) return false;
+  message->type = MIDI_SYSTEM_EXCLUSIVE;
+  return true;
+}
+
 bool_t MidiTimeCodeMessage(
     midi_message_t *message, midi_time_code_t const *time_code) {
-  if (message == NULL) return false;
+  if (!MidiInitializeMessage(message)) return false;
   if (!MidiIsValidTimeCode(time_code)) return false;
   message->type = MIDI_TIME_CODE;
   memcpy(&message->time_code, time_code, sizeof(midi_time_code_t));

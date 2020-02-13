@@ -5,6 +5,7 @@
  * This project is licensed under the terms of the MIT license.
  * See LICENSE for details.
  */
+#include <string.h>
 #include <unity.h>
 
 #include "midi_defs.h"
@@ -113,6 +114,124 @@ static void TestMidiStatusByte_FromMessage(void) {
   TEST_ASSERT_EQUAL(MIDI_SYSTEM_RESET, MidiMessageStatus(&message));
 }
 
+static void TestMidiMessage_Initializer(void) {
+  midi_message_t message;
+  midi_note_t note = {
+    .key = MIDI_MIDDLE_C,
+    .velocity = MIDI_NOTE_ON_VELOCITY
+  };
+  TEST_ASSERT_FALSE(MidiNoteOnMessage(NULL, MIDI_CHANNEL_6, &note));
+  TEST_ASSERT_FALSE(MidiNoteOnMessage(&message, 0x16, &note));
+  TEST_ASSERT_FALSE(MidiNoteOnMessage(&message, MIDI_CHANNEL_6, NULL));
+  note.velocity = 0x80;
+  TEST_ASSERT_FALSE(MidiNoteOnMessage(&message, MIDI_CHANNEL_6, &note));
+  note.velocity = MIDI_NOTE_ON_VELOCITY;
+  TEST_ASSERT_TRUE(MidiNoteOnMessage(&message, MIDI_CHANNEL_6, &note));
+  TEST_ASSERT_EQUAL(MIDI_NOTE_ON, message.type);
+  TEST_ASSERT_EQUAL(MIDI_CHANNEL_6, message.channel);
+  TEST_ASSERT_EQUAL(MIDI_MIDDLE_C, message.note.key);
+  TEST_ASSERT_EQUAL(MIDI_NOTE_ON_VELOCITY, message.note.velocity);
+
+  memset(&message, 0, sizeof(message));
+  TEST_ASSERT_TRUE(MidiNoteOffMessage(&message, MIDI_CHANNEL_6, &note));
+  TEST_ASSERT_EQUAL(MIDI_NOTE_OFF, message.type);
+  TEST_ASSERT_EQUAL(MIDI_CHANNEL_6, message.channel);
+  TEST_ASSERT_EQUAL(MIDI_MIDDLE_C, message.note.key);
+  TEST_ASSERT_EQUAL(MIDI_NOTE_ON_VELOCITY, message.note.velocity);
+
+  note = (midi_note_t) {
+    .key = MIDI_MIDDLE_C,
+    .pressure = 0x10
+  };
+  TEST_ASSERT_FALSE(MidiKeyPressureMessage(NULL, MIDI_CHANNEL_11, &note));
+  TEST_ASSERT_FALSE(MidiKeyPressureMessage(&message, 0x16, &note));
+  TEST_ASSERT_FALSE(MidiKeyPressureMessage(&message, MIDI_CHANNEL_11, NULL));
+  note.pressure = 0x80;
+  TEST_ASSERT_FALSE(MidiKeyPressureMessage(
+      &message, MIDI_CHANNEL_11, &note));
+  note.pressure = 0x20;
+  TEST_ASSERT_TRUE(MidiKeyPressureMessage(
+      &message, MIDI_CHANNEL_11, &note));
+  TEST_ASSERT_EQUAL(MIDI_KEY_PRESSURE, message.type);
+  TEST_ASSERT_EQUAL(MIDI_CHANNEL_11, message.channel);
+  TEST_ASSERT_EQUAL(MIDI_MIDDLE_C, message.note.key);
+  TEST_ASSERT_EQUAL(0x20, message.note.pressure);
+
+  midi_control_change_t control = {
+    .number = MIDI_PORTAMENTO_CONTROL,
+    .value = MIDI_CONTROL_ON
+  };
+  TEST_ASSERT_FALSE(MidiControlChangeMessage(NULL, MIDI_CHANNEL_7, &control));
+  TEST_ASSERT_FALSE(MidiControlChangeMessage(&message, 0x16, &control));
+  TEST_ASSERT_FALSE(MidiControlChangeMessage(&message, MIDI_CHANNEL_7, NULL));
+  control.value = 0x80;
+  TEST_ASSERT_FALSE(MidiControlChangeMessage(
+      &message, MIDI_CHANNEL_7, &control));
+  control.value = MIDI_CONTROL_ON;
+  TEST_ASSERT_TRUE(MidiControlChangeMessage(
+      &message, MIDI_CHANNEL_7, &control));
+  TEST_ASSERT_EQUAL(MIDI_CONTROL_CHANGE, message.type);
+  TEST_ASSERT_EQUAL(MIDI_CHANNEL_7, message.channel);
+  TEST_ASSERT_EQUAL(MIDI_PORTAMENTO_CONTROL, message.control.number);
+  TEST_ASSERT_EQUAL(MIDI_CONTROL_ON, message.control.value);
+
+  TEST_ASSERT_FALSE(MidiProgramChangeMessage(
+      NULL, MIDI_CHANNEL_13, MIDI_TUBULAR_BELLS));
+  TEST_ASSERT_FALSE(MidiProgramChangeMessage(
+      &message, 0x16, MIDI_TUBULAR_BELLS));
+  TEST_ASSERT_FALSE(MidiProgramChangeMessage(
+      &message, MIDI_CHANNEL_13, MIDI_TUBULAR_BELLS | 0x80));
+  TEST_ASSERT_TRUE(MidiProgramChangeMessage(
+      &message, MIDI_CHANNEL_13, MIDI_TUBULAR_BELLS));
+  TEST_ASSERT_EQUAL(MIDI_PROGRAM_CHANGE, message.type);
+  TEST_ASSERT_EQUAL(MIDI_CHANNEL_13, message.channel);
+  TEST_ASSERT_EQUAL(MIDI_TUBULAR_BELLS, message.program);
+
+  TEST_ASSERT_FALSE(MidiChannelPressureMessage(
+      NULL, MIDI_CHANNEL_6, 0x0A));
+  TEST_ASSERT_FALSE(MidiChannelPressureMessage(
+      &message, 0x16, 0x0A));
+  TEST_ASSERT_FALSE(MidiChannelPressureMessage(
+      &message, MIDI_CHANNEL_6, 0x8A));
+  TEST_ASSERT_TRUE(MidiChannelPressureMessage(
+      &message, MIDI_CHANNEL_6, 0x0A));
+  TEST_ASSERT_EQUAL(MIDI_CHANNEL_PRESSURE, message.type);
+  TEST_ASSERT_EQUAL(MIDI_CHANNEL_6, message.channel);
+  TEST_ASSERT_EQUAL(0x0A, message.pressure);
+
+  TEST_ASSERT_FALSE(MidiPitchWheelMessage(
+      NULL, MIDI_CHANNEL_3, 0x0ABC));
+  TEST_ASSERT_FALSE(MidiPitchWheelMessage(
+      &message, 0x16, 0x0ABC));
+  TEST_ASSERT_FALSE(MidiPitchWheelMessage(
+      &message, MIDI_CHANNEL_3, 0x9ABC));
+  TEST_ASSERT_TRUE(MidiPitchWheelMessage(
+      &message, MIDI_CHANNEL_3, 0x0ABC));
+  TEST_ASSERT_EQUAL(MIDI_PITCH_WHEEL, message.type);
+  TEST_ASSERT_EQUAL(MIDI_CHANNEL_3, message.channel);
+  TEST_ASSERT_EQUAL(0x0ABC, message.pitch);
+
+  uint8_t const id[] = {0x00, 0x50, 0x00};
+  TEST_ASSERT_FALSE(MidiSystemExclusiveMessage(NULL, id));
+  TEST_ASSERT_TRUE(MidiSystemExclusiveMessage(&message, id));
+  TEST_ASSERT_EQUAL(MIDI_SYSTEM_EXCLUSIVE, message.type);
+  TEST_ASSERT_EQUAL_MEMORY(id, message.sys_ex.id, sizeof(id));
+
+  midi_time_code_t time_code = {
+    .type = MIDI_SECONDS_COUNT_MSN,
+    .value = 0x3  /*0x30 = 48*/
+  };
+  TEST_ASSERT_FALSE(MidiTimeCodeMessage(NULL, &time_code));
+  TEST_ASSERT_FALSE(MidiTimeCodeMessage(&message, NULL));
+  time_code.value = 0x4;
+  TEST_ASSERT_FALSE(MidiTimeCodeMessage(&message, &time_code));
+  time_code.value = 0x3;
+  TEST_ASSERT_TRUE(MidiTimeCodeMessage(&message, &time_code));
+  TEST_ASSERT_EQUAL(MIDI_TIME_CODE, message.type);
+  TEST_ASSERT_EQUAL(MIDI_SECONDS_COUNT_MSN, message.time_code.type);
+  TEST_ASSERT_EQUAL(0x3, message.time_code.value);
+}
+
 void MidiMessageTest(void) {
   RUN_TEST(TestMidiStatusByte_Validator);
   RUN_TEST(TestMidiMessageType_FromStatus);
@@ -120,4 +239,6 @@ void MidiMessageTest(void) {
   RUN_TEST(TestMidiMessageType_ChannelValidator);
   RUN_TEST(TestMidiStatusByte_FromChannelMessage);
   RUN_TEST(TestMidiStatusByte_FromMessage);
+
+  RUN_TEST(TestMidiMessage_Initializer);
 }
