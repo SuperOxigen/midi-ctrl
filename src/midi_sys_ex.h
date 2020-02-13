@@ -54,6 +54,10 @@ bool_t MidiHandShakeSysEx(
   midi_sys_ex_t *sys_ex, midi_device_id_t device_id,
   uint8_t handshake_sub_id, midi_packet_number_t packet_number);
 
+bool_t MidiInitializeSysUni(
+  midi_sys_ex_t *sys_ex, bool_t real_time,
+  midi_device_id_t device_id, uint8_t sub_id);
+
 size_t MidiSerializeSysEx(
   midi_sys_ex_t const *sys_ex, uint8_t *data, size_t data_size);
 size_t MidiDeserializeSysEx(
