@@ -105,6 +105,16 @@ static uint8_t const kDeviceInquiryResponseSysExData[] = {
   0x4D, 0x49, 0x44, 0x49
 };
 
+static midi_sys_ex_t const kGeneralMidiModeOnSysEx = {
+  .id = { MIDI_NON_REAL_TIME_ID, 0x00, 0x00 },
+  .device_id = 0x43,
+  .sub_id = MIDI_GENERAL_MIDI,
+  .gm_mode = MIDI_GENERAL_MIDI_ON
+};
+static uint8_t const kGeneralMidiModeOnSysExData[] = {
+  MIDI_NON_REAL_TIME_ID, 0x43, MIDI_GENERAL_MIDI, MIDI_GENERAL_MIDI_ON
+};
+
 static midi_sys_ex_t const kInvalidSysEx = {
   .id = { MIDI_NON_REAL_TIME_ID, 0x00, 0x00 },
   .device_id = 0x1F,
@@ -165,6 +175,21 @@ static void TestMidiSysEx_Validator(void) {
   TEST_ASSERT_FALSE(MidiIsValidSysEx(&sys_ex));
   memcpy(sys_ex.id, kAmericanManId, sizeof(sys_ex.id));
   TEST_ASSERT_TRUE(MidiIsValidSysEx(&sys_ex));
+
+  TEST_ASSERT_TRUE(MidiIsValidSysEx(&kCancelSysEx));
+  TEST_ASSERT_TRUE(MidiIsValidSysEx(&kAckSysEx));
+  TEST_ASSERT_TRUE(MidiIsValidSysEx(&kDumpRequestSysEx));
+  TEST_ASSERT_TRUE(MidiIsValidSysEx(&kSampleDumpResponseSysEx));
+  TEST_ASSERT_TRUE(MidiIsValidSysEx(&kDeviceInquiryResponseSysEx));
+  TEST_ASSERT_TRUE(MidiIsValidSysEx(&kGeneralMidiModeOnSysEx));
+  TEST_ASSERT_TRUE(MidiIsValidSysEx(&kProprietarySysExOne));
+  TEST_ASSERT_TRUE(MidiIsValidSysEx(&kProprietarySysExTwo));
+
+  TEST_ASSERT_FALSE(MidiIsValidSysEx(&kInvalidSysEx));
+  TEST_ASSERT_FALSE(MidiIsValidSysEx(&kInvalidProprietarySysEx));
+  sys_ex = kDeviceInquiryResponseSysEx;
+  sys_ex.device_inquiry.id[1] = 0x90;
+  TEST_ASSERT_FALSE(MidiIsValidSysEx(&sys_ex));
 }
 
 static void TestMidiSysEx_Initializer(void) {
@@ -215,6 +240,26 @@ static void TestMidiHandShakeSysEx_Initializer(void) {
   TEST_ASSERT_EQUAL(0x40, sys_ex.device_id);
   TEST_ASSERT_EQUAL(MIDI_WAIT, sys_ex.sub_id);
   TEST_ASSERT_EQUAL(0x6F, sys_ex.packet_number);
+}
+
+static void TestMidiGeneralMidiModeSysEx_Initializer(void) {
+  midi_sys_ex_t sys_ex;
+  TEST_ASSERT_FALSE(MidiGeneralMidiModeSysEx(NULL, 0x40, false));
+  TEST_ASSERT_FALSE(MidiGeneralMidiModeSysEx(&sys_ex, 0xC0, false));
+
+  TEST_ASSERT_TRUE(MidiGeneralMidiModeOnSysEx(&sys_ex, 0x40));
+  TEST_ASSERT_EQUAL_MEMORY(
+      kNonRealTimeManId, sys_ex.id, sizeof(kNonRealTimeManId));
+  TEST_ASSERT_EQUAL(0x40, sys_ex.device_id);
+  TEST_ASSERT_EQUAL(MIDI_GENERAL_MIDI, sys_ex.sub_id);
+  TEST_ASSERT_EQUAL(MIDI_GENERAL_MIDI_ON, sys_ex.gm_mode);
+
+  TEST_ASSERT_TRUE(MidiGeneralMidiModeOffSysEx(&sys_ex, 0x43));
+  TEST_ASSERT_EQUAL_MEMORY(
+      kNonRealTimeManId, sys_ex.id, sizeof(kNonRealTimeManId));
+  TEST_ASSERT_EQUAL(0x43, sys_ex.device_id);
+  TEST_ASSERT_EQUAL(MIDI_GENERAL_MIDI, sys_ex.sub_id);
+  TEST_ASSERT_EQUAL(MIDI_GENERAL_MIDI_OFF, sys_ex.gm_mode);
 }
 
 static void TestMidiStandardSysEx_Initializer(void) {
@@ -294,6 +339,12 @@ static void TestMidiSysEx_Serialize(void) {
   TEST_ASSERT_EQUAL_MEMORY(
       kDeviceInquiryResponseSysExData, sys_ex_data,
       sizeof(kDeviceInquiryResponseSysExData));
+
+  TEST_ASSERT_EQUAL(sizeof(kGeneralMidiModeOnSysExData), MidiSerializeSysEx(
+      &kGeneralMidiModeOnSysEx, sys_ex_data, sizeof(sys_ex_data)));
+  TEST_ASSERT_EQUAL_MEMORY(
+      kGeneralMidiModeOnSysExData, sys_ex_data,
+      sizeof(kGeneralMidiModeOnSysExData));
 }
 
 static void TestMidiSysEx_Deserialize(void) {
@@ -398,6 +449,15 @@ static void TestMidiSysEx_Deserialize(void) {
       kDeviceInquiryResponseSysEx.device_inquiry.software_revision_level,
       sys_ex.device_inquiry.software_revision_level,
       MIDI_SOFTWARE_REVISION_SIZE);
+
+  TEST_ASSERT_EQUAL(sizeof(kGeneralMidiModeOnSysExData), MidiDeserializeSysEx(
+      kGeneralMidiModeOnSysExData, sizeof(kGeneralMidiModeOnSysExData),
+      &sys_ex));
+  TEST_ASSERT_EQUAL_MEMORY(
+      kGeneralMidiModeOnSysEx.id, sys_ex.id, sizeof(midi_manufacturer_id_t));
+  TEST_ASSERT_EQUAL(kGeneralMidiModeOnSysEx.device_id, sys_ex.device_id);
+  TEST_ASSERT_EQUAL(kGeneralMidiModeOnSysEx.sub_id, sys_ex.sub_id);
+  TEST_ASSERT_EQUAL(kGeneralMidiModeOnSysEx.gm_mode, sys_ex.gm_mode);
 }
 
 static void TestMidiSysEx_Proprietary(void) {
@@ -453,6 +513,7 @@ void MidiSystemExclusiveTest(void) {
   RUN_TEST(TestMidiSysEx_Initializer);
   RUN_TEST(TestMidiHandShakeSysEx_Checker);
   RUN_TEST(TestMidiHandShakeSysEx_Initializer);
+  RUN_TEST(TestMidiGeneralMidiModeSysEx_Initializer);
 
   RUN_TEST(TestMidiStandardSysEx_Initializer);
 

@@ -552,3 +552,9 @@ size_t MidiDeserializeDeviceInquiry(
          MIDI_SOFTWARE_REVISION_SIZE);
   return expected_size;
 }
+
+/* General MIDI Mode. */
+
+bool_t MidiIsValidGeneralMidiMode(midi_general_midi_mode_t mode) {
+  return mode == MIDI_GENERAL_MIDI_ON || mode == MIDI_GENERAL_MIDI_OFF;
+}

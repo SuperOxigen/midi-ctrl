@@ -25,6 +25,7 @@ static bool_t MidiIsValidNonRealtimeSubId(uint8_t sub_id) {
     case MIDI_DATA_PACKET:
     case MIDI_SAMPLE_DUMP:
     case MIDI_GENERAL_INFO:
+    case MIDI_GENERAL_MIDI:
     case MIDI_EOF:
     case MIDI_WAIT:
     case MIDI_CANCEL:
@@ -34,11 +35,13 @@ static bool_t MidiIsValidNonRealtimeSubId(uint8_t sub_id) {
     /* Not supported */
     case MIDI_FILE_DUMP:
     case MIDI_TUNING_DUMP:
-    case MIDI_GENERAL_MIDI:
       return false;
   }
   return false;
 }
+
+/* TODO: Support realtime IDs. */
+#define MidiIsValidRealtimeSubId(sub_id) false
 
 bool_t MidiIsSpecialSysExId(midi_manufacturer_id_cref_t id) {
   if (!MidiIsValidManufacturerId(id)) return false;
@@ -75,7 +78,7 @@ bool_t MidiIsValidSysEx(midi_sys_ex_t const *sys_ex) {
     case MIDI_TUNING_DUMP:
       return false;  /* Not supported */
     case MIDI_GENERAL_MIDI:
-      return false;  /* Not supported */
+      return MidiIsValidGeneralMidiMode(sys_ex->gm_mode);
     case MIDI_EOF:
     case MIDI_WAIT:
     case MIDI_CANCEL:
@@ -121,15 +124,29 @@ bool_t MidiHandShakeSysEx(
   return true;
 }
 
+bool_t MidiGeneralMidiModeSysEx(
+    midi_sys_ex_t *sys_ex, midi_device_id_t device_id, bool_t on) {
+  if (sys_ex == NULL) return false;
+  if (!MidiInitializeSysUni(sys_ex, false, device_id, MIDI_GENERAL_MIDI))
+    return false;
+  sys_ex->gm_mode = on ? MIDI_GENERAL_MIDI_ON : MIDI_GENERAL_MIDI_OFF;
+  return true;
+}
+
 bool_t MidiInitializeSysUni(
     midi_sys_ex_t *sys_ex, bool_t real_time,
     midi_device_id_t device_id, uint8_t sub_id) {
   if (sys_ex == NULL) return false;
   if (!MidiIsValidDeviceId(device_id)) return false;
-  if (real_time) return false;  /* TODO: Support realtime messages. */
-  if (!MidiIsValidNonRealtimeSubId(sub_id)) return false;
   memset(sys_ex, 0, sizeof(midi_sys_ex_t));
-  sys_ex->id[0] = MIDI_NON_REAL_TIME_ID;
+  if (real_time) {
+    if (!MidiIsValidRealtimeSubId(sub_id)) return false;
+    sys_ex->id[0] = MIDI_REAL_TIME_ID;
+    return true;
+  } else {
+    if (!MidiIsValidNonRealtimeSubId(sub_id)) return false;
+    sys_ex->id[0] = MIDI_NON_REAL_TIME_ID;
+  }
   sys_ex->device_id = device_id;
   sys_ex->sub_id = sub_id;
   return true;
@@ -173,8 +190,13 @@ size_t MidiSerializeSysEx(
     /* Not supported */
     case MIDI_FILE_DUMP:
     case MIDI_TUNING_DUMP:
-    case MIDI_GENERAL_MIDI:
       break;
+    case MIDI_GENERAL_MIDI: {
+      if (data_size >= 4) {
+        data[3] = sys_ex->gm_mode;
+      }
+      sub_response = 1;
+    } break;
     case MIDI_EOF:
     case MIDI_WAIT:
     case MIDI_CANCEL:
@@ -251,8 +273,14 @@ size_t MidiDeserializeSysEx(
     /* Not supported */
     case MIDI_FILE_DUMP:
     case MIDI_TUNING_DUMP:
-    case MIDI_GENERAL_MIDI:
       break;
+    case MIDI_GENERAL_MIDI: {
+      if (data_size >= 4) {
+        sys_ex->gm_mode = data[3];
+        if (!MidiIsValidGeneralMidiMode(sys_ex->gm_mode)) return 0;
+      }
+      sub_response = 1;
+    } break;
     case MIDI_EOF:
     case MIDI_WAIT:
     case MIDI_CANCEL:

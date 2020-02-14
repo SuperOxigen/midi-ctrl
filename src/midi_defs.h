@@ -480,4 +480,8 @@
 #define MIDI_LOOP_BIDIRECTIONAL           0x01
 #define MIDI_LOOP_OFF                     0x7F
 
+/* General MIDI */
+#define MIDI_GENERAL_MIDI_ON              0x01
+#define MIDI_GENERAL_MIDI_OFF             0x02
+
 #endif  /* _MIDI_DEFS_H_ */

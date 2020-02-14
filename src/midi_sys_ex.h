@@ -37,6 +37,7 @@ typedef struct {
     midi_data_packet_t data_packet;
     midi_sample_dump_t sample_dump;
     midi_device_inquiry_t device_inquiry;
+    midi_general_midi_mode_t gm_mode;
   };
 } midi_sys_ex_t;
 
@@ -53,6 +54,13 @@ bool_t MidiInitializeSysEx(
 bool_t MidiHandShakeSysEx(
   midi_sys_ex_t *sys_ex, midi_device_id_t device_id,
   uint8_t handshake_sub_id, midi_packet_number_t packet_number);
+
+bool_t MidiGeneralMidiModeSysEx(
+  midi_sys_ex_t *sys_ex, midi_device_id_t device_id, bool_t on);
+#define MidiGeneralMidiModeOnSysEx(sys_ex, device_id) \
+    MidiGeneralMidiModeSysEx(sys_ex, device_id, true)
+#define MidiGeneralMidiModeOffSysEx(sys_ex, device_id) \
+    MidiGeneralMidiModeSysEx(sys_ex, device_id, false)
 
 bool_t MidiInitializeSysUni(
   midi_sys_ex_t *sys_ex, bool_t real_time,

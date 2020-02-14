@@ -197,6 +197,10 @@ size_t MidiDeserializeDeviceInquiry(
   uint8_t const *data, size_t data_size,
   midi_device_inquiry_t *device_inquiry);
 
+/* General MIDI Mode. */
+typedef uint8_t midi_general_midi_mode_t;
+bool_t MidiIsValidGeneralMidiMode(midi_general_midi_mode_t mode);
+
 C_SECTION_END;
 
 #endif  /* _MIDI_SYSTEM_UNIVERSAL_H_ */

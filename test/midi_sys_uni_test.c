@@ -1180,6 +1180,15 @@ static void TestMidiDeviceInquiry_Deserialize(void) {
       device_inquiry.software_revision_level, MIDI_SOFTWARE_REVISION_SIZE);
 }
 
+static void TestMidiGeneralMidi_Validator(void) {
+  TEST_ASSERT_FALSE(MidiIsValidGeneralMidiMode(0x00))
+  TEST_ASSERT_TRUE(MidiIsValidGeneralMidiMode(MIDI_GENERAL_MIDI_OFF));
+  TEST_ASSERT_TRUE(MidiIsValidGeneralMidiMode(MIDI_GENERAL_MIDI_ON));
+  TEST_ASSERT_FALSE(MidiIsValidGeneralMidiMode(0x10));
+  TEST_ASSERT_FALSE(MidiIsValidGeneralMidiMode(0x7F));
+  TEST_ASSERT_FALSE(MidiIsValidGeneralMidiMode(0x80));
+}
+
 void MidiSystemUniversalTest(void) {
   RUN_TEST(TestMidiDeviceId_Validator);
   RUN_TEST(TestMidiHandShakeId_Validator);
@@ -1209,4 +1218,6 @@ void MidiSystemUniversalTest(void) {
   RUN_TEST(TestMidiDeviceInquiry_Initializer);
   RUN_TEST(TestMidiDeviceInquiry_Serialize);
   RUN_TEST(TestMidiDeviceInquiry_Deserialize);
+
+  RUN_TEST(TestMidiGeneralMidi_Validator);
 }
