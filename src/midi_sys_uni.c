@@ -558,3 +558,79 @@ size_t MidiDeserializeDeviceInquiry(
 bool_t MidiIsValidGeneralMidiMode(midi_general_midi_mode_t mode) {
   return mode == MIDI_GENERAL_MIDI_ON || mode == MIDI_GENERAL_MIDI_OFF;
 }
+
+/*
+ * Device Control Message.
+ *  Format: tt|vv|vv
+ *
+ * Fields:
+ *    tt     - Control type
+ *    vv vv  - Control value
+ */
+#define MidiIsValidDeviceControlSubId(sub_id) \
+    ((sub_id) == MIDI_MASTER_VOLUME || \
+     (sub_id) == MIDI_MASTER_BALANCE)
+
+bool_t MidiIsValidDeviceControl(midi_device_control_t const *control) {
+  if (control == NULL) return false;
+  switch (control->sub_id) {
+    case MIDI_MASTER_VOLUME:
+      return MidiIsValidMasterVolume(control->volume);
+    case MIDI_MASTER_BALANCE:
+      return MidiIsValidMasterBalance(control->balance);
+  }
+  return false;
+}
+
+bool_t MidiInitializeDeviceControl(
+    midi_device_control_t *control, uint8_t sub_id, uint16_t value) {
+  if (control == NULL) return false;
+  memset(control, 0, sizeof(midi_device_control_t));
+  control->sub_id = sub_id;
+  switch (control->sub_id) {
+    case MIDI_MASTER_VOLUME:
+      if (!MidiIsValidMasterVolume(value)) return false;
+      control->volume = value;
+      return true;
+    case MIDI_MASTER_BALANCE:
+      if (!MidiIsValidMasterBalance(value)) return false;
+      control->balance = value;
+      return true;
+  }
+  return false;
+}
+
+size_t MidiSerializeDeviceControl(
+    midi_device_control_t const *control, uint8_t *data, size_t data_size) {
+  if (data == NULL && data_size > 0) return false;
+  if (!MidiIsValidDeviceControl(control)) return false;
+  if (data_size >= MIDI_DEVICE_CONTROL_PAYLOAD_SIZE) {
+    data[0] = control->sub_id;
+    uint16_t const value = (control->sub_id == MIDI_MASTER_VOLUME)
+        ? control->volume : control->balance;
+    data[1] = MidiGetDataWordLsb(value);
+    data[2] = MidiGetDataWordMsb(value);
+  }
+  return MIDI_DEVICE_CONTROL_PAYLOAD_SIZE;
+}
+
+size_t MidiDeserializeDeviceControl(
+    uint8_t const *data, size_t data_size, midi_device_control_t *control) {
+  if (data == NULL && data_size > 0) return false;
+  if (control == NULL) return false;
+  if (data_size >= MIDI_DEVICE_CONTROL_PAYLOAD_SIZE) {
+    if (!MidiIsDataArray(data, MIDI_DEVICE_CONTROL_PAYLOAD_SIZE)) return 0;
+    control->sub_id = data[0];
+    switch (control->sub_id) {
+      case MIDI_MASTER_VOLUME:
+        control->volume = MidiDataWordFromBytes(data[2], data[1]);
+        break;
+      case MIDI_MASTER_BALANCE:
+        control->balance = MidiDataWordFromBytes(data[2], data[1]);
+        break;
+      default:
+        return 0;
+    }
+  }
+  return MIDI_DEVICE_CONTROL_PAYLOAD_SIZE;
+}

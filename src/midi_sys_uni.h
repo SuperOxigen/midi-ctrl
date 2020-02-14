@@ -11,6 +11,7 @@
 #include "base.h"
 #include "midi_bytes.h"
 #include "midi_man_id.h"
+#include "midi_volume.h"
 
 C_SECTION_BEGIN;
 
@@ -19,7 +20,7 @@ typedef uint8_t midi_device_id_t;
 #define MidiIsValidDeviceId(device_id) MidiIsDataByte(device_id)
 
 /*
- *  Non-Real Time - System Universal Message.
+ *  Non-Realtime - System Universal Message.
  */
 /* Handshake Message. */
 bool_t MidiIsHandShakeSubId(uint8_t sub_id);
@@ -200,6 +201,29 @@ size_t MidiDeserializeDeviceInquiry(
 /* General MIDI Mode. */
 typedef uint8_t midi_general_midi_mode_t;
 bool_t MidiIsValidGeneralMidiMode(midi_general_midi_mode_t mode);
+
+/*
+ *  Realtime - System Universal Message.
+ */
+/* Device Control */
+#define MIDI_DEVICE_CONTROL_PAYLOAD_SIZE 3
+typedef struct {
+  uint8_t sub_id;
+  union {
+    midi_master_volume_t volume;
+    midi_master_balance_t balance;
+  };
+} midi_device_control_t;
+
+bool_t MidiIsValidDeviceControl(midi_device_control_t const *device_control);
+
+bool_t MidiInitializeDeviceControl(
+  midi_device_control_t *device_control, uint8_t sub_id, uint16_t value);
+
+size_t MidiSerializeDeviceControl(
+  midi_device_control_t const *device_control, uint8_t *data, size_t data_size);
+size_t MidiDeserializeDeviceControl(
+  uint8_t const *data, size_t data_size, midi_device_control_t *device_control);
 
 C_SECTION_END;
 

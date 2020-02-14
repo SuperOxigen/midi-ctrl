@@ -442,6 +442,15 @@
 #define MIDI_30_FPS_NON_DROP              0x60
 
 /*
+ *  MIDI Device Control
+ */
+#define MIDI_MASTER_VOLUME_OFF            0x0000
+#define MIDI_MASTER_VOLUME_MAX            0x3FFF
+#define MIDI_MASTER_BALANCE_HARD_LEFT     0x0000
+#define MIDI_MASTER_BALANCE_EQUAL         0x2000
+#define MIDI_MASTER_BALANCE_HARD_RIGHT    0x3FFF
+
+/*
  *  System Univeral
  */
 /* Special Manufacturer IDs */
@@ -452,7 +461,7 @@
 /* Special Device ID */
 #define MIDI_ALL_CALL                     0x7F
 
-/* Sub Id */
+/* Non-Realtime Sub Id */
 #define MIDI_DUMP_HEADER                  0x01
 #define MIDI_DATA_PACKET                  0x02
 #define MIDI_DUMP_REQUEST                 0x03
@@ -466,6 +475,9 @@
 #define MIDI_CANCEL                       0x7D
 #define MIDI_NAK                          0x7E
 #define MIDI_ACK                          0x7F
+/* Realtime Sub Id */
+#define MIDI_NOTATION_INFO                0x03
+#define MIDI_DEVICE_CONTROL               0x04
 
 /* Sample Loop Sub ID */
 #define MIDI_SAMPLE_LOOP_RESPONSE         0x01
@@ -480,8 +492,17 @@
 #define MIDI_LOOP_BIDIRECTIONAL           0x01
 #define MIDI_LOOP_OFF                     0x7F
 
-/* General MIDI */
+/* General MIDI Sub ID */
 #define MIDI_GENERAL_MIDI_ON              0x01
 #define MIDI_GENERAL_MIDI_OFF             0x02
+
+/* Notation Info Sub ID */
+#define MIDI_BAR_NUMBER                   0x01
+#define MIDI_TIME_SIGNATURE_IMMEDIATE     0x02
+#define MIDI_TIME_SIGNATURE_DELAY         0x42
+
+/* Device Control Sub ID */
+#define MIDI_MASTER_VOLUME                0x01
+#define MIDI_MASTER_BALANCE               0x02
 
 #endif  /* _MIDI_DEFS_H_ */

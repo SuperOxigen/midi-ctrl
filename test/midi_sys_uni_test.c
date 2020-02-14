@@ -853,7 +853,7 @@ static void TestMidiSampleDump_Deserialize(void) {
 
 static uint8_t const kSmallDeviceInquiryManId[3] = {0x69, 0x00, 0x00};
 static uint8_t const kBadDeviceInquiryManId[3] = {0x00, 0x13, 0xF7};
-static uint8_t const kDeviceInquiryRev[4] = { 0x4D, 0x49, 0x44, 0x49 };
+static uint8_t const kDeviceInquiryRev[4] = {0x4D, 0x49, 0x44, 0x49};
 
 static midi_device_inquiry_t const kGoodDeviceInquiryRequest = {
   .sub_id = MIDI_DEVICE_INQUIRY_REQUEST
@@ -1180,6 +1180,8 @@ static void TestMidiDeviceInquiry_Deserialize(void) {
       device_inquiry.software_revision_level, MIDI_SOFTWARE_REVISION_SIZE);
 }
 
+/* General MIDI Mode */
+
 static void TestMidiGeneralMidi_Validator(void) {
   TEST_ASSERT_FALSE(MidiIsValidGeneralMidiMode(0x00))
   TEST_ASSERT_TRUE(MidiIsValidGeneralMidiMode(MIDI_GENERAL_MIDI_OFF));
@@ -1187,6 +1189,140 @@ static void TestMidiGeneralMidi_Validator(void) {
   TEST_ASSERT_FALSE(MidiIsValidGeneralMidiMode(0x10));
   TEST_ASSERT_FALSE(MidiIsValidGeneralMidiMode(0x7F));
   TEST_ASSERT_FALSE(MidiIsValidGeneralMidiMode(0x80));
+}
+
+/* Device Control */
+static midi_device_control_t const kDeviceControlVolume = {
+  .sub_id = MIDI_MASTER_VOLUME,
+  .volume = 0x0765
+};
+static uint8_t const kDeviceControlVolumeData[MIDI_DEVICE_CONTROL_PAYLOAD_SIZE] = {
+  MIDI_MASTER_VOLUME, 0x65, 0x0E
+};
+
+static midi_device_control_t const kDeviceControlBalance = {
+  .sub_id = MIDI_MASTER_BALANCE,
+  .balance = 0x3FFF
+};
+static uint8_t const kDeviceControlBalanceData[MIDI_DEVICE_CONTROL_PAYLOAD_SIZE] = {
+  MIDI_MASTER_BALANCE, 0x7F, 0x7F
+};
+
+static midi_device_control_t const kInvalidDeviceControl = {
+  .sub_id = 0x16,
+  .volume = 0x0010
+};
+static uint8_t const kInvalidDeviceControlData[MIDI_DEVICE_CONTROL_PAYLOAD_SIZE] = {
+  0x16, 0x10, 0x00
+};
+
+static void TestMidiDeviceControl_Validator(void) {
+  TEST_ASSERT_FALSE(MidiIsValidDeviceControl(NULL));
+  TEST_ASSERT_FALSE(MidiIsValidDeviceControl(&kInvalidDeviceControl));
+
+  TEST_ASSERT_TRUE(MidiIsValidDeviceControl(&kDeviceControlVolume));
+  TEST_ASSERT_TRUE(MidiIsValidDeviceControl(&kDeviceControlBalance));
+}
+
+static void TestMidiDeviceControl_Initializer(void) {
+  midi_device_control_t control;
+  TEST_ASSERT_FALSE(MidiInitializeDeviceControl(
+      NULL, MIDI_MASTER_VOLUME, 0x1000));
+  TEST_ASSERT_FALSE(MidiInitializeDeviceControl(
+      &control, 0x16, 0x1000));
+  TEST_ASSERT_FALSE(MidiInitializeDeviceControl(
+      &control, MIDI_MASTER_VOLUME, 0x4000));
+
+  TEST_ASSERT_TRUE(MidiInitializeDeviceControl(
+      &control, MIDI_MASTER_VOLUME, 0x1000));
+  TEST_ASSERT_EQUAL(MIDI_MASTER_VOLUME, control.sub_id);
+  TEST_ASSERT_EQUAL(0x1000, control.volume);
+
+  TEST_ASSERT_TRUE(MidiInitializeDeviceControl(
+      &control, MIDI_MASTER_BALANCE, 0x2000));
+  TEST_ASSERT_EQUAL(MIDI_MASTER_BALANCE, control.sub_id);
+  TEST_ASSERT_EQUAL(0x2000, control.balance);
+}
+
+static void TestMidiDeviceControl_Serialize(void) {
+  uint8_t control_data[MIDI_DEVICE_CONTROL_PAYLOAD_SIZE + 1];
+  control_data[MIDI_DEVICE_CONTROL_PAYLOAD_SIZE] = 0xE5;
+
+  /* Invalid input. */
+  TEST_ASSERT_EQUAL(0, MidiSerializeDeviceControl(
+      NULL, control_data, sizeof(control_data)));
+  TEST_ASSERT_EQUAL(0, MidiSerializeDeviceControl(
+      &kDeviceControlVolume, NULL, sizeof(control_data)));
+  TEST_ASSERT_EQUAL(0, MidiSerializeDeviceControl(
+      &kInvalidDeviceControl, control_data, sizeof(control_data)));
+
+  /* Partial serialization. */
+  TEST_ASSERT_EQUAL(
+      MIDI_DEVICE_CONTROL_PAYLOAD_SIZE,
+      MidiSerializeDeviceControl(&kDeviceControlVolume, NULL, 0));
+  TEST_ASSERT_EQUAL(
+      MIDI_DEVICE_CONTROL_PAYLOAD_SIZE,
+      MidiSerializeDeviceControl(&kDeviceControlVolume, control_data, 1));
+  TEST_ASSERT_EQUAL(
+      MIDI_DEVICE_CONTROL_PAYLOAD_SIZE,
+      MidiSerializeDeviceControl(&kDeviceControlBalance, control_data, 1));
+
+  /* Successful serialization */
+  TEST_ASSERT_EQUAL(
+      MIDI_DEVICE_CONTROL_PAYLOAD_SIZE,
+      MidiSerializeDeviceControl(
+          &kDeviceControlVolume, control_data, sizeof(control_data)));
+  TEST_ASSERT_EQUAL_MEMORY(
+      kDeviceControlVolumeData, control_data,
+      sizeof(kDeviceControlVolumeData));
+
+  TEST_ASSERT_EQUAL(
+      MIDI_DEVICE_CONTROL_PAYLOAD_SIZE,
+      MidiSerializeDeviceControl(
+          &kDeviceControlBalance, control_data, sizeof(control_data)));
+  TEST_ASSERT_EQUAL_MEMORY(
+      kDeviceControlBalanceData, control_data,
+      sizeof(kDeviceControlBalanceData));
+
+  /* Overrun check. */
+  TEST_ASSERT_EQUAL(0xE5, control_data[MIDI_DEVICE_CONTROL_PAYLOAD_SIZE]);
+}
+
+static void TestMidiDeviceControl_Deserialize(void) {
+  midi_device_control_t control;
+
+  /* Invalid input. */
+  TEST_ASSERT_EQUAL(0, MidiDeserializeDeviceControl(
+      NULL, sizeof(kDeviceControlVolumeData), &control));
+  TEST_ASSERT_EQUAL(0, MidiDeserializeDeviceControl(
+      kDeviceControlVolumeData, sizeof(kDeviceControlVolumeData), NULL));
+  TEST_ASSERT_EQUAL(0, MidiDeserializeDeviceControl(
+      kInvalidDeviceControlData, sizeof(kInvalidDeviceControlData), &control));
+
+  /* Partial deserialization. */
+  TEST_ASSERT_EQUAL(
+      MIDI_DEVICE_CONTROL_PAYLOAD_SIZE,
+      MidiDeserializeDeviceControl(NULL, 0, &control));
+  TEST_ASSERT_EQUAL(
+      MIDI_DEVICE_CONTROL_PAYLOAD_SIZE,
+      MidiDeserializeDeviceControl(kDeviceControlVolumeData, 1, &control));
+
+  /* Successful deserialization. */
+  TEST_ASSERT_EQUAL(
+      MIDI_DEVICE_CONTROL_PAYLOAD_SIZE,
+      MidiDeserializeDeviceControl(
+          kDeviceControlVolumeData, sizeof(kDeviceControlVolumeData),
+          &control));
+  TEST_ASSERT_EQUAL(kDeviceControlVolume.sub_id, control.sub_id);
+  TEST_ASSERT_EQUAL(kDeviceControlVolume.volume, control.volume);
+
+  TEST_ASSERT_EQUAL(
+      MIDI_DEVICE_CONTROL_PAYLOAD_SIZE,
+      MidiDeserializeDeviceControl(
+          kDeviceControlBalanceData, sizeof(kDeviceControlBalanceData),
+          &control));
+  TEST_ASSERT_EQUAL(kDeviceControlBalance.sub_id, control.sub_id);
+  TEST_ASSERT_EQUAL(kDeviceControlBalance.volume, control.volume);
 }
 
 void MidiSystemUniversalTest(void) {
@@ -1220,4 +1356,9 @@ void MidiSystemUniversalTest(void) {
   RUN_TEST(TestMidiDeviceInquiry_Deserialize);
 
   RUN_TEST(TestMidiGeneralMidi_Validator);
+
+  RUN_TEST(TestMidiDeviceControl_Validator);
+  RUN_TEST(TestMidiDeviceControl_Initializer);
+  RUN_TEST(TestMidiDeviceControl_Serialize);
+  RUN_TEST(TestMidiDeviceControl_Deserialize);
 }
