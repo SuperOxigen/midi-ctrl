@@ -13,6 +13,7 @@
 #include "midi_channel.h"
 #include "midi_control.h"
 #include "midi_man_id.h"
+#include "midi_notation.h"
 #include "midi_note.h"
 #include "midi_program.h"
 #include "midi_sys_ex.h"
@@ -62,9 +63,8 @@ typedef struct {
     midi_sys_ex_t sys_ex;
     /* Non-Channel Based */
     midi_time_code_t time_code;
-    /* TODO: Support these
-    uint16_t song_position;
-    uint8_t song_number; */
+    midi_song_position_t song_position;
+    midi_song_number_t song_number;
   };
 } midi_message_t;
 
@@ -111,6 +111,12 @@ bool_t MidiSystemExclusiveMessage(
 
 bool_t MidiTimeCodeMessage(
   midi_message_t *message, midi_time_code_t const *time_code);
+
+bool_t MidiSongPositionMessage(
+  midi_message_t *message, midi_song_position_t song_position);
+
+bool_t MidiSongSelectMessage(
+  midi_message_t *message, midi_song_number_t song_number);
 
 C_SECTION_END;
 

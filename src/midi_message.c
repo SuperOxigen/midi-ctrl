@@ -81,11 +81,9 @@ bool_t MidiMessageIsValid(midi_message_t const *message) {
     case MIDI_TIME_CODE:
       return MidiIsValidTimeCode(&message->time_code);
     case MIDI_SONG_POSITION_POINTER:
-      /* TODO: Check |song_position| */
-      return false;
+      return MidiIsValidSongPosition(message->song_position);
     case MIDI_SONG_SELECT:
-      /* TODO: Check |song_number| */
-      return false;
+      return MidiIsValidSongNumber(message->song_number);
   }
   return false;
 }
@@ -195,5 +193,23 @@ bool_t MidiTimeCodeMessage(
   if (!MidiIsValidTimeCode(time_code)) return false;
   message->type = MIDI_TIME_CODE;
   memcpy(&message->time_code, time_code, sizeof(midi_time_code_t));
+  return true;
+}
+
+bool_t MidiSongPositionMessage(
+    midi_message_t *message, midi_song_position_t position) {
+  if (!MidiInitializeMessage(message)) return false;
+  if (!MidiIsValidSongPosition(position)) return false;
+  message->type = MIDI_SONG_POSITION_POINTER;
+  message->song_position = position;
+  return true;
+}
+
+bool_t MidiSongSelectMessage(
+    midi_message_t *message, midi_song_number_t number) {
+  if (!MidiInitializeMessage(message)) return false;
+  if (!MidiIsValidSongNumber(number)) return false;
+  message->type = MIDI_SONG_SELECT;
+  message->song_number = number;
   return true;
 }

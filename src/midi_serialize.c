@@ -116,6 +116,19 @@ size_t MidiSerializeMessage(
       }
       ++data_used;
       break;
+    case MIDI_SONG_POSITION_POINTER:
+      if (message_data_size >= 2) {
+        message_data[0] = MidiGetDataWordLsb(message->song_position);
+        message_data[1] = MidiGetDataWordMsb(message->song_position);
+      }
+      data_used += 2;
+      break;
+    case MIDI_SONG_SELECT:
+      if (message_data_size >= 1) {
+        message_data[0] = message->song_number;
+      }
+      ++data_used;
+      break;
     /* Data-less */
     case MIDI_TUNE_REQUEST:
     case MIDI_END_SYSTEM_EXCLUSIVE:
@@ -127,9 +140,6 @@ size_t MidiSerializeMessage(
     case MIDI_SYSTEM_RESET:
       message_data_size = 0;
       break;
-    /* Unsupported */
-    case MIDI_SONG_POSITION_POINTER:
-    case MIDI_SONG_SELECT:
     default:
       return 0;
   }  /* switch (message->type) */
@@ -241,16 +251,18 @@ size_t MidiDeserializeMessage(
       if (message_data_size >= 2) {
         if (!MidiIsDataArray(message_data, 2))
           goto deserialize_error;
-        /* TODO: Support song position pointer. */
+        message->song_position = MidiDataWordFromBytes(
+            message_data[1], message_data[0]);
+        /* Song position has specialized checks. */
+        if (!MidiIsValidSongPosition(message->song_position))
+          goto deserialize_error;
       }
-      message->type = MIDI_NONE;
       data_used += 2;
       break;
     case MIDI_SONG_SELECT:
-      /* TODO: Support song position pointer. */
-      if (!MidiIsDataByte(message_data[0]))
+      if (!MidiIsValidSongNumber(message_data[0]))
         goto deserialize_error;
-      message->type = MIDI_NONE;
+      message->song_number = message_data[0];
       ++data_used;
       break;
     case MIDI_TUNE_REQUEST:

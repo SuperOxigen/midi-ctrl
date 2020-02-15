@@ -13,7 +13,9 @@
 #include "midi_serialize.h"
 
 static uint8_t const kFillerByte = 0x42;
-static uint16_t const kFillerWord = 0x2142;
+static uint16_t const kFillerWord = 0x2424;
+static uint8_t const kFillerWordLsb = 0x24;
+static uint8_t const kFillerWordMsb = 0x48;
 
 static uint8_t const kNoteOnPacket[] = {
   MIDI_NOTE_ON | MIDI_CHANNEL_4, MIDI_MIDDLE_C,  MIDI_NOTE_ON_VELOCITY
@@ -82,7 +84,7 @@ static midi_message_t const kChannelPressureMessage = {
 };
 
 static uint8_t const kPitchWheelPacket[] = {
-  MIDI_PITCH_WHEEL | MIDI_CHANNEL_16, kFillerByte, kFillerByte
+  MIDI_PITCH_WHEEL | MIDI_CHANNEL_16, kFillerWordLsb, kFillerWordMsb
 };
 static midi_message_t const kPitchWheelMessage = {
   .type = MIDI_PITCH_WHEEL,
@@ -101,17 +103,17 @@ static midi_message_t const kTimeCodeMessage = {
 };
 
 static uint8_t const kSongPositionPointerPacket[] = {
-  MIDI_SONG_POSITION_POINTER, kFillerByte, kFillerByte
+  MIDI_SONG_POSITION_POINTER, 0x70, 0x19
 };
 static midi_message_t const kSongPositionPointerMessage = {
   .type = MIDI_SONG_POSITION_POINTER,
-  /* .song_position = kFillerWord */
+  .song_position = 0x0CF0  /* Divisible by 6. */
 };
 
 static uint8_t const kSongSelectPacket[] = { MIDI_SONG_SELECT, kFillerByte };
 static midi_message_t const kSongSelectMessage = {
   .type = MIDI_SONG_SELECT,
-  /* .song_number = kFillerByte */
+  .song_number = kFillerByte
 };
 
 static uint8_t const kTuneRequestPacket[] = { MIDI_TUNE_REQUEST };
@@ -204,7 +206,7 @@ static midi_message_t const kDataPacketSysExMessage = {
 static uint8_t const kDeviceControlBalanceSysExPacket[] = {
   MIDI_SYSTEM_EXCLUSIVE,
   MIDI_REAL_TIME_ID, kFillerByte, MIDI_DEVICE_CONTROL,
-  MIDI_MASTER_BALANCE, kFillerByte, kFillerByte,
+  MIDI_MASTER_BALANCE, kFillerWordLsb, kFillerWordMsb,
   MIDI_END_SYSTEM_EXCLUSIVE
 };
 static midi_message_t const kDeviceControlBalanceSysExMessage = {
@@ -373,19 +375,19 @@ static void TestMidiSerialize_KnownMessage(void) {
       MidiSerializeMessage(&kTimeCodeMessage, false, buffer, sizeof(buffer)));
   TEST_ASSERT_EQUAL_MEMORY(kTimeCodePacket, buffer, sizeof(kTimeCodePacket));
 
-  // TEST_ASSERT_EQUAL(
-  //     sizeof(kSongPositionPointerPacket),
-  //     MidiSerializeMessage(
-  //         &kSongPositionPointerMessage, false, buffer, sizeof(buffer)));
-  // TEST_ASSERT_EQUAL_MEMORY(
-  //     kSongPositionPointerPacket, buffer, sizeof(kSongPositionPointerPacket));
+  TEST_ASSERT_EQUAL(
+      sizeof(kSongPositionPointerPacket),
+      MidiSerializeMessage(
+          &kSongPositionPointerMessage, false, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_MEMORY(
+      kSongPositionPointerPacket, buffer, sizeof(kSongPositionPointerPacket));
 
-  // TEST_ASSERT_EQUAL(
-  //     sizeof(kSongSelectPacket),
-  //     MidiSerializeMessage(
-  //         &kSongSelectMessage, false, buffer, sizeof(buffer)));
-  // TEST_ASSERT_EQUAL_MEMORY(
-  //     kSongSelectPacket, buffer, sizeof(kSongSelectPacket));
+  TEST_ASSERT_EQUAL(
+      sizeof(kSongSelectPacket),
+      MidiSerializeMessage(
+          &kSongSelectMessage, false, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_MEMORY(
+      kSongSelectPacket, buffer, sizeof(kSongSelectPacket));
 
   TEST_ASSERT_EQUAL(
       sizeof(kTuneRequestPacket),
@@ -627,17 +629,17 @@ static void TestMidiDeserialize_KnownMessage(void) {
       MidiDeserializeMessage(
           kSongPositionPointerPacket, sizeof(kSongPositionPointerPacket),
           MIDI_NONE, &message));
-  // TEST_ASSERT_EQUAL(kSongPositionPointerMessage.type, message.type);
-  // TEST_ASSERT_EQUAL(
-  //     kSongPositionPointerMessage.song_position, message.song_position);
+  TEST_ASSERT_EQUAL(kSongPositionPointerMessage.type, message.type);
+  TEST_ASSERT_EQUAL(
+      kSongPositionPointerMessage.song_position, message.song_position);
 
   TEST_ASSERT_EQUAL(
       sizeof(kSongSelectPacket),
       MidiDeserializeMessage(
           kSongSelectPacket, sizeof(kSongSelectPacket),
           MIDI_NONE, &message));
-  // TEST_ASSERT_EQUAL(kSongSelectMessage.type, message.type);
-  // TEST_ASSERT_EQUAL(kSongSelectMessage.song_number, message.song_number);
+  TEST_ASSERT_EQUAL(kSongSelectMessage.type, message.type);
+  TEST_ASSERT_EQUAL(kSongSelectMessage.song_number, message.song_number);
 
   TEST_ASSERT_EQUAL(
       sizeof(kTuneRequestPacket),
