@@ -5,6 +5,7 @@
  * This project is licensed under the terms of the MIT license.
  * See LICENSE for details.
  */
+#include <string.h>
 #include <unity.h>
 
 #include "midi_defs.h"
@@ -89,18 +90,6 @@ static midi_message_t const kPitchWheelMessage = {
   .pitch = kFillerWord
 };
 
-static uint8_t const kSystemExclusivePacket[] = { MIDI_SYSTEM_EXCLUSIVE };
-static midi_message_t const kSystemExclusiveMessage = {
-  .type = MIDI_SYSTEM_EXCLUSIVE
-};
-
-static uint8_t const kEndSystemExclusivePacket[] = {
-  MIDI_END_SYSTEM_EXCLUSIVE
-};
-static midi_message_t const kEndSystemExclusiveMessage = {
-  .type = MIDI_END_SYSTEM_EXCLUSIVE
-};
-
 static uint8_t const kTimeCodePacket[] = { MIDI_TIME_CODE,
     MIDI_HOURS_COUNT_LSN | 0x05 };
 static midi_message_t const kTimeCodeMessage = {
@@ -154,18 +143,187 @@ static midi_message_t const kNoneMessage = {
 };
 static uint8_t const kUnknownPacket[] = { 0xF4 };
 
+/* System Exclusive Message. */
+
+static uint8_t const kDataPacketSysExPacket[] = {
+  MIDI_SYSTEM_EXCLUSIVE,
+  MIDI_NON_REAL_TIME_ID, kFillerByte, MIDI_DATA_PACKET,
+  kFillerByte,
+  /* Random bytes, checksum = device_id =  number = 0x42 */
+  0x30, 0x0B, 0x4A, 0x08, 0x25, 0x22, 0x0F, 0x70,
+  0x04, 0x7C, 0x0D, 0x53, 0x77, 0x27, 0x44, 0x68,
+  0x40, 0x5E, 0x55, 0x13, 0x52, 0x3D, 0x13, 0x3C,
+  0x1C, 0x50, 0x7A, 0x4D, 0x37, 0x30, 0x62, 0x3A,
+  0x70, 0x62, 0x2D, 0x5B, 0x25, 0x5F, 0x46, 0x06,
+  0x2D, 0x44, 0x2C, 0x3C, 0x28, 0x62, 0x7C, 0x1C,
+  0x20, 0x32, 0x39, 0x49, 0x05, 0x13, 0x1A, 0x1B,
+  0x18, 0x1D, 0x32, 0x3E, 0x21, 0x16, 0x63, 0x2F,
+  0x4B, 0x23, 0x06, 0x78, 0x34, 0x1E, 0x26, 0x5A,
+  0x4C, 0x20, 0x44, 0x6E, 0x00, 0x45, 0x08, 0x5D,
+  0x7D, 0x2C, 0x33, 0x54, 0x79, 0x75, 0x0D, 0x57,
+  0x3F, 0x6A, 0x2C, 0x29, 0x41, 0x44, 0x16, 0x69,
+  0x1E, 0x68, 0x3B, 0x51, 0x0E, 0x1C, 0x07, 0x4D,
+  0x11, 0x4B, 0x33, 0x36, 0x22, 0x01, 0x6F, 0x47,
+  0x6C, 0x5D, 0x25, 0x70, 0x60, 0x7E, 0x2B, 0x4E,
+  kFillerByte,
+  MIDI_END_SYSTEM_EXCLUSIVE
+};
+static uint8_t gDataPacketSysEx[MIDI_DATA_PACKET_DATA_LENGTH] = {
+  /* Random bytes, checksum = device_id =  number = 0x42 */
+  0x30, 0x0B, 0x4A, 0x08, 0x25, 0x22, 0x0F, 0x70,
+  0x04, 0x7C, 0x0D, 0x53, 0x77, 0x27, 0x44, 0x68,
+  0x40, 0x5E, 0x55, 0x13, 0x52, 0x3D, 0x13, 0x3C,
+  0x1C, 0x50, 0x7A, 0x4D, 0x37, 0x30, 0x62, 0x3A,
+  0x70, 0x62, 0x2D, 0x5B, 0x25, 0x5F, 0x46, 0x06,
+  0x2D, 0x44, 0x2C, 0x3C, 0x28, 0x62, 0x7C, 0x1C,
+  0x20, 0x32, 0x39, 0x49, 0x05, 0x13, 0x1A, 0x1B,
+  0x18, 0x1D, 0x32, 0x3E, 0x21, 0x16, 0x63, 0x2F,
+  0x4B, 0x23, 0x06, 0x78, 0x34, 0x1E, 0x26, 0x5A,
+  0x4C, 0x20, 0x44, 0x6E, 0x00, 0x45, 0x08, 0x5D,
+  0x7D, 0x2C, 0x33, 0x54, 0x79, 0x75, 0x0D, 0x57,
+  0x3F, 0x6A, 0x2C, 0x29, 0x41, 0x44, 0x16, 0x69,
+  0x1E, 0x68, 0x3B, 0x51, 0x0E, 0x1C, 0x07, 0x4D,
+  0x11, 0x4B, 0x33, 0x36, 0x22, 0x01, 0x6F, 0x47,
+  0x6C, 0x5D, 0x25, 0x70, 0x60, 0x7E, 0x2B, 0x4E
+};
+static midi_message_t const kDataPacketSysExMessage = {
+  .type = MIDI_SYSTEM_EXCLUSIVE,
+  .sys_ex = {
+    .id = {MIDI_NON_REAL_TIME_ID, 0x00, 0x00},
+    .device_id = kFillerByte,
+    .sub_id = MIDI_DATA_PACKET,
+    .data_packet = {
+      .number = kFillerByte,
+      .data = gDataPacketSysEx,
+      .length = MIDI_DATA_PACKET_DATA_LENGTH,
+      .checksum = kFillerByte
+    }
+  }
+};
+
+static uint8_t const kDeviceControlBalanceSysExPacket[] = {
+  MIDI_SYSTEM_EXCLUSIVE,
+  MIDI_REAL_TIME_ID, kFillerByte, MIDI_DEVICE_CONTROL,
+  MIDI_MASTER_BALANCE, kFillerByte, kFillerByte,
+  MIDI_END_SYSTEM_EXCLUSIVE
+};
+static midi_message_t const kDeviceControlBalanceSysExMessage = {
+  .type = MIDI_SYSTEM_EXCLUSIVE,
+  .sys_ex = {
+    .id = {MIDI_REAL_TIME_ID, 0x00, 0x00},
+    .device_id = kFillerByte,
+    .sub_id = MIDI_DEVICE_CONTROL,
+    .device_control = {
+      .sub_id = MIDI_MASTER_BALANCE,
+      .balance = kFillerWord
+    }
+  }
+};
+
+static uint8_t const kAckSysExPacket[] = {
+  MIDI_SYSTEM_EXCLUSIVE,
+  MIDI_NON_REAL_TIME_ID, kFillerByte, MIDI_ACK, kFillerByte,
+  MIDI_END_SYSTEM_EXCLUSIVE
+};
+static midi_message_t const kAckSysExMessage = {
+  .type = MIDI_SYSTEM_EXCLUSIVE,
+  .sys_ex = {
+    .id = {MIDI_NON_REAL_TIME_ID, 0x00, 0x00},
+    .device_id = kFillerByte,
+    .sub_id = MIDI_ACK,
+    .packet_number = kFillerByte
+  }
+};
+
+static uint8_t const kProprietarySysExPacket[] = {
+  MIDI_SYSTEM_EXCLUSIVE,
+  0x00, kFillerByte, kFillerByte,
+  kFillerByte, kFillerByte,
+  0x49, 0x54, 0x6D, 0x51, 0x16, 0x45, 0x01, 0x60,
+  0x10, 0x1E, 0x21, 0x5E, 0x5E, 0x08, 0x23, 0x64,
+  0x6C, 0x02, 0x40, 0x0D, 0x30, 0x7E, 0x7A, 0x16,
+  0x20, 0x6D, 0x3D, 0x38, 0x51, 0x5C, 0x75, 0x6F,
+  0x2F, 0x5A, 0x7B, 0x7B, 0x5E, 0x22, 0x72, 0x69,
+  0x06, 0x1E, 0x0A, 0x0B, 0x69, 0x0E, 0x24, 0x11,
+  0x2A, 0x10, 0x64, 0x78, 0x35, 0x78, 0x2D, 0x0B,
+  0x66, 0x10, 0x06, 0x2F, 0x24, 0x0E, 0x10, 0x4D,
+  0x56, 0x09, 0x05, 0x5A, 0x03, 0x0E, 0x55, 0x39,
+  0x7B, 0x5B, 0x3C, 0x43, 0x37, 0x6F, 0x16, 0x45,
+  0x3C, 0x7F, 0x39, 0x10, 0x1D, 0x0F, 0x67, 0x5E,
+  0x5B, 0x1F, 0x79, 0x3D, 0x32, 0x35, 0x0B, 0x2F,
+  0x1C, 0x0D, 0x72, 0x43, 0x4E, 0x32, 0x2E, 0x55,
+  0x1E, 0x06, 0x68, 0x69, 0x5E, 0x09, 0x4C, 0x21,
+  0x0B, 0x11, 0x08, 0x24, 0x73, 0x44, 0x46, 0x5D,
+  0x27, 0x5C, 0x26, 0x13, 0x35, 0x40, 0x19, 0x7F,
+  0x6A, 0x1D, 0x0B, 0x6F, 0x79, 0x39, 0x21, 0x59,
+  0x4B, 0x44, 0x19, 0x70, 0x1C, 0x00, 0x09, 0x21,
+  0x57, 0x49, 0x13, 0x17, 0x42, 0x36, 0x16, 0x28,
+  0x1A, 0x48, 0x0D, 0x75, 0x32, 0x0B, 0x69, 0x68,
+  0x04, 0x6E, 0x19, 0x0B, 0x44, 0x6D, 0x2A, 0x48,
+  0x76, 0x79, 0x3C, 0x38, 0x52, 0x73, 0x66, 0x6E,
+  0x05, 0x0C, 0x72, 0x6E, 0x10, 0x22, 0x6B, 0x2F,
+  0x61, 0x2B, 0x34, 0x7F, 0x20, 0x3E, 0x0F, 0x2F,
+  0x7D, 0x07, 0x6A, 0x1C, 0x1B, 0x41, 0x1A, 0x11,
+  0x35, 0x2A, 0x36, 0x65, 0x7A, 0x38, 0x58, 0x4E,
+  0x7F, 0x0D, 0x54, 0x11, 0x16, 0x65, 0x4C, 0x14,
+  0x0D, 0x47, 0x41, 0x36, 0x46, 0x30, 0x60, 0x4F,
+  0x58, 0x21, 0x49, 0x3E, 0x0B, 0x47, 0x03, 0x08,
+  0x70, 0x15, 0x7D, 0x18, 0x21, 0x3F, 0x42, 0x5B,
+  MIDI_END_SYSTEM_EXCLUSIVE
+};
+static midi_message_t const kProprietarySysExMessage = {
+  .type = MIDI_SYSTEM_EXCLUSIVE,
+  .sys_ex = {
+    .id = {0x00, kFillerByte, kFillerByte},
+    .device_id = kFillerByte,
+    .sub_id = kFillerByte
+  }
+};
+
+static uint8_t const kInvalidSysExPacket[] = {
+  MIDI_SYSTEM_EXCLUSIVE,
+  MIDI_NON_REAL_TIME_ID, kFillerByte, MIDI_DUMP_REQUEST,
+  0x44, 0x83,
+  MIDI_END_SYSTEM_EXCLUSIVE
+};
+static midi_message_t const kInvalidSysExMessage = {
+  .type = MIDI_SYSTEM_EXCLUSIVE,
+  .sys_ex = {
+    .id = {MIDI_NON_REAL_TIME_ID, 0x00, 0x00},
+    .device_id = kFillerByte,
+    .sub_id = MIDI_DUMP_REQUEST,
+    .dump_request = {
+      .sample_number = 0x41C3
+    }
+  }
+};
+
 static void TestMidiSerialize_Invalid(void) {
   uint8_t buffer[4];
-  TEST_ASSERT_EQUAL(
-      0, MidiSerializeMessage(NULL, false, buffer, sizeof(buffer)));
-  TEST_ASSERT_EQUAL(
-      0, MidiSerializeMessage(&kNoteOnMessage, false, NULL, sizeof(buffer)));
-  TEST_ASSERT_EQUAL(
-      0, MidiSerializeMessage(&kNoneMessage, false, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(0, MidiSerializeMessage(
+      NULL, false, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(0, MidiSerializeMessage(
+      &kNoteOnMessage, false, NULL, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(0, MidiSerializeMessage(
+      &kNoneMessage, false, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(0, MidiSerializeMessage(
+      &kInvalidSysExMessage, false, buffer, sizeof(buffer)));
 }
 
 static void TestMidiSerialize_KnownMessage(void) {
   uint8_t buffer[4];
+  /* Partial serialize. */
+  TEST_ASSERT_EQUAL(
+      sizeof(kNoteOffPacket),
+      MidiSerializeMessage(&kNoteOffMessage, false, NULL, 0));
+  TEST_ASSERT_EQUAL(
+      sizeof(kNoteOffPacket),
+      MidiSerializeMessage(&kNoteOffMessage, false, buffer, 1));
+  TEST_ASSERT_EQUAL(
+      sizeof(kProgramChangePacket),
+      MidiSerializeMessage(&kProgramChangeMessage, false, buffer, 1));
+
+  /* Successful serial. */
   TEST_ASSERT_EQUAL(
       sizeof(kNoteOffPacket),
       MidiSerializeMessage(&kNoteOffMessage, false, buffer, sizeof(buffer)));
@@ -196,26 +354,20 @@ static void TestMidiSerialize_KnownMessage(void) {
       kProgramChangePacket, buffer, sizeof(kProgramChangePacket));
 
   TEST_ASSERT_EQUAL(
+      sizeof(kChannelPressurePacket),
+      MidiSerializeMessage(
+          &kChannelPressureMessage, false, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_MEMORY(
+      kChannelPressurePacket, buffer, sizeof(kChannelPressurePacket));
+
+  TEST_ASSERT_EQUAL(
       sizeof(kPitchWheelPacket),
       MidiSerializeMessage(
           &kPitchWheelMessage, false, buffer, sizeof(buffer)));
   TEST_ASSERT_EQUAL_MEMORY(
       kPitchWheelPacket, buffer, sizeof(kPitchWheelPacket));
 
-  // TEST_ASSERT_EQUAL(
-  //     sizeof(kSystemExclusivePacket),
-  //     MidiSerializeMessage(
-  //         &kSystemExclusiveMessage, false, buffer, sizeof(buffer)));
-  // TEST_ASSERT_EQUAL_MEMORY(
-  //     kSystemExclusivePacket, buffer, sizeof(kSystemExclusivePacket));
-
-  TEST_ASSERT_EQUAL(
-      sizeof(kEndSystemExclusivePacket),
-      MidiSerializeMessage(
-          &kEndSystemExclusiveMessage, false, buffer, sizeof(buffer)));
-  TEST_ASSERT_EQUAL_MEMORY(
-      kEndSystemExclusivePacket, buffer, sizeof(kEndSystemExclusivePacket));
-
+  /* System exclusive has its own serialization test. */
   TEST_ASSERT_EQUAL(
       sizeof(kTimeCodePacket),
       MidiSerializeMessage(&kTimeCodeMessage, false, buffer, sizeof(buffer)));
@@ -279,6 +431,48 @@ static void TestMidiSerialize_KnownMessage(void) {
       kSystemResetPacket, buffer, sizeof(kSystemResetPacket));
 }
 
+static void TestMidiSerialize_SysEx(void) {
+  uint8_t buffer[128];
+  /* Partial serialization. */
+  TEST_ASSERT_EQUAL(
+      sizeof(kDataPacketSysExPacket),
+      MidiSerializeMessage(
+          &kDataPacketSysExMessage, false, NULL, 0));
+  TEST_ASSERT_EQUAL(
+      sizeof(kDataPacketSysExPacket),
+      MidiSerializeMessage(
+          &kDataPacketSysExMessage, false, buffer, sizeof(buffer) / 2));
+  TEST_ASSERT_EQUAL(
+      sizeof(kDeviceControlBalanceSysExPacket),
+      MidiSerializeMessage(
+          &kDeviceControlBalanceSysExMessage, false, NULL, 0));
+
+  /* Successful serialization. */
+  TEST_ASSERT_EQUAL(
+      sizeof(kDataPacketSysExPacket),
+      MidiSerializeMessage(
+          &kDataPacketSysExMessage, false, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_MEMORY(
+      kDataPacketSysExPacket, buffer, sizeof(kDataPacketSysExPacket));
+
+  TEST_ASSERT_EQUAL(
+      sizeof(kDeviceControlBalanceSysExPacket),
+      MidiSerializeMessage(
+          &kDeviceControlBalanceSysExMessage, false, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_MEMORY(
+      kDeviceControlBalanceSysExPacket, buffer,
+      sizeof(kDeviceControlBalanceSysExPacket));
+
+  TEST_ASSERT_EQUAL(
+      sizeof(kAckSysExPacket),
+      MidiSerializeMessage(&kAckSysExMessage, false, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_MEMORY(kAckSysExPacket, buffer, sizeof(kAckSysExPacket));
+
+  /* Unsupported proprietary. */
+  TEST_ASSERT_EQUAL(0, MidiSerializeMessage(
+      &kProprietarySysExMessage, false, buffer, sizeof(buffer)));
+}
+
 static void TestMidiSerialize_TimePacket(void) {
   midi_time_t time;
   uint8_t time_packet[12];
@@ -336,13 +530,16 @@ static void TestMidiSerialize_TimePacket(void) {
 
 static void TestMidiDeserialize_Invalid(void) {
   midi_message_t message;
-  TEST_ASSERT_EQUAL(
-      0, MidiDeserializeMessage(NULL, 3, MIDI_NONE, &message));
-  TEST_ASSERT_EQUAL(
-      0, MidiDeserializeMessage(kNoteOffPacket, 0, MIDI_NONE, &message));
-  TEST_ASSERT_EQUAL(
-      0, MidiDeserializeMessage(
-          kNoteOffPacket, sizeof(kNoteOffPacket), MIDI_NONE, NULL));
+  TEST_ASSERT_EQUAL(0, MidiDeserializeMessage(
+      NULL, 3, MIDI_NONE, &message));
+  TEST_ASSERT_EQUAL(0, MidiDeserializeMessage(
+      kNoteOffPacket, 0, MIDI_NONE, NULL));
+  TEST_ASSERT_EQUAL(0, MidiDeserializeMessage(
+      kNoteOffPacket, sizeof(kNoteOffPacket), MIDI_NONE, NULL));
+  TEST_ASSERT_EQUAL(0, MidiDeserializeMessage(
+      kUnknownPacket, sizeof(kUnknownPacket), MIDI_NONE, &message));
+  TEST_ASSERT_EQUAL(0, MidiDeserializeMessage(
+      kInvalidSysExPacket, sizeof(kInvalidSysExPacket), MIDI_NONE, &message));
 }
 
 static void TestMidiDeserialize_KnownMessage(void) {
@@ -381,8 +578,10 @@ static void TestMidiDeserialize_KnownMessage(void) {
           MIDI_NONE, &message));
   TEST_ASSERT_EQUAL(kControlChangeMessage.type, message.type);
   TEST_ASSERT_EQUAL(kControlChangeMessage.channel, message.channel);
-  TEST_ASSERT_EQUAL(kControlChangeMessage.control.number, message.control.number);
-  TEST_ASSERT_EQUAL(kControlChangeMessage.control.value, message.control.value);
+  TEST_ASSERT_EQUAL(
+      kControlChangeMessage.control.number, message.control.number);
+  TEST_ASSERT_EQUAL(
+      kControlChangeMessage.control.value, message.control.value);
 
   TEST_ASSERT_EQUAL(
       sizeof(kProgramChangePacket),
@@ -394,6 +593,15 @@ static void TestMidiDeserialize_KnownMessage(void) {
   TEST_ASSERT_EQUAL(kProgramChangeMessage.program, message.program);
 
   TEST_ASSERT_EQUAL(
+      sizeof(kChannelPressurePacket),
+      MidiDeserializeMessage(
+          kChannelPressurePacket, sizeof(kChannelPressurePacket),
+          MIDI_NONE, &message));
+  TEST_ASSERT_EQUAL(kChannelPressureMessage.type, message.type);
+  TEST_ASSERT_EQUAL(kChannelPressureMessage.channel, message.channel);
+  TEST_ASSERT_EQUAL(kChannelPressureMessage.pressure, message.pressure);
+
+  TEST_ASSERT_EQUAL(
       sizeof(kPitchWheelPacket),
       MidiDeserializeMessage(
           kPitchWheelPacket, sizeof(kPitchWheelPacket),
@@ -402,22 +610,7 @@ static void TestMidiDeserialize_KnownMessage(void) {
   TEST_ASSERT_EQUAL(kPitchWheelMessage.channel, message.channel);
   TEST_ASSERT_EQUAL(kPitchWheelMessage.pitch, message.pitch);
 
-  TEST_ASSERT_EQUAL(
-      sizeof(kSystemExclusivePacket),
-      MidiDeserializeMessage(
-          kSystemExclusivePacket, sizeof(kSystemExclusivePacket),
-          MIDI_NONE, &message));
-  TEST_ASSERT_EQUAL(kSystemExclusiveMessage.type, message.type);
-  // TEST_ASSERT_EQUAL_MEMORY(
-  //     kSystemExclusiveMessage.manufacture_id, message.manufacture_id,
-  //     sizeof(message.manufacture_id));
-
-  TEST_ASSERT_EQUAL(
-      sizeof(kEndSystemExclusivePacket),
-      MidiDeserializeMessage(
-          kEndSystemExclusivePacket, sizeof(kEndSystemExclusivePacket),
-          MIDI_NONE, &message));
-  TEST_ASSERT_EQUAL(kEndSystemExclusiveMessage.type, message.type);
+  /* System exclusive has its own deserialization test. */
 
   TEST_ASSERT_EQUAL(
       sizeof(kTimeCodePacket),
@@ -496,10 +689,113 @@ static void TestMidiDeserialize_KnownMessage(void) {
   TEST_ASSERT_EQUAL(kSystemResetMessage.type, message.type);
 }  /* TestMidiDeserialize_KnownMessage */
 
+static void TestMidiDeserialize_SysEx(void) {
+  midi_message_t message;
+  /* Partial serialize. */
+  TEST_ASSERT_EQUAL(
+      sizeof(kDataPacketSysExPacket),
+      MidiDeserializeMessage(
+          kDataPacketSysExPacket, sizeof(kDataPacketSysExPacket) / 2,
+          MIDI_NONE, &message));
+  TEST_ASSERT_EQUAL(
+      sizeof(kDeviceControlBalanceSysExPacket),
+      MidiDeserializeMessage(
+          kDeviceControlBalanceSysExPacket,
+          sizeof(kDeviceControlBalanceSysExPacket) - 2, MIDI_NONE,
+          &message));
+
+  /* Successful serialization. */
+  midi_data_packet_buffer_t buffer;
+  TEST_ASSERT_TRUE(MidiPushGlobalDataPacketBuffer(buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(
+      sizeof(kDataPacketSysExPacket),
+      MidiDeserializeMessage(
+          kDataPacketSysExPacket, sizeof(kDataPacketSysExPacket), MIDI_NONE,
+          &message));
+  TEST_ASSERT_EQUAL(kDataPacketSysExMessage.type, message.type);
+  TEST_ASSERT_EQUAL_MEMORY(
+      kDataPacketSysExMessage.sys_ex.id, message.sys_ex.id,
+      sizeof(midi_manufacturer_id_t));
+  TEST_ASSERT_EQUAL(
+      kDataPacketSysExMessage.sys_ex.device_id, message.sys_ex.device_id);
+  TEST_ASSERT_EQUAL(kDataPacketSysExMessage.sys_ex.sub_id, message.sys_ex.sub_id);
+  TEST_ASSERT_EQUAL(
+      kDataPacketSysExMessage.sys_ex.data_packet.number,
+      message.sys_ex.data_packet.number);
+  TEST_ASSERT_EQUAL(((uint8_t*) buffer), message.sys_ex.data_packet.data);
+  TEST_ASSERT_EQUAL_MEMORY(
+      kDataPacketSysExMessage.sys_ex.data_packet.data,
+      message.sys_ex.data_packet.data, MIDI_DATA_PACKET_DATA_LENGTH);
+  TEST_ASSERT_EQUAL(
+      kDataPacketSysExMessage.sys_ex.data_packet.length,
+      message.sys_ex.data_packet.length);
+  TEST_ASSERT_EQUAL(
+      kDataPacketSysExMessage.sys_ex.data_packet.checksum,
+      message.sys_ex.data_packet.checksum);
+  TEST_ASSERT_TRUE(MidiVerifyDataPacketChecksum(
+      &message.sys_ex.data_packet, message.sys_ex.device_id));
+
+  memset(&message, 0, sizeof(message));
+  TEST_ASSERT_EQUAL(
+      sizeof(kDeviceControlBalanceSysExPacket),
+      MidiDeserializeMessage(
+          kDeviceControlBalanceSysExPacket,
+          sizeof(kDeviceControlBalanceSysExPacket), MIDI_NONE, &message));
+  TEST_ASSERT_EQUAL(kDeviceControlBalanceSysExMessage.type, message.type);
+  TEST_ASSERT_EQUAL_MEMORY(
+      kDeviceControlBalanceSysExMessage.sys_ex.id, message.sys_ex.id,
+      sizeof(midi_manufacturer_id_t));
+  TEST_ASSERT_EQUAL(
+      kDeviceControlBalanceSysExMessage.sys_ex.device_id,
+      message.sys_ex.device_id);
+  TEST_ASSERT_EQUAL(
+      kDeviceControlBalanceSysExMessage.sys_ex.sub_id, message.sys_ex.sub_id);
+  TEST_ASSERT_EQUAL(
+      kDeviceControlBalanceSysExMessage.sys_ex.device_control.sub_id,
+      message.sys_ex.device_control.sub_id);
+  TEST_ASSERT_EQUAL(
+      kDeviceControlBalanceSysExMessage.sys_ex.device_control.balance,
+      message.sys_ex.device_control.balance);
+
+  memset(&message, 0, sizeof(message));
+  TEST_ASSERT_EQUAL(
+      sizeof(kAckSysExPacket),
+      MidiDeserializeMessage(
+          kAckSysExPacket,
+          sizeof(kAckSysExPacket), MIDI_NONE, &message));
+  TEST_ASSERT_EQUAL(kAckSysExMessage.type, message.type);
+  TEST_ASSERT_EQUAL_MEMORY(
+      kAckSysExMessage.sys_ex.id, message.sys_ex.id,
+      sizeof(midi_manufacturer_id_t));
+  TEST_ASSERT_EQUAL(
+      kAckSysExMessage.sys_ex.device_id, message.sys_ex.device_id);
+  TEST_ASSERT_EQUAL(
+      kAckSysExMessage.sys_ex.sub_id, message.sys_ex.sub_id);
+  TEST_ASSERT_EQUAL(
+      kAckSysExMessage.sys_ex.packet_number, message.sys_ex.packet_number);
+
+  /* Deserialize proprietary */
+  memset(&message, 0, sizeof(message));
+  TEST_ASSERT_EQUAL(sizeof(kProprietarySysExPacket), MidiDeserializeMessage(
+      kProprietarySysExPacket, sizeof(kProprietarySysExPacket), MIDI_NONE,
+      &message));
+  TEST_ASSERT_EQUAL(kProprietarySysExMessage.type, message.type);
+  TEST_ASSERT_EQUAL_MEMORY(
+      kProprietarySysExMessage.sys_ex.id, message.sys_ex.id,
+      sizeof(midi_manufacturer_id_t));
+  TEST_ASSERT_EQUAL(
+      kProprietarySysExMessage.sys_ex.device_id,
+      message.sys_ex.device_id);
+  TEST_ASSERT_EQUAL(
+      kProprietarySysExMessage.sys_ex.sub_id, message.sys_ex.sub_id);
+}  /* TestMidiDeserialize_SysEx */
+
 void MidiSerializeTest(void) {
   RUN_TEST(TestMidiSerialize_Invalid);
   RUN_TEST(TestMidiSerialize_KnownMessage);
+  RUN_TEST(TestMidiSerialize_SysEx);
   RUN_TEST(TestMidiSerialize_TimePacket);
   RUN_TEST(TestMidiDeserialize_Invalid);
   RUN_TEST(TestMidiDeserialize_KnownMessage);
+  RUN_TEST(TestMidiDeserialize_SysEx);
 }

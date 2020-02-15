@@ -44,14 +44,14 @@
 #define MIDI_PITCH_WHEEL                  0xE0
 /* System Exclusive */
 #define MIDI_SYSTEM_EXCLUSIVE             0xF0
-#define MIDI_END_SYSTEM_EXCLUSIVE         0xF7
 /* System Common Messages */
 #define MIDI_TIME_CODE                    0xF1
 #define MIDI_SONG_POSITION_POINTER        0xF2
 #define MIDI_SONG_SELECT                  0xF3
 #define MIDI_TUNE_REQUEST                 0xF6
-#define MIDI_TIMING_CLOCK                 0xF8
+#define MIDI_END_SYSTEM_EXCLUSIVE         0xF7
 /* System Real-Time Messages */
+#define MIDI_TIMING_CLOCK                 0xF8
 #define MIDI_START                        0xFA
 #define MIDI_CONTINUE                     0xFB
 #define MIDI_STOP                         0xFC
