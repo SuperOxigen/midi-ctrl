@@ -40,8 +40,16 @@ static bool_t MidiIsValidNonRealtimeSubId(uint8_t sub_id) {
   return false;
 }
 
-/* TODO: Support realtime IDs. */
-#define MidiIsValidRealtimeSubId(sub_id) false
+static bool_t MidiIsValidRealtimeSubId(uint8_t sub_id) {
+  if (!MidiIsDataByte(sub_id)) return false;
+  switch (sub_id) {
+    case MIDI_NONE:
+      return false;
+    case MIDI_DEVICE_CONTROL:
+      return true;
+  }
+  return false;
+}
 
 bool_t MidiIsSpecialSysExId(midi_manufacturer_id_cref_t id) {
   if (!MidiIsValidManufacturerId(id)) return false;
@@ -61,8 +69,6 @@ bool_t MidiIsValidSysEx(midi_sys_ex_t const *sys_ex) {
   /* No special support, recognized as a valid message without data. */
   if (!MidiIsSpecialSysExId(sys_ex->id)) return true;
   if (sys_ex->id[0] == MIDI_NON_REAL_TIME_ID) switch (sys_ex->sub_id) {
-    case MIDI_NONE:
-      return false;
     case MIDI_DUMP_HEADER:
       return MidiIsValidDumpHeader(&sys_ex->dump_header);
     case MIDI_DUMP_REQUEST:
@@ -87,7 +93,8 @@ bool_t MidiIsValidSysEx(midi_sys_ex_t const *sys_ex) {
       return MidiIsValidPacketNumber(sys_ex->packet_number);
   }
   if (sys_ex->id[0] == MIDI_REAL_TIME_ID) switch (sys_ex->sub_id) {
-    return false;  /* Not yet supported. */
+    case MIDI_DEVICE_CONTROL:
+      return MidiIsValidDeviceControl(&sys_ex->device_control);
   }
   return false;
 }
@@ -207,12 +214,12 @@ size_t MidiSerializeSysEx(
       }
       sub_response = 1;
     } break;
-    default:
-      /* WUT? */
-      return 0;
   } else if (sys_ex->id[0] == MIDI_REAL_TIME_ID) switch (sys_ex->sub_id) {
     /* Realtime */
-    /* TODO: Support realtime IDs. */
+    case MIDI_DEVICE_CONTROL:
+      sub_response = MidiSerializeDeviceControl(
+          &sys_ex->device_control, &data[di], data_size - di);
+      break;
   }
   if (sub_response == 0) return 0;
   return sub_response + 3;
@@ -292,12 +299,12 @@ size_t MidiDeserializeSysEx(
       }
       sub_response = 1;
     } break;
-    default:
-      /* WUT? */
-      return 0;
   } else if (sys_ex->id[0] == MIDI_REAL_TIME_ID) switch (sys_ex->sub_id) {
     /* Realtime */
-    /* TODO: Support realtime IDs. */
+    case MIDI_DEVICE_CONTROL:
+      sub_response = MidiDeserializeDeviceControl(
+          &data[3], data_size - 3, &sys_ex->device_control);
+      break;
   }
   if (sub_response == 0) return 0;
   return sub_response + 3;

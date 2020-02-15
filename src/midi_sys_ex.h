@@ -29,6 +29,7 @@ typedef struct {
   uint8_t sub_id;  /* Determines which system universal message to use. */
   /* System Universal Message. */
   union {
+    /* Non-Realtime */
     /* For all handshake messages. */
     midi_packet_number_t packet_number;
     /* Data dump. */
@@ -38,6 +39,8 @@ typedef struct {
     midi_sample_dump_t sample_dump;
     midi_device_inquiry_t device_inquiry;
     midi_general_midi_mode_t gm_mode;
+    /* Realtime */
+    midi_device_control_t device_control;
   };
 } midi_sys_ex_t;
 

@@ -115,6 +115,20 @@ static uint8_t const kGeneralMidiModeOnSysExData[] = {
   MIDI_NON_REAL_TIME_ID, 0x43, MIDI_GENERAL_MIDI, MIDI_GENERAL_MIDI_ON
 };
 
+static midi_sys_ex_t const kDeviceControlBalanceSysEx = {
+  .id = { MIDI_REAL_TIME_ID, 0x00, 0x00 },
+  .device_id = 0x1A,
+  .sub_id = MIDI_DEVICE_CONTROL,
+  .device_control = {
+    .sub_id = MIDI_MASTER_BALANCE,
+    .balance = 0x2222,
+  }
+};
+static uint8_t const kDeviceControlBalanceSysExData[] = {
+  MIDI_REAL_TIME_ID, 0x1A, MIDI_DEVICE_CONTROL,
+  MIDI_MASTER_BALANCE, 0x22, 0x44
+};
+
 static midi_sys_ex_t const kInvalidSysEx = {
   .id = { MIDI_NON_REAL_TIME_ID, 0x00, 0x00 },
   .device_id = 0x1F,
@@ -182,6 +196,7 @@ static void TestMidiSysEx_Validator(void) {
   TEST_ASSERT_TRUE(MidiIsValidSysEx(&kSampleDumpResponseSysEx));
   TEST_ASSERT_TRUE(MidiIsValidSysEx(&kDeviceInquiryResponseSysEx));
   TEST_ASSERT_TRUE(MidiIsValidSysEx(&kGeneralMidiModeOnSysEx));
+  TEST_ASSERT_TRUE(MidiIsValidSysEx(&kDeviceControlBalanceSysEx));
   TEST_ASSERT_TRUE(MidiIsValidSysEx(&kProprietarySysExOne));
   TEST_ASSERT_TRUE(MidiIsValidSysEx(&kProprietarySysExTwo));
 
@@ -345,6 +360,12 @@ static void TestMidiSysEx_Serialize(void) {
   TEST_ASSERT_EQUAL_MEMORY(
       kGeneralMidiModeOnSysExData, sys_ex_data,
       sizeof(kGeneralMidiModeOnSysExData));
+
+  TEST_ASSERT_EQUAL(sizeof(kDeviceControlBalanceSysExData), MidiSerializeSysEx(
+      &kDeviceControlBalanceSysEx, sys_ex_data, sizeof(sys_ex_data)));
+  TEST_ASSERT_EQUAL_MEMORY(
+      kDeviceControlBalanceSysExData, sys_ex_data,
+      sizeof(kDeviceControlBalanceSysExData));
 }
 
 static void TestMidiSysEx_Deserialize(void) {
@@ -458,6 +479,18 @@ static void TestMidiSysEx_Deserialize(void) {
   TEST_ASSERT_EQUAL(kGeneralMidiModeOnSysEx.device_id, sys_ex.device_id);
   TEST_ASSERT_EQUAL(kGeneralMidiModeOnSysEx.sub_id, sys_ex.sub_id);
   TEST_ASSERT_EQUAL(kGeneralMidiModeOnSysEx.gm_mode, sys_ex.gm_mode);
+
+  TEST_ASSERT_EQUAL(sizeof(kDeviceControlBalanceSysExData), MidiDeserializeSysEx(
+      kDeviceControlBalanceSysExData, sizeof(kDeviceControlBalanceSysExData),
+      &sys_ex));
+  TEST_ASSERT_EQUAL_MEMORY(
+      kDeviceControlBalanceSysEx.id, sys_ex.id, sizeof(midi_manufacturer_id_t));
+  TEST_ASSERT_EQUAL(kDeviceControlBalanceSysEx.device_id, sys_ex.device_id);
+  TEST_ASSERT_EQUAL(kDeviceControlBalanceSysEx.sub_id, sys_ex.sub_id);
+  TEST_ASSERT_EQUAL(kDeviceControlBalanceSysEx.device_control.sub_id,
+      sys_ex.device_control.sub_id);
+  TEST_ASSERT_EQUAL(kDeviceControlBalanceSysEx.device_control.balance,
+      sys_ex.device_control.balance);
 }
 
 static void TestMidiSysEx_Proprietary(void) {
