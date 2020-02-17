@@ -48,7 +48,7 @@ midi_channel_number_t MidiChannelFromStatusByte(midi_status_t status_byte) {
   return status_byte & 0x0F;
 }
 
-bool_t MidiMessageIsValid(midi_message_t const *message) {
+bool_t MidiIsValidMessage(midi_message_t const *message) {
   if (message == NULL) return false;
   if (!MidiIsValidMessageType(message->type)) return false;
   if (MidiIsChannelMessageType(message->type) &&
@@ -89,7 +89,7 @@ bool_t MidiMessageIsValid(midi_message_t const *message) {
 }
 
 midi_status_t MidiMessageStatus(midi_message_t const *message) {
-  if (!MidiMessageIsValid(message)) return MIDI_NONE;
+  if (!MidiIsValidMessage(message)) return MIDI_NONE;
   return MidiIsChannelMessageType(message->type)
       ? MidiChannelStatusByte(message->type, message->channel)
       : message->type;

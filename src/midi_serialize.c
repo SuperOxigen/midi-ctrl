@@ -45,7 +45,7 @@ size_t MidiSerializeMessage(
     midi_message_t const *message, bool_t skip_status,
     uint8_t *data, size_t data_size) {
   if (data == NULL && data_size > 0) return 0;
-  if (!MidiMessageIsValid(message)) return 0;
+  if (!MidiIsValidMessage(message)) return 0;
   if (message->type == MIDI_NONE) return 0;
   uint8_t *message_data = data;
   size_t message_data_size = data_size;
@@ -195,21 +195,21 @@ size_t MidiDeserializeMessage(
   } else switch (message->type) {
     case MIDI_NOTE_OFF:
     case MIDI_NOTE_ON:
-      if (message_data_size >=  2) {
+      if (message_data_size >= 2) {
         if (!MidiNote(&message->note, message_data[0], message_data[1]))
           goto deserialize_error;
       }
       data_used += 2;
       break;
     case MIDI_KEY_PRESSURE:
-      if (message_data_size >=  2) {
+      if (message_data_size >= 2) {
         if (!MidiNotePressure(&message->note, message_data[0], message_data[1]))
           goto deserialize_error;
       }
       data_used += 2;
       break;
     case MIDI_CONTROL_CHANGE:
-      if (message_data_size >=  2) {
+      if (message_data_size >= 2) {
         if (!MidiControlChange(&message->control, message_data[0], message_data[1]))
           goto deserialize_error;
       }
@@ -232,7 +232,7 @@ size_t MidiDeserializeMessage(
       ++data_used;
       break;
     case MIDI_PITCH_WHEEL:
-      if (message_data_size >=  2) {
+      if (message_data_size >= 2) {
         if (!MidiIsDataArray(message_data, 2))
           goto deserialize_error;
         message->pitch =

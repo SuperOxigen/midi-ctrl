@@ -736,6 +736,7 @@ static void TestMidiDeserialize_SysEx(void) {
       message.sys_ex.data_packet.checksum);
   TEST_ASSERT_TRUE(MidiVerifyDataPacketChecksum(
       &message.sys_ex.data_packet, message.sys_ex.device_id));
+  MidiPushGlobalDataPacketBuffer(NULL, 0);
 
   memset(&message, 0, sizeof(message));
   TEST_ASSERT_EQUAL(

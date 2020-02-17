@@ -49,13 +49,13 @@ typedef struct {
     struct {
       midi_channel_number_t channel;
       union {
-        /* NOTE_ON, NOTE_OFF, KEY_PRESSURE */
+        /* Note-On/Off, Key pressure. */
         midi_note_t note;
         midi_control_change_t control;
         midi_program_number_t program;
-        /* CHANNEL_PRESSURE */
+        /* Chanel pressure. */
         uint8_t pressure;
-        /* PITCH_WHEEL */
+        /* Pitch wheel change. */
         uint16_t pitch;
       };
     };
@@ -68,7 +68,7 @@ typedef struct {
   };
 } midi_message_t;
 
-bool_t MidiMessageIsValid(midi_message_t const *message);
+bool_t MidiIsValidMessage(midi_message_t const *message);
 
 /* Validators for stand along message values. */
 #define MidiIsValidChannelPressure(pressure) MidiIsDataByte(pressure)
