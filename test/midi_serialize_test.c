@@ -691,6 +691,126 @@ static void TestMidiDeserialize_KnownMessage(void) {
   TEST_ASSERT_EQUAL(kSystemResetMessage.type, message.type);
 }  /* TestMidiDeserialize_KnownMessage */
 
+static void TestMidiDeserialize_MultiByteMessage_WithOverride(void) {
+  midi_message_t message;
+  TEST_ASSERT_EQUAL(sizeof(kNoteOffPacket) - 1, MidiDeserializeMessage(
+      &kNoteOffPacket[1], sizeof(kNoteOffPacket) - 1,
+      kNoteOffMessage.type | kNoteOffMessage.channel, &message));
+  TEST_ASSERT_EQUAL(kNoteOffMessage.type, message.type);
+  TEST_ASSERT_EQUAL(kNoteOffMessage.channel, message.channel);
+  TEST_ASSERT_EQUAL(kNoteOffMessage.note.key, message.note.key);
+  TEST_ASSERT_EQUAL(kNoteOffMessage.note.velocity, message.note.velocity);
+
+  TEST_ASSERT_EQUAL(sizeof(kNoteOnPacket) - 1, MidiDeserializeMessage(
+      &kNoteOnPacket[1], sizeof(kNoteOnPacket) - 1,
+      kNoteOnMessage.type | kNoteOnMessage.channel, &message));
+  TEST_ASSERT_EQUAL(kNoteOnMessage.type, message.type);
+  TEST_ASSERT_EQUAL(kNoteOnMessage.channel, message.channel);
+  TEST_ASSERT_EQUAL(kNoteOnMessage.note.key, message.note.key);
+  TEST_ASSERT_EQUAL(kNoteOnMessage.note.velocity, message.note.velocity);
+
+  TEST_ASSERT_EQUAL(sizeof(kKeyPressurePacket) - 1, MidiDeserializeMessage(
+      &kKeyPressurePacket[1], sizeof(kKeyPressurePacket) - 1,
+      kKeyPressureMessage.type | kKeyPressureMessage.channel, &message));
+  TEST_ASSERT_EQUAL(kKeyPressureMessage.type, message.type);
+  TEST_ASSERT_EQUAL(kKeyPressureMessage.channel, message.channel);
+  TEST_ASSERT_EQUAL(kKeyPressureMessage.note.key, message.note.key);
+  TEST_ASSERT_EQUAL(kKeyPressureMessage.note.pressure, message.note.pressure);
+
+  TEST_ASSERT_EQUAL(sizeof(kControlChangePacket) - 1, MidiDeserializeMessage(
+      &kControlChangePacket[1], sizeof(kControlChangePacket) - 1,
+      kControlChangeMessage.type | kControlChangeMessage.channel, &message));
+  TEST_ASSERT_EQUAL(kControlChangeMessage.type, message.type);
+  TEST_ASSERT_EQUAL(kControlChangeMessage.channel, message.channel);
+  TEST_ASSERT_EQUAL(
+      kControlChangeMessage.control.number, message.control.number);
+  TEST_ASSERT_EQUAL(
+      kControlChangeMessage.control.value, message.control.value);
+
+  TEST_ASSERT_EQUAL(sizeof(kProgramChangePacket) - 1, MidiDeserializeMessage(
+      &kProgramChangePacket[1], sizeof(kProgramChangePacket) - 1,
+      kProgramChangeMessage.type | kProgramChangeMessage.channel, &message));
+  TEST_ASSERT_EQUAL(kProgramChangeMessage.type, message.type);
+  TEST_ASSERT_EQUAL(kProgramChangeMessage.channel, message.channel);
+  TEST_ASSERT_EQUAL(kProgramChangeMessage.program, message.program);
+
+  TEST_ASSERT_EQUAL(sizeof(kChannelPressurePacket) - 1, MidiDeserializeMessage(
+      &kChannelPressurePacket[1], sizeof(kChannelPressurePacket) - 1,
+      kChannelPressureMessage.type | kChannelPressureMessage.channel,
+      &message));
+  TEST_ASSERT_EQUAL(kChannelPressureMessage.type, message.type);
+  TEST_ASSERT_EQUAL(kChannelPressureMessage.channel, message.channel);
+  TEST_ASSERT_EQUAL(kChannelPressureMessage.pressure, message.pressure);
+
+  TEST_ASSERT_EQUAL(sizeof(kPitchWheelPacket) - 1, MidiDeserializeMessage(
+      &kPitchWheelPacket[1], sizeof(kPitchWheelPacket) - 1,
+      kPitchWheelMessage.type | kPitchWheelMessage.channel, &message));
+  TEST_ASSERT_EQUAL(kPitchWheelMessage.type, message.type);
+  TEST_ASSERT_EQUAL(kPitchWheelMessage.channel, message.channel);
+  TEST_ASSERT_EQUAL(kPitchWheelMessage.pitch, message.pitch);
+
+  /* System exclusive has its own deserialization test. */
+
+  TEST_ASSERT_EQUAL(sizeof(kTimeCodePacket) - 1, MidiDeserializeMessage(
+      &kTimeCodePacket[1], sizeof(kTimeCodePacket) - 1,
+      kTimeCodeMessage.type, &message));
+  TEST_ASSERT_EQUAL(kTimeCodeMessage.type, message.type);
+  TEST_ASSERT_EQUAL_MEMORY(
+      &kTimeCodeMessage.time_code, &message.time_code,
+      sizeof(midi_time_code_t));
+
+  TEST_ASSERT_EQUAL(
+      sizeof(kSongPositionPointerPacket) - 1,
+      MidiDeserializeMessage(
+          &kSongPositionPointerPacket[1],
+          sizeof(kSongPositionPointerPacket) - 1,
+          kSongPositionPointerMessage.type, &message));
+  TEST_ASSERT_EQUAL(kSongPositionPointerMessage.type, message.type);
+  TEST_ASSERT_EQUAL(
+      kSongPositionPointerMessage.song_position, message.song_position);
+
+  TEST_ASSERT_EQUAL(sizeof(kSongSelectPacket) - 1, MidiDeserializeMessage(
+      &kSongSelectPacket[1], sizeof(kSongSelectPacket) - 1,
+      kSongSelectMessage.type, &message));
+  TEST_ASSERT_EQUAL(kSongSelectMessage.type, message.type);
+  TEST_ASSERT_EQUAL(kSongSelectMessage.song_number, message.song_number);
+}  /* TestMidiDeserialize_KnownMessage_WithOverride */
+
+static void TestMidiDeserialize_SingleByteMessage_WithOverride(void) {
+  midi_message_t message;
+  TEST_ASSERT_EQUAL(0, MidiDeserializeMessage(
+      NULL, 0, MIDI_TUNE_REQUEST, &message));
+  TEST_ASSERT_EQUAL(MIDI_TUNE_REQUEST, message.type);
+
+  TEST_ASSERT_EQUAL(0, MidiDeserializeMessage(
+      NULL, 0, MIDI_END_SYSTEM_EXCLUSIVE, &message));
+  TEST_ASSERT_EQUAL(MIDI_END_SYSTEM_EXCLUSIVE, message.type);
+
+  TEST_ASSERT_EQUAL(0, MidiDeserializeMessage(
+      NULL, 0, MIDI_TIMING_CLOCK, &message));
+  TEST_ASSERT_EQUAL(MIDI_TIMING_CLOCK, message.type);
+
+  TEST_ASSERT_EQUAL(0, MidiDeserializeMessage(
+      NULL, 0, MIDI_START, &message));
+  TEST_ASSERT_EQUAL(MIDI_START, message.type);
+
+  TEST_ASSERT_EQUAL(0, MidiDeserializeMessage(
+      NULL, 0, MIDI_CONTINUE, &message));
+  TEST_ASSERT_EQUAL(MIDI_CONTINUE, message.type);
+
+  TEST_ASSERT_EQUAL(0, MidiDeserializeMessage(
+      NULL, 0, MIDI_STOP, &message));
+  TEST_ASSERT_EQUAL(MIDI_STOP, message.type);
+
+  TEST_ASSERT_EQUAL(0, MidiDeserializeMessage(
+      NULL, 0, MIDI_ACTIVE_SENSING, &message));
+  TEST_ASSERT_EQUAL(MIDI_ACTIVE_SENSING, message.type);
+
+  TEST_ASSERT_EQUAL(0, MidiDeserializeMessage(
+      NULL, 0, MIDI_SYSTEM_RESET, &message));
+  TEST_ASSERT_EQUAL(MIDI_SYSTEM_RESET, message.type);
+}
+
 static void TestMidiDeserialize_SysEx(void) {
   midi_message_t message;
   /* Partial serialize. */
@@ -800,5 +920,7 @@ void MidiSerializeTest(void) {
   RUN_TEST(TestMidiSerialize_TimePacket);
   RUN_TEST(TestMidiDeserialize_Invalid);
   RUN_TEST(TestMidiDeserialize_KnownMessage);
+  RUN_TEST(TestMidiDeserialize_MultiByteMessage_WithOverride);
+  RUN_TEST(TestMidiDeserialize_SingleByteMessage_WithOverride);
   RUN_TEST(TestMidiDeserialize_SysEx);
 }
