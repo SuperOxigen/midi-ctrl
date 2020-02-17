@@ -28,4 +28,6 @@ void MidiMessageTest(void);
 
 void MidiSerializeTest(void);
 
+void MidiTransceiverTest(void);
+
 #endif  /* _TEST_H_ */

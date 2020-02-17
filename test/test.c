@@ -33,6 +33,8 @@ int main(void) {
   MidiProgramTest();
   MidiMessageTest();
   MidiSerializeTest();
+
+  MidiTransceiverTest();
   UNITY_END();
   return 0;
 }
