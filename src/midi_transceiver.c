@@ -61,11 +61,11 @@ static size_t MidiReceiveSysExDataInternal(
       rx_ctx->flags &= ~MIDI_RX_SYS_EX_MODE;
     } else if (!MidiIsDataByte(data[i])) {
       rx_ctx->status = MIDI_NONE;
-      return 0;
+      break;
     }
     if (rx_ctx->size >= MIDI_RX_BUFFER_SIZE) {
       rx_ctx->status = MIDI_NONE;
-      return 0;
+      break;
     }
     rx_ctx->buffer[rx_ctx->size++] = data[i];
   }
@@ -74,48 +74,75 @@ static size_t MidiReceiveSysExDataInternal(
   return i;
 }
 
+static size_t MidiReceiverDeserializeMessage(
+    midi_rx_ctx_t *rx_ctx, midi_message_t *message) {
+  size_t const res = MidiDeserializeMessage(
+      rx_ctx->buffer, rx_ctx->size, rx_ctx->status, message);
+  if (res == 0 || res > MIDI_RX_BUFFER_SIZE) {
+    /* Either no data required, error, or message is beyond buffer data
+     * limit (unlikely).  In any case, the receiver status needs to be
+     * cleared.  If the message doesn't require any data, then status-run
+     * should be prevented. */
+    rx_ctx->status = MIDI_NONE;
+    if (rx_ctx->size > 0) {
+      memset(rx_ctx->buffer, 0, MIDI_RX_BUFFER_SIZE);
+      rx_ctx->size = 0;
+    }
+    if (res > MIDI_RX_BUFFER_SIZE) {
+      message->type = MIDI_NONE;
+    }
+  } else if (res <= rx_ctx->size) {
+    /* Complete */
+    for (size_t i = 0; i < (rx_ctx->size - res); ++i) {
+      rx_ctx->buffer[i] = rx_ctx->buffer[i + res];
+    }
+    rx_ctx->size -= res;
+  } else {
+    /* Incomplete */
+    message->type = MIDI_NONE;
+  }
+  return (res > MIDI_RX_BUFFER_SIZE) ? 0 : res;
+}
+
 static size_t MidiReceiveDataInternal(
     midi_rx_ctx_t *rx_ctx, uint8_t const *data, size_t data_size,
     midi_message_t *message) {
   /* Assume all variables are valid. |data| != NULL and |data_size| > 0. */
+  size_t di = 0;
   if (rx_ctx->status == MIDI_NONE) {
-    return MidiSeekStatusInternal(rx_ctx, data, data_size);
+    size_t const res = MidiSeekStatusInternal(rx_ctx, data, data_size);
+    if (res > data_size) {
+      return res;
+    }
+    di += res;
   }
   /* If in SysEx mode, seek for EndSysEx. */
   if (rx_ctx->flags & MIDI_RX_SYS_EX_MODE) {
-    return MidiReceiveSysExDataInternal(rx_ctx, data, data_size);
-  }
-
-  size_t const res = MidiDeserializeMessage(
-      rx_ctx->buffer, rx_ctx->size, rx_ctx->status, message);
-  if (res == 0) {
-    rx_ctx->status = MIDI_NONE;
-    return 0;
-  }
-  if (res > MIDI_RX_BUFFER_SIZE) {
-    rx_ctx->status = MIDI_NONE;
-    return 0;
-  }
-  /* Check if incomplete. */
-  if (res > rx_ctx->size) {
-    message->type = MIDI_NONE;
-    size_t i;
-    for (i = 0; i < data_size && rx_ctx->size < res; ++i) {
-      if (!MidiIsDataByte(data[i])) {
-        rx_ctx->status = MIDI_NONE;
-        break;
-      }
-      rx_ctx->buffer[rx_ctx->size++] = data[i];
+    size_t const res = MidiReceiveSysExDataInternal(
+        rx_ctx, &data[di], data_size - di);
+    if (res > (data_size - di)) {
+      return di + res;
     }
-    return i;
+    di += res;
   }
 
-  /* If complete, shift. */
-  for (size_t i = 0; i < (rx_ctx->size - res); ++i) {
-    rx_ctx->buffer[i] = rx_ctx->buffer[i + res];
+  if (rx_ctx->status == MIDI_NONE) {
+    return di;
   }
-  rx_ctx->size -= res;
-  return 0;
+
+  size_t const res = MidiReceiverDeserializeMessage(rx_ctx, message);
+  if (res == 0 || message->type != MIDI_NONE) {
+    return di;
+  }
+
+  while (di < data_size && rx_ctx->size < res) {
+    if (!MidiIsDataByte(data[di])) {
+      rx_ctx->status = MIDI_NONE;
+      return di;
+    }
+    rx_ctx->buffer[rx_ctx->size++] = data[di++];
+  }
+  return di + (res - rx_ctx->size);
 }
 
 size_t MidiReceiveData(

@@ -132,6 +132,7 @@ static void TestMidiReceiver_SingleByteMessage(void) {
   TEST_ASSERT_EQUAL(MIDI_CONTINUE, message.type);
   /* Data-less messages should clear status. */
   TEST_ASSERT_EQUAL(MIDI_NONE, rx_ctx.status);
+  TEST_ASSERT_EQUAL(0, rx_ctx.size);
 }
 
 static void TestMidiReceiver_MultiByteMessage(void) {
@@ -149,6 +150,7 @@ static void TestMidiReceiver_MultiByteMessage(void) {
   /* Messages with data (other than SysEx) should leave status set. */
   TEST_ASSERT_EQUAL(
       kNoteOnMessage.type | kNoteOnMessage.channel, rx_ctx.status);
+  TEST_ASSERT_EQUAL(0, rx_ctx.size);
   /* Should only require the data bytes for deserialization. */
   TEST_ASSERT_EQUAL(sizeof(kNoteOnPacket) - 1, MidiReceiveData(
       &rx_ctx, NULL, 0, &message));
@@ -177,6 +179,10 @@ static void TestMidiReceiver_MultiByteMessage_Transition(void) {
   TEST_ASSERT_EQUAL(kNoteOnMessage.note.key, message.note.key);
   TEST_ASSERT_EQUAL(kNoteOnMessage.note.velocity, message.note.velocity);
 
+  TEST_ASSERT_EQUAL(
+      kNoteOnMessage.type | kNoteOnMessage.channel, rx_ctx.status);
+  TEST_ASSERT_EQUAL(0, rx_ctx.size);
+
   memset(&message, 0xE5, sizeof(message));
   TEST_ASSERT_EQUAL(sizeof(kNoteOffPacket), MidiReceiveData(
       &rx_ctx, kNoteOffPacket, sizeof(kNoteOffPacket), &message));
@@ -187,6 +193,44 @@ static void TestMidiReceiver_MultiByteMessage_Transition(void) {
 
   TEST_ASSERT_EQUAL(
       kNoteOffMessage.type | kNoteOffMessage.channel, rx_ctx.status);
+}
+
+static void TestMidiReceiver_MultiByteMessage_StatusRun(void) {
+  static uint8_t const kNoteOnPackets[] = {
+    MIDI_NOTE_ON | MIDI_CHANNEL_6,
+    MIDI_MIDDLE_C, MIDI_NOTE_ON_VELOCITY,
+    MIDI_MIDDLE_C + 4, MIDI_NOTE_ON_VELOCITY,
+    MIDI_MIDDLE_C + 7, MIDI_NOTE_ON_VELOCITY
+  };
+  static midi_message_t const kNoteOnMessages[] = {
+    { .type = MIDI_NOTE_ON, .channel = MIDI_CHANNEL_6,
+      .note = { .key = MIDI_MIDDLE_C, .velocity = MIDI_NOTE_ON_VELOCITY }},
+    { .type = MIDI_NOTE_ON, .channel = MIDI_CHANNEL_6,
+      .note = { .key = MIDI_MIDDLE_C + 4, .velocity = MIDI_NOTE_ON_VELOCITY }},
+    { .type = MIDI_NOTE_ON, .channel = MIDI_CHANNEL_6,
+      .note = { .key = MIDI_MIDDLE_C + 7, .velocity = MIDI_NOTE_ON_VELOCITY }}
+  };
+  midi_rx_ctx_t rx_ctx;
+  midi_message_t message;
+  MidiInitializeReceiverCtx(&rx_ctx);
+  memset(&message, 0xE5, sizeof(message));
+  TEST_ASSERT_EQUAL(3, MidiReceiveData(
+      &rx_ctx, &kNoteOnPackets[0], 1, &message));
+  TEST_ASSERT_EQUAL(MIDI_NONE, message.type);
+
+  for (size_t i = 0; i < 3; ++i) {
+    TEST_ASSERT_EQUAL(2, MidiReceiveData(
+        &rx_ctx, &kNoteOnPackets[1 + 2*i], 2, &message));
+    /* Receiver state */
+    TEST_ASSERT_EQUAL(MIDI_NOTE_ON | MIDI_CHANNEL_6, rx_ctx.status);
+    TEST_ASSERT_EQUAL(0, rx_ctx.size);
+    /* Status-run state. */
+    TEST_ASSERT_EQUAL(MIDI_NOTE_ON, message.type);
+    TEST_ASSERT_EQUAL(MIDI_CHANNEL_6, message.channel);
+    /* Note data. */
+    TEST_ASSERT_EQUAL(kNoteOnMessages[i].note.key, message.note.key);
+    TEST_ASSERT_EQUAL(kNoteOnMessages[i].note.velocity, message.note.velocity);
+  }
 }
 
 static void TestMidiReceiver_SysEx_Large(void) {
@@ -242,5 +286,6 @@ void MidiTransceiverTest(void) {
   RUN_TEST(TestMidiReceiver_SingleByteMessage);
   RUN_TEST(TestMidiReceiver_MultiByteMessage);
   RUN_TEST(TestMidiReceiver_MultiByteMessage_Transition);
-  // RUN_TEST(TestMidiReceiver_SysEx_Large);
+  RUN_TEST(TestMidiReceiver_MultiByteMessage_StatusRun);
+  RUN_TEST(TestMidiReceiver_SysEx_Large);
 }
