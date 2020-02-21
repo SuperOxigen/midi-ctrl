@@ -222,6 +222,31 @@ static midi_message_t const kDeviceControlBalanceSysExMessage = {
   }
 };
 
+static uint8_t const kDeviceInquirySysExPacket[] = {
+  MIDI_SYSTEM_EXCLUSIVE, MIDI_NON_REAL_TIME_ID, MIDI_ALL_CALL,
+  MIDI_GENERAL_INFO, MIDI_DEVICE_INQUIRY_RESPONSE,
+  0x00, 0x12, 0x34,
+  0x7C, 0x1F,
+  0x33, 0x66,
+  'M', 'I', 'D', 'I',
+  MIDI_END_SYSTEM_EXCLUSIVE
+};
+static midi_message_t const kDeviceInquirySysExMessage = {
+  .type = MIDI_SYSTEM_EXCLUSIVE,
+  .sys_ex = {
+    .id = {MIDI_NON_REAL_TIME_ID, 0x00, 0x00},
+    .device_id = MIDI_ALL_CALL,
+    .sub_id = MIDI_GENERAL_INFO,
+    .device_inquiry = {
+      .sub_id = MIDI_DEVICE_INQUIRY_RESPONSE,
+      .id = {0x00, 0x12, 0x34},
+      .device_family_code = 0x0FFC,
+      .device_family_member_code = 0x3333,
+      .software_revision_level = {'M', 'I', 'D', 'I'}
+    }
+  }
+};
+
 static uint8_t const kAckSysExPacket[] = {
   MIDI_SYSTEM_EXCLUSIVE,
   MIDI_NON_REAL_TIME_ID, kFillerByte, MIDI_ACK, kFillerByte,
@@ -464,6 +489,11 @@ static void TestMidiSerialize_SysEx(void) {
   TEST_ASSERT_EQUAL_MEMORY(
       kDeviceControlBalanceSysExPacket, buffer,
       sizeof(kDeviceControlBalanceSysExPacket));
+
+  TEST_ASSERT_EQUAL(sizeof(kDeviceInquirySysExPacket), MidiSerializeMessage(
+      &kDeviceInquirySysExMessage, false, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_MEMORY(
+      kDeviceInquirySysExPacket, buffer, sizeof(kDeviceInquirySysExPacket));
 
   TEST_ASSERT_EQUAL(
       sizeof(kAckSysExPacket),
@@ -879,6 +909,36 @@ static void TestMidiDeserialize_SysEx(void) {
   TEST_ASSERT_EQUAL(
       kDeviceControlBalanceSysExMessage.sys_ex.device_control.balance,
       message.sys_ex.device_control.balance);
+
+  TEST_ASSERT_EQUAL(
+      sizeof(kDeviceInquirySysExPacket),
+      MidiDeserializeMessage(
+          kDeviceInquirySysExPacket,
+          sizeof(kDeviceInquirySysExPacket), MIDI_NONE, &message));
+  TEST_ASSERT_EQUAL(kDeviceInquirySysExMessage.type, message.type);
+  TEST_ASSERT_EQUAL_MEMORY(
+      kDeviceInquirySysExMessage.sys_ex.id, message.sys_ex.id,
+      sizeof(midi_manufacturer_id_t));
+  TEST_ASSERT_EQUAL(
+      kDeviceInquirySysExMessage.sys_ex.device_id, message.sys_ex.device_id);
+  TEST_ASSERT_EQUAL(
+      kDeviceInquirySysExMessage.sys_ex.sub_id, message.sys_ex.sub_id);
+  TEST_ASSERT_EQUAL(
+      kDeviceInquirySysExMessage.sys_ex.device_inquiry.sub_id,
+      message.sys_ex.device_inquiry.sub_id);
+  TEST_ASSERT_EQUAL_MEMORY(
+      kDeviceInquirySysExMessage.sys_ex.device_inquiry.id,
+      message.sys_ex.device_inquiry.id, sizeof(midi_manufacturer_id_t));
+  TEST_ASSERT_EQUAL(
+      kDeviceInquirySysExMessage.sys_ex.device_inquiry.device_family_code,
+      message.sys_ex.device_inquiry.device_family_code);
+  TEST_ASSERT_EQUAL(
+      kDeviceInquirySysExMessage.sys_ex.device_inquiry.device_family_member_code,
+      message.sys_ex.device_inquiry.device_family_member_code);
+  TEST_ASSERT_EQUAL_MEMORY(
+      kDeviceInquirySysExMessage.sys_ex.device_inquiry.software_revision_level,
+      message.sys_ex.device_inquiry.software_revision_level,
+      MIDI_SOFTWARE_REVISION_SIZE);
 
   memset(&message, 0, sizeof(message));
   TEST_ASSERT_EQUAL(
