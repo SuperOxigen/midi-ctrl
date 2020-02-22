@@ -87,6 +87,25 @@ static midi_message_t const kDataPacketSysExMessage = {
   }
 };
 
+static uint8_t const kDeviceControlBalanceSysExPacket[] = {
+  MIDI_SYSTEM_EXCLUSIVE,
+  MIDI_REAL_TIME_ID, MIDI_ALL_CALL, MIDI_DEVICE_CONTROL,
+  MIDI_MASTER_BALANCE, 0x00, 0x02,
+  MIDI_END_SYSTEM_EXCLUSIVE
+};
+static midi_message_t const kDeviceControlBalanceSysExMessage = {
+  .type = MIDI_SYSTEM_EXCLUSIVE,
+  .sys_ex = {
+    .id = {MIDI_REAL_TIME_ID, 0x00, 0x00},
+    .device_id = MIDI_ALL_CALL,
+    .sub_id = MIDI_DEVICE_CONTROL,
+    .device_control = {
+      .sub_id = MIDI_MASTER_BALANCE,
+      .balance = 0x0100
+    }
+  }
+};
+
 static midi_message_t const kInvalidNoteOnMessage = {
   .type = MIDI_NOTE_ON,
   .note = {
@@ -486,6 +505,21 @@ static void TestMidiTransmitter_SingleByteMessage_WithRun(void) {
   TEST_ASSERT_EQUAL_MEMORY(kContinuePacket, buffer, sizeof(kContinuePacket));
 }
 
+static void TestMidiTransmitter_SysExMessage_WithRun(void) {
+  midi_tx_ctx_t tx_ctx;
+  uint8_t buffer[16];
+  TEST_ASSERT_TRUE(MidiInitializeTransmitterCtx(&tx_ctx, true));
+
+  TEST_ASSERT_EQUAL(
+      sizeof(kDeviceControlBalanceSysExPacket), MidiTransmitterSerializeMessage(
+          &tx_ctx, &kDeviceControlBalanceSysExMessage, buffer, sizeof(buffer)));
+  /* SysEx messages should not use status run. */
+  TEST_ASSERT_EQUAL(MIDI_NONE, tx_ctx.status);
+  TEST_ASSERT_EQUAL_MEMORY(
+      kDeviceControlBalanceSysExPacket, buffer,
+      sizeof(kDeviceControlBalanceSysExPacket));
+}
+
 static void TestMidiTransmitter_MultipleMessages_WithoutRun(void) {
   static uint8_t const kExpectedData[] = {
     kNoteOnStatus, kNoteOnMessage.note.key, kNoteOnMessage.note.velocity,
@@ -513,12 +547,12 @@ static void TestMidiTransmitter_MultipleMessages_WithoutRun(void) {
 
   /* Partial serialization. */
   TEST_ASSERT_EQUAL(sizeof(kExpectedData), MidiTransmitterSerializeMessages(
-    &tx_ctx, messages, 5, NULL, 0));
+      &tx_ctx, messages, 5, NULL, 0));
   TEST_ASSERT_EQUAL(sizeof(kExpectedData), MidiTransmitterSerializeMessages(
-    &tx_ctx, messages, 5, buffer, sizeof(buffer) / 2));
+      &tx_ctx, messages, 5, buffer, sizeof(buffer) / 2));
   /* Complete serialization. */
   TEST_ASSERT_EQUAL(sizeof(kExpectedData), MidiTransmitterSerializeMessages(
-    &tx_ctx, messages, 5, buffer, sizeof(buffer)));
+      &tx_ctx, messages, 5, buffer, sizeof(buffer)));
   TEST_ASSERT_EQUAL(MIDI_NONE, tx_ctx.status);
   TEST_ASSERT_EQUAL_MEMORY(kExpectedData, buffer, sizeof(kExpectedData));
 }
@@ -547,12 +581,12 @@ static void TestMidiTransmitter_MultipleMessages_WithRun(void) {
   TEST_ASSERT_TRUE(MidiInitializeTransmitterCtx(&tx_ctx, true));
   /* Partial serialization. */
   TEST_ASSERT_EQUAL(sizeof(kExpectedData), MidiTransmitterSerializeMessages(
-    &tx_ctx, messages, 5, NULL, 0));
+      &tx_ctx, messages, 5, NULL, 0));
   TEST_ASSERT_EQUAL(sizeof(kExpectedData), MidiTransmitterSerializeMessages(
-    &tx_ctx, messages, 5, buffer, sizeof(buffer) / 2));
+      &tx_ctx, messages, 5, buffer, sizeof(buffer) / 2));
   /* Complete serialization. */
   TEST_ASSERT_EQUAL(sizeof(kExpectedData), MidiTransmitterSerializeMessages(
-    &tx_ctx, messages, 5, buffer, sizeof(buffer)));
+      &tx_ctx, messages, 5, buffer, sizeof(buffer)));
   TEST_ASSERT_EQUAL(kNoteOffStatus, tx_ctx.status);
   TEST_ASSERT_EQUAL_MEMORY(kExpectedData, buffer, sizeof(kExpectedData));
 }
@@ -577,9 +611,31 @@ static void TestMidiTransmitter_MultipleMessages_SkipInvalid(void) {
   uint8_t buffer[16];
   TEST_ASSERT_TRUE(MidiInitializeTransmitterCtx(&tx_ctx, true));
   TEST_ASSERT_EQUAL(sizeof(kExpectedData), MidiTransmitterSerializeMessages(
-    &tx_ctx, messages, 4, buffer, sizeof(buffer)));
+      &tx_ctx, messages, 4, buffer, sizeof(buffer)));
   TEST_ASSERT_EQUAL(kNoteOnStatus, tx_ctx.status);
   TEST_ASSERT_EQUAL_MEMORY(kExpectedData, buffer, sizeof(kExpectedData));
+}
+
+static void TestMidiTransmitter_MultipleSysExMessages_WithRun(void) {
+  static size_t const kPacketSize = sizeof(kDeviceControlBalanceSysExPacket);
+  static size_t const kMessageSize = sizeof(kDeviceControlBalanceSysExMessage);
+  uint8_t expected_data[kPacketSize * 2];
+  memcpy(expected_data, kDeviceControlBalanceSysExPacket, kPacketSize);
+  memcpy(
+      &expected_data[kPacketSize], kDeviceControlBalanceSysExPacket,
+      kPacketSize);
+  midi_message_t messages[2];
+  memcpy(&messages[0], &kDeviceControlBalanceSysExMessage, kMessageSize);
+  memcpy(&messages[1], &kDeviceControlBalanceSysExMessage, kMessageSize);
+
+  midi_tx_ctx_t tx_ctx;
+  uint8_t buffer[64];
+  TEST_ASSERT_TRUE(MidiInitializeTransmitterCtx(&tx_ctx, true));
+  TEST_ASSERT_EQUAL(sizeof(expected_data), MidiTransmitterSerializeMessages(
+      &tx_ctx, messages, 4, buffer, sizeof(buffer)));
+  /* SysEx messages should not use status run. */
+  TEST_ASSERT_EQUAL(MIDI_NONE, tx_ctx.status);
+  TEST_ASSERT_EQUAL_MEMORY(expected_data, buffer, sizeof(expected_data));
 }
 
 void MidiTransceiverTest(void) {
@@ -602,8 +658,10 @@ void MidiTransceiverTest(void) {
   RUN_TEST(TestMidiTransmitter_MultiByteMessage_WithoutRun);
   RUN_TEST(TestMidiTransmitter_MultiByteMessage_WithRun);
   RUN_TEST(TestMidiTransmitter_SingleByteMessage_WithRun);
+  RUN_TEST(TestMidiTransmitter_SysExMessage_WithRun);
 
   RUN_TEST(TestMidiTransmitter_MultipleMessages_WithoutRun);
   RUN_TEST(TestMidiTransmitter_MultipleMessages_WithRun);
   RUN_TEST(TestMidiTransmitter_MultipleMessages_SkipInvalid);
+  RUN_TEST(TestMidiTransmitter_MultipleSysExMessages_WithRun);
 }

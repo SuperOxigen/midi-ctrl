@@ -282,6 +282,8 @@ static size_t MidiTransmitterSerializeMessageInternal(
   size_t const data_used = MidiSerializeMessage(
       message, skip_status, data, data_size);
   if (MidiTransmitterRunEnabled(tx_ctx) &&
+      status != MIDI_SYSTEM_EXCLUSIVE &&
+      status != MIDI_END_SYSTEM_EXCLUSIVE &&
       data_used > (skip_status ? 0 : 1)) {
     tx_ctx->status = status;
   } else {
