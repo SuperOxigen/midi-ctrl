@@ -22,6 +22,8 @@ static midi_message_t const kNoteOnMessage = {
     .velocity = MIDI_NOTE_ON_VELOCITY
   }
 };
+static midi_status_t const kNoteOnStatus =
+  MIDI_NOTE_ON | kNoteOnMessage.channel;
 
 static uint8_t const kNoteOffPacket[] = {
   MIDI_NOTE_OFF | MIDI_CHANNEL_5, MIDI_MIDDLE_C,  MIDI_NOTE_ON_VELOCITY
@@ -34,10 +36,16 @@ static midi_message_t const kNoteOffMessage = {
     .velocity = MIDI_NOTE_ON_VELOCITY
   }
 };
+static midi_status_t const kNoteOffStatus =
+  MIDI_NOTE_OFF | kNoteOffMessage.channel;
 
 static uint8_t const kContinuePacket[] = {
   MIDI_CONTINUE
 };
+static midi_message_t const kContinueMessage = {
+  .type = MIDI_CONTINUE
+};
+
 
 static uint8_t const kDataPacketSysExPacket[] = {
   MIDI_SYSTEM_EXCLUSIVE,
@@ -73,6 +81,14 @@ static midi_message_t const kDataPacketSysExMessage = {
       .length = 0,
       .checksum = 0x4B
     }
+  }
+};
+
+static midi_message_t const kInvalidNoteOnMessage = {
+  .type = MIDI_NOTE_ON,
+  .note = {
+    .key = 0x84,
+    .velocity = MIDI_NOTE_ON_VELOCITY
   }
 };
 
@@ -336,6 +352,207 @@ static void TestMidiReceiver_SysEx_Large(void) {
 
   TEST_ASSERT_EQUAL(MIDI_NONE,  rx_ctx.status);
 }
+/* TestMidiTransmitter */
+
+static void TestMidiTransmitter_Initialize(void) {
+  midi_tx_ctx_t tx_ctx;
+  TEST_ASSERT_FALSE(MidiInitializeTransmitterCtx(NULL, true));
+  TEST_ASSERT_TRUE(MidiInitializeTransmitterCtx(&tx_ctx, true));
+  TEST_ASSERT_EQUAL(MIDI_NONE, tx_ctx.status);
+}
+
+static void TestMidiTransmitter_InvalidParameters(void) {
+  midi_tx_ctx_t tx_ctx;
+  uint8_t buffer[8];
+  TEST_ASSERT_TRUE(MidiInitializeTransmitterCtx(&tx_ctx, false));
+  /* Single messages. */
+  TEST_ASSERT_EQUAL(0, MidiTransmitterSerializeMessage(
+      NULL, &kNoteOnMessage, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(0, MidiTransmitterSerializeMessage(
+      &tx_ctx, NULL, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(0, MidiTransmitterSerializeMessage(
+      &tx_ctx, &kInvalidNoteOnMessage, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(0, MidiTransmitterSerializeMessage(
+      &tx_ctx, &kNoteOnMessage, NULL, sizeof(buffer)));
+
+  /* Multiple messages. */
+  TEST_ASSERT_EQUAL(0, MidiTransmitterSerializeMessages(
+      NULL, &kNoteOnMessage, 1, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(0, MidiTransmitterSerializeMessages(
+      &tx_ctx, NULL, 1, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(0, MidiTransmitterSerializeMessages(
+      &tx_ctx, &kNoteOnMessage, 0, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(0, MidiTransmitterSerializeMessages(
+      &tx_ctx, &kInvalidNoteOnMessage, 1, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(0, MidiTransmitterSerializeMessages(
+      &tx_ctx, &kNoteOnMessage, 1, NULL, sizeof(buffer)));
+}
+
+static void TestMidiTransmitter_MultiByteMessage_WithoutRun(void) {
+  midi_tx_ctx_t tx_ctx;
+  uint8_t buffer[8];
+  TEST_ASSERT_TRUE(MidiInitializeTransmitterCtx(&tx_ctx, false));
+  /* Partial serialization. */
+  TEST_ASSERT_EQUAL(sizeof(kNoteOnPacket), MidiTransmitterSerializeMessage(
+      &tx_ctx, &kNoteOnMessage, NULL, 0));
+  TEST_ASSERT_EQUAL(MIDI_NONE, tx_ctx.status);
+  TEST_ASSERT_EQUAL(sizeof(kNoteOnPacket), MidiTransmitterSerializeMessage(
+      &tx_ctx, &kNoteOnMessage, buffer, 1));
+  TEST_ASSERT_EQUAL(MIDI_NONE, tx_ctx.status);
+  /* Complete serialization. */
+  TEST_ASSERT_EQUAL(sizeof(kNoteOnPacket), MidiTransmitterSerializeMessage(
+      &tx_ctx, &kNoteOnMessage, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(MIDI_NONE, tx_ctx.status);
+  TEST_ASSERT_EQUAL_MEMORY(kNoteOnPacket, buffer, sizeof(kNoteOnPacket));
+}
+
+static void TestMidiTransmitter_MultiByteMessage_WithRun(void) {
+  midi_tx_ctx_t tx_ctx;
+  uint8_t buffer[8];
+  TEST_ASSERT_TRUE(MidiInitializeTransmitterCtx(&tx_ctx, true));
+  /* First run. */
+  TEST_ASSERT_EQUAL(sizeof(kNoteOnPacket), MidiTransmitterSerializeMessage(
+      &tx_ctx, &kNoteOnMessage, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(kNoteOnStatus, tx_ctx.status);
+  TEST_ASSERT_EQUAL_MEMORY(kNoteOnPacket, buffer, sizeof(kNoteOnPacket));
+
+  /* Partial serialization. */
+  TEST_ASSERT_EQUAL(sizeof(kNoteOnPacket) - 1, MidiTransmitterSerializeMessage(
+      &tx_ctx, &kNoteOnMessage, NULL, 0));
+  TEST_ASSERT_EQUAL(kNoteOnStatus, tx_ctx.status);
+  TEST_ASSERT_EQUAL(sizeof(kNoteOnPacket) - 1, MidiTransmitterSerializeMessage(
+      &tx_ctx, &kNoteOnMessage, buffer, 1));
+  TEST_ASSERT_EQUAL(kNoteOnStatus, tx_ctx.status);
+  /* Complete serialization. */
+  TEST_ASSERT_EQUAL(sizeof(kNoteOnPacket) - 1, MidiTransmitterSerializeMessage(
+      &tx_ctx, &kNoteOnMessage, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(kNoteOnStatus, tx_ctx.status);
+  TEST_ASSERT_EQUAL_MEMORY(&kNoteOnPacket[1], buffer, sizeof(kNoteOnPacket) - 1);
+
+  /* Status changed. */
+  TEST_ASSERT_EQUAL(sizeof(kNoteOffPacket), MidiTransmitterSerializeMessage(
+      &tx_ctx, &kNoteOffMessage, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(kNoteOffStatus, tx_ctx.status);
+  TEST_ASSERT_EQUAL_MEMORY(kNoteOffPacket, buffer, sizeof(kNoteOffPacket));
+
+  /* Invalid has no effect. */
+  TEST_ASSERT_EQUAL(0, MidiTransmitterSerializeMessage(
+      &tx_ctx, &kInvalidNoteOnMessage, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(kNoteOffStatus, tx_ctx.status);
+}
+
+static void TestMidiTransmitter_SingleByteMessage_WithRun(void) {
+  midi_tx_ctx_t tx_ctx;
+  uint8_t buffer[8];
+  TEST_ASSERT_TRUE(MidiInitializeTransmitterCtx(&tx_ctx, true));
+
+  /* First run. */
+  TEST_ASSERT_EQUAL(sizeof(kNoteOnPacket), MidiTransmitterSerializeMessage(
+      &tx_ctx, &kNoteOnMessage, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(kNoteOnStatus, tx_ctx.status);
+  TEST_ASSERT_EQUAL_MEMORY(kNoteOnPacket, buffer, sizeof(kNoteOnPacket));
+
+  TEST_ASSERT_EQUAL(1, MidiTransmitterSerializeMessage(
+      &tx_ctx, &kContinueMessage, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(MIDI_NONE, tx_ctx.status);
+  TEST_ASSERT_EQUAL_MEMORY(kContinuePacket, buffer, sizeof(kContinuePacket));
+}
+
+static void TestMidiTransmitter_MultipleMessages_WithoutRun(void) {
+  static uint8_t const kExpectedData[] = {
+    kNoteOnStatus, kNoteOnMessage.note.key, kNoteOnMessage.note.velocity,
+    kNoteOnStatus, kNoteOnMessage.note.key + 7,
+    kNoteOnMessage.note.velocity + 16,
+    MIDI_CONTINUE,
+    kNoteOffStatus, kNoteOffMessage.note.key, kNoteOffMessage.note.velocity,
+    kNoteOffStatus, kNoteOffMessage.note.key + 10,
+    kNoteOffMessage.note.velocity + 32,
+  };
+  midi_message_t messages[5];
+  memcpy(&messages[0], &kNoteOnMessage, sizeof(midi_message_t));
+  memcpy(&messages[1], &kNoteOnMessage, sizeof(midi_message_t));
+  messages[1].note.key += 7;
+  messages[1].note.velocity += 16;
+  memcpy(&messages[2], &kContinueMessage, sizeof(midi_message_t));
+  memcpy(&messages[3], &kNoteOffMessage, sizeof(midi_message_t));
+  memcpy(&messages[4], &kNoteOffMessage, sizeof(midi_message_t));
+  messages[4].note.key += 10;
+  messages[4].note.velocity += 32;
+
+  midi_tx_ctx_t tx_ctx;
+  uint8_t buffer[16];
+  TEST_ASSERT_TRUE(MidiInitializeTransmitterCtx(&tx_ctx, false));
+
+  /* Partial serialization. */
+  TEST_ASSERT_EQUAL(sizeof(kExpectedData), MidiTransmitterSerializeMessages(
+    &tx_ctx, messages, 5, NULL, 0));
+  TEST_ASSERT_EQUAL(sizeof(kExpectedData), MidiTransmitterSerializeMessages(
+    &tx_ctx, messages, 5, buffer, sizeof(buffer) / 2));
+  /* Complete serialization. */
+  TEST_ASSERT_EQUAL(sizeof(kExpectedData), MidiTransmitterSerializeMessages(
+    &tx_ctx, messages, 5, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(MIDI_NONE, tx_ctx.status);
+  TEST_ASSERT_EQUAL_MEMORY(kExpectedData, buffer, sizeof(kExpectedData));
+}
+
+static void TestMidiTransmitter_MultipleMessages_WithRun(void) {
+  static uint8_t const kExpectedData[] = {
+    kNoteOnStatus, kNoteOnMessage.note.key, kNoteOnMessage.note.velocity,
+    kNoteOnMessage.note.key + 7, kNoteOnMessage.note.velocity + 16,
+    MIDI_CONTINUE,
+    kNoteOffStatus, kNoteOffMessage.note.key, kNoteOffMessage.note.velocity,
+    kNoteOffMessage.note.key + 10, kNoteOffMessage.note.velocity + 32,
+  };
+  midi_message_t messages[5];
+  memcpy(&messages[0], &kNoteOnMessage, sizeof(midi_message_t));
+  memcpy(&messages[1], &kNoteOnMessage, sizeof(midi_message_t));
+  messages[1].note.key += 7;
+  messages[1].note.velocity += 16;
+  memcpy(&messages[2], &kContinueMessage, sizeof(midi_message_t));
+  memcpy(&messages[3], &kNoteOffMessage, sizeof(midi_message_t));
+  memcpy(&messages[4], &kNoteOffMessage, sizeof(midi_message_t));
+  messages[4].note.key += 10;
+  messages[4].note.velocity += 32;
+
+  midi_tx_ctx_t tx_ctx;
+  uint8_t buffer[16];
+  TEST_ASSERT_TRUE(MidiInitializeTransmitterCtx(&tx_ctx, true));
+  /* Partial serialization. */
+  TEST_ASSERT_EQUAL(sizeof(kExpectedData), MidiTransmitterSerializeMessages(
+    &tx_ctx, messages, 5, NULL, 0));
+  TEST_ASSERT_EQUAL(sizeof(kExpectedData), MidiTransmitterSerializeMessages(
+    &tx_ctx, messages, 5, buffer, sizeof(buffer) / 2));
+  /* Complete serialization. */
+  TEST_ASSERT_EQUAL(sizeof(kExpectedData), MidiTransmitterSerializeMessages(
+    &tx_ctx, messages, 5, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(kNoteOffStatus, tx_ctx.status);
+  TEST_ASSERT_EQUAL_MEMORY(kExpectedData, buffer, sizeof(kExpectedData));
+}
+
+static void TestMidiTransmitter_MultipleMessages_SkipInvalid(void) {
+  static uint8_t const kExpectedData[] = {
+    kNoteOnStatus, kNoteOnMessage.note.key, kNoteOnMessage.note.velocity,
+    kNoteOnMessage.note.key + 7, kNoteOnMessage.note.velocity + 16,
+    kNoteOnMessage.note.key + 4, kNoteOnMessage.note.velocity + 32,
+  };
+  midi_message_t messages[4];
+  memcpy(&messages[0], &kNoteOnMessage, sizeof(midi_message_t));
+  memcpy(&messages[1], &kNoteOnMessage, sizeof(midi_message_t));
+  messages[1].note.key += 7;
+  messages[1].note.velocity += 16;
+  memcpy(&messages[2], &kInvalidNoteOnMessage, sizeof(midi_message_t));
+  memcpy(&messages[3], &kNoteOnMessage, sizeof(midi_message_t));
+  messages[3].note.key += 4;
+  messages[3].note.velocity += 32;
+
+  midi_tx_ctx_t tx_ctx;
+  uint8_t buffer[16];
+  TEST_ASSERT_TRUE(MidiInitializeTransmitterCtx(&tx_ctx, true));
+  TEST_ASSERT_EQUAL(sizeof(kExpectedData), MidiTransmitterSerializeMessages(
+    &tx_ctx, messages, 4, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(kNoteOnStatus, tx_ctx.status);
+  TEST_ASSERT_EQUAL_MEMORY(kExpectedData, buffer, sizeof(kExpectedData));
+}
 
 void MidiTransceiverTest(void) {
   RUN_TEST(TestMidiReceiver_Initialize);
@@ -349,4 +566,14 @@ void MidiTransceiverTest(void) {
   RUN_TEST(TestMidiReceiver_MultiByteMessage_StatusRun);
   RUN_TEST(TestMidiReceiver_SysEx_SmallMessage);
   RUN_TEST(TestMidiReceiver_SysEx_Large);
+
+  RUN_TEST(TestMidiTransmitter_Initialize);
+  RUN_TEST(TestMidiTransmitter_InvalidParameters);
+  RUN_TEST(TestMidiTransmitter_MultiByteMessage_WithoutRun);
+  RUN_TEST(TestMidiTransmitter_MultiByteMessage_WithRun);
+  RUN_TEST(TestMidiTransmitter_SingleByteMessage_WithRun);
+
+  RUN_TEST(TestMidiTransmitter_MultipleMessages_WithoutRun);
+  RUN_TEST(TestMidiTransmitter_MultipleMessages_WithRun);
+  RUN_TEST(TestMidiTransmitter_MultipleMessages_SkipInvalid);
 }

@@ -44,7 +44,7 @@ size_t MidiReceiveData(
  *  Transmitter Context
  */
 typedef struct {
-  midi_status_t last_status;
+  midi_status_t status;
   uint8_t flags;
 } midi_tx_ctx_t;
 

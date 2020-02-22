@@ -257,43 +257,61 @@ size_t MidiReceiveData(
 /*
  *  Transmitter Context
  */
-#define MIDI_TX_STATUS_RUN_ENABLED 0x01
+/* When enabled, the status byte will be omitted between message
+ * having the same status value. */
+#define MIDI_TX_STATUS_RUN_ENABLED  0x01
+
+#define MidiTransmitterRunEnabled(tx_ctx) \
+  (tx_ctx->flags & MIDI_TX_STATUS_RUN_ENABLED)
 
 bool_t MidiInitializeTransmitterCtx(midi_tx_ctx_t *tx_ctx, bool_t status_run) {
   if (tx_ctx == NULL) return false;
-  tx_ctx->last_status = MIDI_NONE;
+  tx_ctx->status = MIDI_NONE;
   tx_ctx->flags = status_run ? MIDI_TX_STATUS_RUN_ENABLED : 0;
   return true;
+}
+
+static size_t MidiTransmitterSerializeMessageInternal(
+    midi_tx_ctx_t *tx_ctx, midi_message_t const *message,
+    uint8_t *data, size_t data_size) {
+  if (!MidiIsValidMessage(message)) return 0;
+  midi_status_t const status = MidiMessageStatus(message);
+  bool_t const skip_status =
+      MidiTransmitterRunEnabled(tx_ctx) &&
+      status == tx_ctx->status;
+  size_t const data_used = MidiSerializeMessage(
+      message, skip_status, data, data_size);
+  if (MidiTransmitterRunEnabled(tx_ctx) &&
+      data_used > (skip_status ? 0 : 1)) {
+    tx_ctx->status = status;
+  } else {
+    tx_ctx->status = MIDI_NONE;
+  }
+  return data_used;
 }
 
 size_t MidiTransmitterSerializeMessage(
     midi_tx_ctx_t *tx_ctx, midi_message_t const *message,
     uint8_t *data, size_t data_size) {
-  if (tx_ctx == NULL || message == NULL || data == NULL) return 0;
-  if (!MidiIsValidMessage(message)) return 0;
-  midi_status_t const status = MidiMessageStatus(message);
-  bool_t const skip_status =
-      status == tx_ctx->last_status &&
-      (tx_ctx->flags & MIDI_TX_STATUS_RUN_ENABLED);
-  size_t const data_used = MidiSerializeMessage(
-      message, skip_status, data, data_size);
-  if (data_used <= data_size) {
-    tx_ctx->last_status = status;
-  }
-  return data_used;
+  if (tx_ctx == NULL) return 0;
+  if (data == NULL && data_size > 0) return 0;
+  return MidiTransmitterSerializeMessageInternal(
+      tx_ctx, message, data, data_size);
 }
 
 size_t MidiTransmitterSerializeMessages(
     midi_tx_ctx_t *tx_ctx,
     midi_message_t const *messages, size_t message_count,
     uint8_t *data, size_t data_size) {
-  if (tx_ctx == NULL || messages == NULL ||
-      data == NULL || message_count == 0) return 0;
+  if (tx_ctx == NULL) return 0;
+  if (data == NULL && data_size > 0) return 0;
+  if (messages == NULL || message_count == 0) return 0;
   size_t mi = 0, di = 0;
   size_t total_message_size = 0;
   while (mi < message_count) {
-    size_t const message_size = MidiTransmitterSerializeMessage(
-        tx_ctx, &messages[mi++], &data[di], di - data_size);
+    uint8_t *message_data = (data == NULL) ? NULL : &data[di];
+    size_t const message_size = MidiTransmitterSerializeMessageInternal(
+        tx_ctx, &messages[mi++], message_data, data_size - di);
     if (message_size == 0) continue;
     total_message_size += message_size;
     if (total_message_size >= data_size) {
