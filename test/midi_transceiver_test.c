@@ -6,10 +6,13 @@
  * See LICENSE for details.
  */
 #include <string.h>
+#include <stdlib.h>
 #include <unity.h>
 
 #include "midi_defs.h"
 #include "midi_transceiver.h"
+
+#define RANDOM_SEED 0x1337
 
 static uint8_t const kNoteOnPacket[] = {
   MIDI_NOTE_ON | MIDI_CHANNEL_4, MIDI_MIDDLE_C,  MIDI_NOTE_ON_VELOCITY
@@ -352,7 +355,32 @@ static void TestMidiReceiver_SysEx_Large(void) {
 
   TEST_ASSERT_EQUAL(MIDI_NONE,  rx_ctx.status);
 }
-/* TestMidiTransmitter */
+
+static void TestMidiReceiver_FuzzTest(void) {
+  uint8_t data[1024];
+  srand(RANDOM_SEED);
+  for (size_t i = 0; i < sizeof(data); ++i) {
+    data[i] = rand() & 0xFF;
+  }
+  midi_rx_ctx_t rx_ctx;
+  midi_message_t message;
+  size_t data_used = 0;
+  while (data_used < sizeof(data)) {
+    size_t const to_consume =
+        (sizeof(data) - data_used) > MIDI_RX_BUFFER_SIZE ?
+        MIDI_RX_BUFFER_SIZE : (sizeof(data) - data_used);
+    size_t const res = MidiReceiveData(
+        &rx_ctx, &data[data_used], to_consume, &message);
+    TEST_ASSERT_TRUE(res > 0);
+    TEST_ASSERT_TRUE(
+        rx_ctx.status == MIDI_NONE || MidiIsStatusByte(rx_ctx.status));
+    data_used += res;
+  }
+}
+
+/*
+ *  Transmitter
+ */
 
 static void TestMidiTransmitter_Initialize(void) {
   midi_tx_ctx_t tx_ctx;
@@ -566,6 +594,8 @@ void MidiTransceiverTest(void) {
   RUN_TEST(TestMidiReceiver_MultiByteMessage_StatusRun);
   RUN_TEST(TestMidiReceiver_SysEx_SmallMessage);
   RUN_TEST(TestMidiReceiver_SysEx_Large);
+
+  RUN_TEST(TestMidiReceiver_FuzzTest);
 
   RUN_TEST(TestMidiTransmitter_Initialize);
   RUN_TEST(TestMidiTransmitter_InvalidParameters);
