@@ -17,6 +17,7 @@ void MidiNoteTest(void);
 void MidiTimeTest(void);
 void MidiControlTest(void);
 void MidiFrameTest(void);
+void MidiUserBitsTest(void);
 
 void MidiManufacturerIdTest(void);
 void MidiSystemUniversalTest(void);

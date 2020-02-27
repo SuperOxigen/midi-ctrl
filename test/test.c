@@ -25,6 +25,7 @@ int main(void) {
   MidiTimeTest();
   MidiControlTest();
   MidiFrameTest();
+  MidiUserBitsTest();
 
   MidiManufacturerIdTest();
   MidiSystemUniversalTest();
