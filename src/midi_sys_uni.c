@@ -560,6 +560,115 @@ bool_t MidiIsValidGeneralMidiMode(midi_general_midi_mode_t mode) {
 }
 
 /*
+ * Realtime Time Code Message.
+ *  Full Time Code Message:
+ *    01|hh|mm|ss|ff
+ *
+ * Fields:
+ *    01 - Full time code message sub ID.
+ *    hh - Hours and frame type
+ *    mm - Minutes
+ *    ss - Seconds
+ *    ff - Frame
+ */
+#define MIDI_FULL_TIME_CODE_FPS_MASK      0x60
+#define MIDI_FULL_TIME_CODE_HOURS_MASK    0x1F
+
+#define MidiIsValidRealtimeTimeCodeSubId(sub_id) \
+    ((sub_id) == MIDI_FULL_TIME_CODE || \
+     (sub_id) == MIDI_USER_BITS)
+
+bool_t MidiIsValidRealtimeTimeCode(midi_rt_time_code_t const *rt_time) {
+  if (rt_time == NULL) return false;
+  switch (rt_time->sub_id) {
+    case MIDI_FULL_TIME_CODE:
+      return MidiIsValidTime(&rt_time->time);
+    case MIDI_USER_BITS:
+      return MidiIsValidUserBits(&rt_time->user_bits);
+  }
+  return false;
+}
+
+bool_t MidiInitializeFullTimeCodeMessage(
+    midi_rt_time_code_t *rt_time, midi_time_t const *time) {
+  if (rt_time == NULL) return false;
+  if (!MidiIsValidTime(time)) return false;
+  memset(rt_time, 0, sizeof(midi_rt_time_code_t));
+  rt_time->sub_id = MIDI_FULL_TIME_CODE;
+  memcpy(&rt_time->time, time, sizeof(midi_time_t));
+  return true;
+}
+
+bool_t MidiInitializeUserBitsTimeCode(
+    midi_rt_time_code_t *rt_time, midi_user_bits_t const *user_bits) {
+  if (rt_time == NULL) return false;
+  if (!MidiIsValidUserBits(user_bits)) return false;
+  memset(rt_time, 0, sizeof(midi_rt_time_code_t));
+  rt_time->sub_id = MIDI_USER_BITS;
+  memcpy(&rt_time->user_bits, user_bits, sizeof(midi_user_bits_t));
+  return true;
+}
+
+size_t MidiSerializeRealtimeTimeCode(
+    midi_rt_time_code_t const *rt_time, uint8_t *data, size_t data_size) {
+  if (data == NULL && data_size > 0) return 0;
+  if (!MidiIsValidRealtimeTimeCode(rt_time)) return 0;
+  if (data_size > 0) data[0] = rt_time->sub_id;
+  switch (rt_time->sub_id) {
+    case MIDI_FULL_TIME_CODE: {
+      if (data_size >= MIDI_FULL_TIME_CODE_MESSAGE_PAYLOAD_SIZE) {
+        data[1] = rt_time->time.hours | rt_time->time.fps;
+        data[2] = rt_time->time.minutes;
+        data[3] = rt_time->time.seconds;
+        data[4] = rt_time->time.frame;
+      }
+      return MIDI_FULL_TIME_CODE_MESSAGE_PAYLOAD_SIZE;
+    } break;
+    case MIDI_USER_BITS: {
+      size_t const res = MidiSerializeUserBits(
+          &rt_time->user_bits, data == NULL ? NULL : &data[1],
+          data_size == 0 ? 0 : data_size - 1);
+      return res == 0 ? 0 : MIDI_SMPTE_USER_BITS_PAYLOAD_SIZE;
+    } break;
+  }
+  return 0;
+}
+
+size_t MidiDeserializeRealtimeTimeCode(
+    uint8_t const *data, size_t data_size, midi_rt_time_code_t *rt_time) {
+  if (data == NULL && data_size > 0) return 0;
+  if (rt_time == NULL) return 0;
+  if (data_size == 0) return 1;   /* Need sub ID type. */
+  if (!MidiIsValidRealtimeTimeCodeSubId(data[0]));
+  memset(rt_time, 0, sizeof(midi_rt_time_code_t));
+  rt_time->sub_id = data[0];
+  switch (rt_time->sub_id) {
+    case MIDI_FULL_TIME_CODE: {
+      if (data_size >= MIDI_FULL_TIME_CODE_MESSAGE_PAYLOAD_SIZE) {
+        if (!MidiIsDataArray(
+            &data[1], MIDI_FULL_TIME_CODE_MESSAGE_PAYLOAD_SIZE - 1))
+          return 0;
+        midi_time_t *time = &rt_time->time;
+        time->fps = data[1] & MIDI_FULL_TIME_CODE_FPS_MASK;
+        time->hours = data[1] & MIDI_FULL_TIME_CODE_HOURS_MASK;
+        time->minutes = data[2];
+        time->seconds = data[3];
+        time->frame = data[4];
+        if (!MidiIsValidTime(time)) return 0;
+      }
+      return MIDI_FULL_TIME_CODE_MESSAGE_PAYLOAD_SIZE;
+    } break;
+    case MIDI_USER_BITS: {
+      size_t const res = MidiDeserializeUserBits(
+          data == NULL ? NULL : &data[1], data_size == 0 ? 0 : data_size - 1,
+          &rt_time->user_bits);
+      return res == 0 ? 0 : MIDI_SMPTE_USER_BITS_PAYLOAD_SIZE;
+    } break;
+  }
+  return 0;
+}
+
+/*
  * Device Control Message.
  *  Format: tt|vv|vv
  *
@@ -602,8 +711,8 @@ bool_t MidiInitializeDeviceControl(
 
 size_t MidiSerializeDeviceControl(
     midi_device_control_t const *control, uint8_t *data, size_t data_size) {
-  if (data == NULL && data_size > 0) return false;
-  if (!MidiIsValidDeviceControl(control)) return false;
+  if (data == NULL && data_size > 0) return 0;
+  if (!MidiIsValidDeviceControl(control)) return 0;
   if (data_size >= MIDI_DEVICE_CONTROL_PAYLOAD_SIZE) {
     data[0] = control->sub_id;
     uint16_t const value = (control->sub_id == MIDI_MASTER_VOLUME)
@@ -616,8 +725,8 @@ size_t MidiSerializeDeviceControl(
 
 size_t MidiDeserializeDeviceControl(
     uint8_t const *data, size_t data_size, midi_device_control_t *control) {
-  if (data == NULL && data_size > 0) return false;
-  if (control == NULL) return false;
+  if (data == NULL && data_size > 0) return 0;
+  if (control == NULL) return 0;
   if (data_size >= MIDI_DEVICE_CONTROL_PAYLOAD_SIZE) {
     if (!MidiIsDataArray(data, MIDI_DEVICE_CONTROL_PAYLOAD_SIZE)) return 0;
     control->sub_id = data[0];

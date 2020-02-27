@@ -13,7 +13,7 @@
 C_SECTION_BEGIN;
 
 /*
- *  MIDI Time Code.
+ *  MIDI Quarter Frame Time Code.
  */
 typedef uint8_t midi_time_code_type_t;
 
@@ -36,15 +36,15 @@ bool_t MidiDeserializeTimeCode(
   midi_time_code_t *time_code, uint8_t data);
 
 /*
- *  MIDI Time Code.
+ *  MIDI Time.
  */
 
 typedef struct {
-  uint8_t frame;
-  uint8_t seconds;
-  uint8_t minutes;
-  uint8_t hours;
-  uint8_t fps;
+  uint8_t frame;    /* 00 to 23/24/29, depends on |fps| */
+  uint8_t seconds;  /* 00 to 59 */
+  uint8_t minutes;  /* 00 to 59 */
+  uint8_t hours;  /* 00 to 23 */
+  uint8_t fps;  /* One of a set of values, see midi_defs.h */
 } midi_time_t;
 
 bool_t MidiIsValidTime(midi_time_t const *time);

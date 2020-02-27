@@ -11,6 +11,8 @@
 #include "base.h"
 #include "midi_bytes.h"
 #include "midi_man_id.h"
+#include "midi_time.h"
+#include "midi_user_bits.h"
 #include "midi_volume.h"
 
 C_SECTION_BEGIN;
@@ -205,6 +207,31 @@ bool_t MidiIsValidGeneralMidiMode(midi_general_midi_mode_t mode);
 /*
  *  Realtime - System Universal Message.
  */
+/* Realtime Time Code Message */
+#define MIDI_FULL_TIME_CODE_MESSAGE_PAYLOAD_SIZE 5
+#define MIDI_SMPTE_USER_BITS_PAYLOAD_SIZE 10
+typedef struct {
+  uint8_t sub_id;
+  union {
+    /* Full Time Code Message */
+    midi_time_t time;
+    /* User bits */
+    midi_user_bits_t user_bits;
+  };
+} midi_rt_time_code_t;
+
+bool_t MidiIsValidRealtimeTimeCode(midi_rt_time_code_t const *rt_time);
+
+bool_t MidiInitializeFullTimeCodeMessage(
+  midi_rt_time_code_t *rt_time, midi_time_t const *time);
+bool_t MidiInitializeUserBitsTimeCode(
+  midi_rt_time_code_t *rt_time, midi_user_bits_t const *user_bits);
+
+size_t MidiSerializeRealtimeTimeCode(
+  midi_rt_time_code_t const *rt_time, uint8_t *data, size_t data_size);
+size_t MidiDeserializeRealtimeTimeCode(
+  uint8_t const *data, size_t data_size, midi_rt_time_code_t *rt_time);
+
 /* Device Control */
 #define MIDI_DEVICE_CONTROL_PAYLOAD_SIZE 3
 typedef struct {

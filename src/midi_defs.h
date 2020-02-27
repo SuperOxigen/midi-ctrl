@@ -476,6 +476,7 @@
 #define MIDI_NAK                          0x7E
 #define MIDI_ACK                          0x7F
 /* Realtime Sub Id */
+#define MIDI_RT_TIME_CODE                 0x01
 #define MIDI_NOTATION_INFO                0x03
 #define MIDI_DEVICE_CONTROL               0x04
 
@@ -495,6 +496,10 @@
 /* General MIDI Sub ID */
 #define MIDI_GENERAL_MIDI_ON              0x01
 #define MIDI_GENERAL_MIDI_OFF             0x02
+
+/* RT Time Code Messages */
+#define MIDI_FULL_TIME_CODE               0x01
+#define MIDI_USER_BITS                    0x02
 
 /* Notation Info Sub ID */
 #define MIDI_BAR_NUMBER                   0x01
