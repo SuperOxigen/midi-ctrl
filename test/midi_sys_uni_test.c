@@ -1191,6 +1191,214 @@ static void TestMidiGeneralMidi_Validator(void) {
   TEST_ASSERT_FALSE(MidiIsValidGeneralMidiMode(0x80));
 }
 
+/*  Realtime Time Code Message */
+static midi_rt_time_code_t const kFullTimeCodeMessage = {
+  .sub_id = MIDI_FULL_TIME_CODE,
+  .time = {
+    .hours = 21,
+    .minutes = 49,
+    .seconds = 33,
+    .frame = 29,
+    .fps = MIDI_30_FPS_NON_DROP
+  }
+};
+static uint8_t const kFullTimeCodeMessageData[MIDI_FULL_TIME_CODE_MESSAGE_PAYLOAD_SIZE] = {
+  MIDI_FULL_TIME_CODE, 21 | MIDI_30_FPS_NON_DROP, 49, 33, 29
+};
+
+static midi_rt_time_code_t const kUserBits = {
+  .sub_id = MIDI_USER_BITS,
+  .user_bits = {
+    .data = {0x12, 0x34, 0x56, 0x78},
+    .bg_flags = 0x03
+  }
+};
+static uint8_t const kUserBitsData[MIDI_SMPTE_USER_BITS_PAYLOAD_SIZE] = {
+  MIDI_USER_BITS, 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01, 0x03
+};
+
+static midi_rt_time_code_t const kInvalidFullTimeCodeMessage = {
+  .sub_id = MIDI_FULL_TIME_CODE,
+  .time = {
+    .hours = 3,
+    .minutes = 60,
+    .seconds = 59,
+    .frame = 22,
+    .fps = MIDI_24_FPS
+  }
+};
+static uint8_t const kInvalidFullTimeCodeMessageData[MIDI_FULL_TIME_CODE_MESSAGE_PAYLOAD_SIZE] = {
+  MIDI_FULL_TIME_CODE, 3 | MIDI_24_FPS, 60, 59, 22
+};
+
+static midi_rt_time_code_t const kInvalidUserBits = {
+  .sub_id = MIDI_USER_BITS,
+  .user_bits = {
+    .data = {0x22, 0x33, 0x44, 0x77},
+    .bg_flags = 0x12  /* Bad flags */
+  }
+};
+static uint8_t const kInvalidUserBitsData[MIDI_SMPTE_USER_BITS_PAYLOAD_SIZE] = {
+  MIDI_USER_BITS, 0x07, 0x07, 0x04, 0x04, /* bad */ 0x13, 0x03, 0x02, 0x02,
+  0x02
+};
+
+static  midi_rt_time_code_t const kInvalidRealtimeTimeCode = {
+  .sub_id = 0x11
+};
+static uint8_t const kInvalidRealtimeTimeCodeData[] = {
+  0x11,
+  0x30, 0x10, 0x02, 0x03, 0x01, 0x36, 0x33
+};
+
+static void TestMidiRealtimeTimeCode_Validator(void) {
+  TEST_ASSERT_FALSE(MidiIsValidRealtimeTimeCode(NULL));
+  TEST_ASSERT_FALSE(MidiIsValidRealtimeTimeCode(&kInvalidFullTimeCodeMessage));
+  TEST_ASSERT_FALSE(MidiIsValidRealtimeTimeCode(&kInvalidUserBits));
+  TEST_ASSERT_FALSE(MidiIsValidRealtimeTimeCode(&kInvalidRealtimeTimeCode));
+
+  TEST_ASSERT_TRUE(MidiIsValidRealtimeTimeCode(&kFullTimeCodeMessage));
+  TEST_ASSERT_TRUE(MidiIsValidRealtimeTimeCode(&kUserBits));
+}
+
+static void TestMidiRealtimeTimeCode_Initializer(void) {
+  midi_rt_time_code_t rt_time;
+  /* Full Message Time Code */
+  TEST_ASSERT_FALSE(MidiInitializeFullTimeCodeMessage(
+      NULL, &kFullTimeCodeMessage.time));
+  TEST_ASSERT_FALSE(MidiInitializeFullTimeCodeMessage(
+      &rt_time, NULL));
+  TEST_ASSERT_FALSE(MidiInitializeFullTimeCodeMessage(
+      &rt_time, &kInvalidFullTimeCodeMessage.time));
+
+  TEST_ASSERT_TRUE(MidiInitializeFullTimeCodeMessage(
+      &rt_time, &kFullTimeCodeMessage.time));
+  TEST_ASSERT_EQUAL(MIDI_FULL_TIME_CODE, rt_time.sub_id);
+  midi_time_t const *expected_time = &kFullTimeCodeMessage.time;
+  TEST_ASSERT_EQUAL(expected_time->hours, rt_time.time.hours);
+  TEST_ASSERT_EQUAL(expected_time->minutes, rt_time.time.minutes);
+  TEST_ASSERT_EQUAL(expected_time->seconds, rt_time.time.seconds);
+  TEST_ASSERT_EQUAL(expected_time->frame, rt_time.time.frame);
+  TEST_ASSERT_EQUAL(expected_time->fps, rt_time.time.fps);
+
+  /* User Bits Time Code */
+  TEST_ASSERT_FALSE(MidiInitializeUserBitsTimeCode(
+      NULL, &kUserBits.user_bits));
+  TEST_ASSERT_FALSE(MidiInitializeUserBitsTimeCode(
+      &rt_time, NULL));
+  TEST_ASSERT_FALSE(MidiInitializeUserBitsTimeCode(
+      &rt_time, &kInvalidUserBits.user_bits));
+
+  TEST_ASSERT_TRUE(MidiInitializeUserBitsTimeCode(
+      &rt_time, &kUserBits.user_bits));
+  TEST_ASSERT_EQUAL(MIDI_USER_BITS, rt_time.sub_id);
+  TEST_ASSERT_EQUAL_MEMORY(
+      kUserBits.user_bits.data, rt_time.user_bits.data,
+      MIDI_USER_BITS_DATA_SIZE);
+  TEST_ASSERT_EQUAL(kUserBits.user_bits.bg_flags, rt_time.user_bits.bg_flags);
+}
+
+static void TestMidiRealtimeTimeCode_Serialize(void) {
+  uint8_t buffer[16];
+
+  /* Invalid input. */
+  TEST_ASSERT_EQUAL(0, MidiSerializeRealtimeTimeCode(
+      NULL, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(0, MidiSerializeRealtimeTimeCode(
+      &kFullTimeCodeMessage, NULL, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(0, MidiSerializeRealtimeTimeCode(
+      &kInvalidFullTimeCodeMessage, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(0, MidiSerializeRealtimeTimeCode(
+      &kInvalidUserBits, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(0, MidiSerializeRealtimeTimeCode(
+      &kInvalidRealtimeTimeCode, buffer, sizeof(buffer)));
+
+  /* Partial serialization */
+  TEST_ASSERT_EQUAL(
+      MIDI_FULL_TIME_CODE_MESSAGE_PAYLOAD_SIZE,
+      MidiSerializeRealtimeTimeCode(&kFullTimeCodeMessage, NULL, 0));
+  TEST_ASSERT_EQUAL(
+      MIDI_FULL_TIME_CODE_MESSAGE_PAYLOAD_SIZE,
+      MidiSerializeRealtimeTimeCode(&kFullTimeCodeMessage, buffer, 1));
+  TEST_ASSERT_EQUAL(
+      MIDI_SMPTE_USER_BITS_PAYLOAD_SIZE,
+      MidiSerializeRealtimeTimeCode(&kUserBits, NULL, 0));
+  TEST_ASSERT_EQUAL(
+      MIDI_SMPTE_USER_BITS_PAYLOAD_SIZE,
+      MidiSerializeRealtimeTimeCode(&kUserBits, buffer, 1));
+
+  /* Successful serialization */
+  buffer[MIDI_FULL_TIME_CODE_MESSAGE_PAYLOAD_SIZE] = 0xE5;
+  TEST_ASSERT_EQUAL(
+      MIDI_FULL_TIME_CODE_MESSAGE_PAYLOAD_SIZE,
+      MidiSerializeRealtimeTimeCode(
+          &kFullTimeCodeMessage, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_MEMORY(
+      kFullTimeCodeMessageData, buffer,
+      sizeof(kFullTimeCodeMessageData));
+  TEST_ASSERT_EQUAL(0xE5, buffer[MIDI_FULL_TIME_CODE_MESSAGE_PAYLOAD_SIZE]);
+
+  buffer[MIDI_SMPTE_USER_BITS_PAYLOAD_SIZE] = 0xE4;
+  TEST_ASSERT_EQUAL(
+      MIDI_SMPTE_USER_BITS_PAYLOAD_SIZE,
+      MidiSerializeRealtimeTimeCode(
+          &kUserBits, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_MEMORY(kUserBitsData, buffer, sizeof(kUserBitsData));
+  TEST_ASSERT_EQUAL(0xE4, buffer[MIDI_SMPTE_USER_BITS_PAYLOAD_SIZE]);
+}
+
+static void TestMidiRealtimeTimeCode_Deserialize(void) {
+  midi_rt_time_code_t rt_time;
+
+  /* Invalid input. */
+  TEST_ASSERT_EQUAL(0, MidiDeserializeRealtimeTimeCode(
+      NULL, sizeof(kFullTimeCodeMessageData), &rt_time));
+  TEST_ASSERT_EQUAL(0, MidiDeserializeRealtimeTimeCode(
+      kFullTimeCodeMessageData, sizeof(kFullTimeCodeMessageData), NULL));
+  TEST_ASSERT_EQUAL(0, MidiDeserializeRealtimeTimeCode(
+      kInvalidFullTimeCodeMessageData, sizeof(kInvalidFullTimeCodeMessageData),
+      &rt_time));
+  TEST_ASSERT_EQUAL(0, MidiDeserializeRealtimeTimeCode(
+      kInvalidUserBitsData, sizeof(kInvalidUserBitsData), &rt_time));
+  TEST_ASSERT_EQUAL(0, MidiDeserializeRealtimeTimeCode(
+      kInvalidRealtimeTimeCodeData, sizeof(kInvalidRealtimeTimeCodeData),
+      &rt_time));
+
+  /* Partial deserialization. */
+  TEST_ASSERT_EQUAL(1, MidiDeserializeRealtimeTimeCode(NULL, 0, &rt_time));
+
+  TEST_ASSERT_EQUAL(
+      MIDI_FULL_TIME_CODE_MESSAGE_PAYLOAD_SIZE,
+      MidiDeserializeRealtimeTimeCode(kFullTimeCodeMessageData, 1, &rt_time));
+  TEST_ASSERT_EQUAL(
+      MIDI_SMPTE_USER_BITS_PAYLOAD_SIZE,
+      MidiDeserializeRealtimeTimeCode(kUserBitsData, 1, &rt_time));
+
+  /* Successful deserialization. */
+  TEST_ASSERT_EQUAL(
+      MIDI_FULL_TIME_CODE_MESSAGE_PAYLOAD_SIZE,
+      MidiDeserializeRealtimeTimeCode(
+          kFullTimeCodeMessageData, sizeof(kFullTimeCodeMessageData),
+          &rt_time));
+  TEST_ASSERT_EQUAL(MIDI_FULL_TIME_CODE, rt_time.sub_id);
+  midi_time_t const *expected_time = &kFullTimeCodeMessage.time;
+  TEST_ASSERT_EQUAL(expected_time->hours, rt_time.time.hours);
+  TEST_ASSERT_EQUAL(expected_time->minutes, rt_time.time.minutes);
+  TEST_ASSERT_EQUAL(expected_time->seconds, rt_time.time.seconds);
+  TEST_ASSERT_EQUAL(expected_time->frame, rt_time.time.frame);
+  TEST_ASSERT_EQUAL(expected_time->fps, rt_time.time.fps);
+
+  TEST_ASSERT_EQUAL(
+      MIDI_SMPTE_USER_BITS_PAYLOAD_SIZE,
+      MidiDeserializeRealtimeTimeCode(
+          kUserBitsData, sizeof(kUserBitsData), &rt_time));
+  TEST_ASSERT_EQUAL(MIDI_USER_BITS, rt_time.sub_id);
+  TEST_ASSERT_EQUAL_MEMORY(
+      kUserBits.user_bits.data, rt_time.user_bits.data,
+      MIDI_USER_BITS_DATA_SIZE);
+  TEST_ASSERT_EQUAL(kUserBits.user_bits.bg_flags, rt_time.user_bits.bg_flags);
+}
+
 /* Device Control */
 static midi_device_control_t const kDeviceControlVolume = {
   .sub_id = MIDI_MASTER_VOLUME,
@@ -1356,6 +1564,11 @@ void MidiSystemUniversalTest(void) {
   RUN_TEST(TestMidiDeviceInquiry_Deserialize);
 
   RUN_TEST(TestMidiGeneralMidi_Validator);
+
+  RUN_TEST(TestMidiRealtimeTimeCode_Validator);
+  RUN_TEST(TestMidiRealtimeTimeCode_Initializer);
+  RUN_TEST(TestMidiRealtimeTimeCode_Serialize);
+  RUN_TEST(TestMidiRealtimeTimeCode_Deserialize);
 
   RUN_TEST(TestMidiDeviceControl_Validator);
   RUN_TEST(TestMidiDeviceControl_Initializer);
