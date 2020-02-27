@@ -45,6 +45,7 @@ static bool_t MidiIsValidRealtimeSubId(uint8_t sub_id) {
   switch (sub_id) {
     case MIDI_NONE:
       return false;
+    case MIDI_RT_TIME_CODE:
     case MIDI_DEVICE_CONTROL:
       return true;
   }
@@ -93,6 +94,8 @@ bool_t MidiIsValidSysEx(midi_sys_ex_t const *sys_ex) {
       return MidiIsValidPacketNumber(sys_ex->packet_number);
   }
   if (sys_ex->id[0] == MIDI_REAL_TIME_ID) switch (sys_ex->sub_id) {
+    case MIDI_RT_TIME_CODE:
+      return MidiIsValidRealtimeTimeCode(&sys_ex->rt_time_code);
     case MIDI_DEVICE_CONTROL:
       return MidiIsValidDeviceControl(&sys_ex->device_control);
   }
@@ -216,6 +219,10 @@ size_t MidiSerializeSysEx(
     } break;
   } else if (sys_ex->id[0] == MIDI_REAL_TIME_ID) switch (sys_ex->sub_id) {
     /* Realtime */
+    case MIDI_RT_TIME_CODE:
+      sub_response = MidiSerializeRealtimeTimeCode(
+          &sys_ex->rt_time_code, &data[di], data_size - di);
+      break;
     case MIDI_DEVICE_CONTROL:
       sub_response = MidiSerializeDeviceControl(
           &sys_ex->device_control, &data[di], data_size - di);
@@ -301,6 +308,10 @@ size_t MidiDeserializeSysEx(
     } break;
   } else if (sys_ex->id[0] == MIDI_REAL_TIME_ID) switch (sys_ex->sub_id) {
     /* Realtime */
+    case MIDI_RT_TIME_CODE:
+      sub_response = MidiDeserializeRealtimeTimeCode(
+          &data[3], data_size - 3, &sys_ex->rt_time_code);
+      break;
     case MIDI_DEVICE_CONTROL:
       sub_response = MidiDeserializeDeviceControl(
           &data[3], data_size - 3, &sys_ex->device_control);

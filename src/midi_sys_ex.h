@@ -40,6 +40,7 @@ typedef struct {
     midi_device_inquiry_t device_inquiry;
     midi_general_midi_mode_t gm_mode;
     /* Realtime */
+    midi_rt_time_code_t rt_time_code;
     midi_device_control_t device_control;
   };
 } midi_sys_ex_t;
