@@ -18,6 +18,9 @@ int main(void) {
   printf("\n==== Controller Test ====\n");
   PlatformAttributesTest();
 
+  printf("\n==== Misc Utilities Test ====\n");
+  BitArrayTest();
+
   /* MIDI test. */
   printf("\n==== MIDI Tests ====\n");
   MidiBytesTest();

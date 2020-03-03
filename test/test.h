@@ -10,6 +10,7 @@
 
 void SmartStringTest(void);
 void PlatformAttributesTest(void);
+void BitArrayTest(void);
 
 /* MIDI Tests */
 void MidiBytesTest(void);
