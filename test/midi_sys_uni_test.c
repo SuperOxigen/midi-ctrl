@@ -851,9 +851,18 @@ static void TestMidiSampleDump_Deserialize(void) {
 
 /* Device Inquiry */
 
-static uint8_t const kSmallDeviceInquiryManId[3] = {0x69, 0x00, 0x00};
-static uint8_t const kBadDeviceInquiryManId[3] = {0x00, 0x13, 0xF7};
-static uint8_t const kDeviceInquiryRev[4] = {0x4D, 0x49, 0x44, 0x49};
+static midi_sys_info_t kSmallSystemInfo = {
+  .id = {0x69, 0x00, 0x00},
+  .device_family_code = 0x0050,
+  .device_family_member_code = 0x2330,
+  .software_revision_level = {'M', 'I', 'D', 'I'}
+};
+static midi_sys_info_t kBadSystemInfo = {
+  .id = {0x00, 0x13, 0xF7},
+  .device_family_code = 0x0050,
+  .device_family_member_code = 0x2330,
+  .software_revision_level = {'M', 'I', 'D', 'I'}
+};
 
 static midi_device_inquiry_t const kGoodDeviceInquiryRequest = {
   .sub_id = MIDI_DEVICE_INQUIRY_REQUEST
@@ -863,31 +872,35 @@ static uint8_t const kGoodDeviceInquiryRequestData[MIDI_DEVICE_INQUIRY_REQUEST_P
 };
 static midi_device_inquiry_t const kGoodSmallDeviceInquiryResponse = {
   .sub_id = MIDI_DEVICE_INQUIRY_RESPONSE,
-  .id = { 0x69, 0x00, 0x00 },
-  .device_family_code = 0x0404,
-  .device_family_member_code = 0x0107,
-  .software_revision_level = { 0x4D, 0x49, 0x44, 0x49 }
+  .info = {
+    .id = { 0x69, 0x00, 0x00 },
+    .device_family_code = 0x0404,
+    .device_family_member_code = 0x0107,
+    .software_revision_level = {'M', 'I', 'D', 'I'}
+  }
 };
 static uint8_t const kGoodSmallDeviceInquiryResponseData[MIDI_DEVICE_INQUIRY_RESPONSE_SMALL_PAYLOAD_SIZE] = {
   MIDI_DEVICE_INQUIRY_RESPONSE,
   0x69,
   0x04, 0x08,
   0x07, 0x02,
-  0x4D, 0x49, 0x44, 0x49
+  'M', 'I', 'D', 'I'
 };
 static midi_device_inquiry_t const kGoodLargeDeviceInquiryResponse = {
   .sub_id = MIDI_DEVICE_INQUIRY_RESPONSE,
-  .id = { 0x00, 0x13, 0x37 },
-  .device_family_code = 0x3077,
-  .device_family_member_code = 0x1081,
-  .software_revision_level = { 0x4D, 0x49, 0x44, 0x49 }
+  .info = {
+    .id = { 0x00, 0x13, 0x37 },
+    .device_family_code = 0x3077,
+    .device_family_member_code = 0x1081,
+    .software_revision_level = {'M', 'I', 'D', 'I'}
+  }
 };
 static uint8_t const kGoodLargeDeviceInquiryResponseData[MIDI_DEVICE_INQUIRY_RESPONSE_LARGE_PAYLOAD_SIZE] = {
   MIDI_DEVICE_INQUIRY_RESPONSE,
   0x00, 0x13, 0x37,
   0x77, 0x60,
   0x01, 0x21,
-  0x4D, 0x49, 0x44, 0x49
+  'M', 'I', 'D', 'I'
 };
 
 static midi_device_inquiry_t const kBadDeviceInquiry = {
@@ -898,38 +911,42 @@ static uint8_t const kBadDeviceInquiryData[MIDI_DEVICE_INQUIRY_REQUEST_PAYLOAD_S
 };
 static midi_device_inquiry_t const kBadSmallDeviceInquiryResponse = {
   .sub_id = MIDI_DEVICE_INQUIRY_RESPONSE,
-  .id = { 0x69, 0x00, 0x00 },
-  .device_family_code = 0x0404,
-  .device_family_member_code = 0x0107,
-  .software_revision_level = { 0x4D, 0x49, 0xB4, 0x49 }
+  .info = {
+    .id = {0x69, 0x00, 0x00},
+    .device_family_code = 0x0404,
+    .device_family_member_code = 0x0107,
+    .software_revision_level = {'M', 'I', 'D' | 0x80, 'I'}
+  }
 };
 static uint8_t const kBadSmallDeviceInquiryResponseData[MIDI_DEVICE_INQUIRY_RESPONSE_SMALL_PAYLOAD_SIZE] = {
   MIDI_DEVICE_INQUIRY_RESPONSE,
   0x69,
   0x04, 0x08,
   0x07, 0x02,
-  0x4D, 0x49, 0xB4, 0x49
+  'M', 'I', 'D' | 0x80, 'I'
 };
 static midi_device_inquiry_t const kBadLargeDeviceInquiryResponse = {
   .sub_id = MIDI_DEVICE_INQUIRY_RESPONSE,
-  .id = { 0x00, 0x13, 0x37 },
-  .device_family_code = 0x7077,
-  .device_family_member_code = 0x1081,
-  .software_revision_level = { 0x4D, 0x49, 0x44, 0x49 }
+  .info = {
+    .id = {0x00, 0x13, 0x37},
+    .device_family_code = 0x7077,
+    .device_family_member_code = 0x1081,
+    .software_revision_level = {'M', 'I', 'D', 'I'}
+  }
 };
 static uint8_t const kBadLargeDeviceInquiryResponseDataOne[MIDI_DEVICE_INQUIRY_RESPONSE_LARGE_PAYLOAD_SIZE] = {
   MIDI_DEVICE_INQUIRY_RESPONSE,
   0x00, 0x13, 0x37,
   0x77, 0x60,
   0x81, 0x21,
-  0x4D, 0x49, 0x44, 0x49
+  'M', 'I', 'D', 'I'
 };
 static uint8_t const kBadLargeDeviceInquiryResponseDataTwo[MIDI_DEVICE_INQUIRY_RESPONSE_LARGE_PAYLOAD_SIZE] = {
   MIDI_DEVICE_INQUIRY_RESPONSE,
   0x00, 0x13, 0x87,
   0x77, 0x60,
   0x81, 0x21,
-  0x4D, 0x49, 0x44, 0x49
+  'M', 'I', 'D', 'I'
 };
 
 static void TestMidiDeviceInquiry_Validator(void) {
@@ -943,16 +960,16 @@ static void TestMidiDeviceInquiry_Validator(void) {
   /* Bad small responses. */
   midi_device_inquiry_t bad_device_inquiry = kBadSmallDeviceInquiryResponse;
   TEST_ASSERT_FALSE(MidiIsValidDeviceInquiry(&bad_device_inquiry));
-  memset(bad_device_inquiry.software_revision_level, 0,
+  memset(bad_device_inquiry.info.software_revision_level, 0,
          MIDI_SOFTWARE_REVISION_SIZE);
   TEST_ASSERT_TRUE(MidiIsValidDeviceInquiry(&bad_device_inquiry));
-  bad_device_inquiry.id[2] = 0x8F;
+  bad_device_inquiry.info.id[2] = 0x8F;
   TEST_ASSERT_FALSE(MidiIsValidDeviceInquiry(&bad_device_inquiry));
 
   /* Bad Response */
   bad_device_inquiry = kBadLargeDeviceInquiryResponse;
   TEST_ASSERT_FALSE(MidiIsValidDeviceInquiry(&bad_device_inquiry));
-  bad_device_inquiry.device_family_code = 0x0000;
+  bad_device_inquiry.info.device_family_code = 0x0000;
   TEST_ASSERT_TRUE(MidiIsValidDeviceInquiry(&bad_device_inquiry));
 }
 
@@ -968,32 +985,27 @@ static void TestMidiDeviceInquiry_Initializer(void) {
 
   /* Response */
   TEST_ASSERT_FALSE(MidiInitializeDeviceInquiryResponse(
-      NULL, kSmallDeviceInquiryManId, 0x0050, 0x2330, kDeviceInquiryRev));
+      NULL, &kSmallSystemInfo));
   TEST_ASSERT_FALSE(MidiInitializeDeviceInquiryResponse(
-      &device_inquiry, NULL, 0x0050, 0x2330, kDeviceInquiryRev));
+      &device_inquiry, NULL));
   TEST_ASSERT_FALSE(MidiInitializeDeviceInquiryResponse(
-      &device_inquiry, kBadDeviceInquiryManId, 0x0050, 0x2330,
-      kDeviceInquiryRev));
-  TEST_ASSERT_FALSE(MidiInitializeDeviceInquiryResponse(
-      &device_inquiry, kSmallDeviceInquiryManId, 0x7050, 0x2330,
-      kDeviceInquiryRev));
-  TEST_ASSERT_FALSE(MidiInitializeDeviceInquiryResponse(
-      &device_inquiry, kSmallDeviceInquiryManId, 0x0050, 0x8330,
-      kDeviceInquiryRev));
-  TEST_ASSERT_FALSE(MidiInitializeDeviceInquiryResponse(
-      &device_inquiry, kSmallDeviceInquiryManId, 0x0050, 0x2330, NULL));
+      &device_inquiry, &kBadSystemInfo));
 
   TEST_ASSERT_TRUE(MidiInitializeDeviceInquiryResponse(
-      &device_inquiry, kSmallDeviceInquiryManId, 0x0050, 0x2330,
-      kDeviceInquiryRev));
+      &device_inquiry, &kSmallSystemInfo));
   TEST_ASSERT_EQUAL(MIDI_SAMPLE_LOOP_RESPONSE, device_inquiry.sub_id);
   TEST_ASSERT_EQUAL_MEMORY(
-      kSmallDeviceInquiryManId, device_inquiry.id,
+      kSmallSystemInfo.id, device_inquiry.info.id,
       sizeof(midi_manufacturer_id_t));
-  TEST_ASSERT_EQUAL(0x0050, device_inquiry.device_family_code);
-  TEST_ASSERT_EQUAL(0x2330, device_inquiry.device_family_member_code);
+  TEST_ASSERT_EQUAL(
+      kSmallSystemInfo.device_family_code,
+      device_inquiry.info.device_family_code);
+  TEST_ASSERT_EQUAL(
+      kSmallSystemInfo.device_family_member_code,
+      device_inquiry.info.device_family_member_code);
   TEST_ASSERT_EQUAL_MEMORY(
-      kDeviceInquiryRev, device_inquiry.software_revision_level,
+      kSmallSystemInfo.software_revision_level,
+      device_inquiry.info.software_revision_level,
       MIDI_SOFTWARE_REVISION_SIZE);
 }
 
@@ -1148,17 +1160,18 @@ static void TestMidiDeviceInquiry_Deserialize(void) {
   TEST_ASSERT_EQUAL(
       kGoodSmallDeviceInquiryResponse.sub_id, device_inquiry.sub_id);
   TEST_ASSERT_EQUAL_MEMORY(
-      kGoodSmallDeviceInquiryResponse.id, device_inquiry.id,
+      kGoodSmallDeviceInquiryResponse.info.id, device_inquiry.info.id,
       sizeof(midi_manufacturer_id_t));
   TEST_ASSERT_EQUAL(
-      kGoodSmallDeviceInquiryResponse.device_family_code,
-      device_inquiry.device_family_code);
+      kGoodSmallDeviceInquiryResponse.info.device_family_code,
+      device_inquiry.info.device_family_code);
   TEST_ASSERT_EQUAL(
-      kGoodSmallDeviceInquiryResponse.device_family_member_code,
-      device_inquiry.device_family_member_code);
+      kGoodSmallDeviceInquiryResponse.info.device_family_member_code,
+      device_inquiry.info.device_family_member_code);
   TEST_ASSERT_EQUAL_MEMORY(
-      kGoodSmallDeviceInquiryResponse.software_revision_level,
-      device_inquiry.software_revision_level, MIDI_SOFTWARE_REVISION_SIZE);
+      kGoodSmallDeviceInquiryResponse.info.software_revision_level,
+      device_inquiry.info.software_revision_level,
+      MIDI_SOFTWARE_REVISION_SIZE);
   /* Large response. */
   TEST_ASSERT_EQUAL(
       MIDI_DEVICE_INQUIRY_RESPONSE_LARGE_PAYLOAD_SIZE,
@@ -1167,17 +1180,18 @@ static void TestMidiDeviceInquiry_Deserialize(void) {
           MIDI_DEVICE_INQUIRY_RESPONSE_LARGE_PAYLOAD_SIZE, &device_inquiry));
   TEST_ASSERT_EQUAL(kGoodSmallDeviceInquiryResponse.sub_id, device_inquiry.sub_id);
   TEST_ASSERT_EQUAL_MEMORY(
-      kGoodLargeDeviceInquiryResponse.id, device_inquiry.id,
+      kGoodLargeDeviceInquiryResponse.info.id, device_inquiry.info.id,
       sizeof(midi_manufacturer_id_t));
   TEST_ASSERT_EQUAL(
-      kGoodLargeDeviceInquiryResponse.device_family_code,
-      device_inquiry.device_family_code);
+      kGoodLargeDeviceInquiryResponse.info.device_family_code,
+      device_inquiry.info.device_family_code);
   TEST_ASSERT_EQUAL(
-      kGoodLargeDeviceInquiryResponse.device_family_member_code,
-      device_inquiry.device_family_member_code);
+      kGoodLargeDeviceInquiryResponse.info.device_family_member_code,
+      device_inquiry.info.device_family_member_code);
   TEST_ASSERT_EQUAL_MEMORY(
-      kGoodLargeDeviceInquiryResponse.software_revision_level,
-      device_inquiry.software_revision_level, MIDI_SOFTWARE_REVISION_SIZE);
+      kGoodLargeDeviceInquiryResponse.info.software_revision_level,
+      device_inquiry.info.software_revision_level,
+      MIDI_SOFTWARE_REVISION_SIZE);
 }
 
 /* General MIDI Mode */

@@ -288,10 +288,12 @@ static void TestMidiReceiver_SysEx_SmallMessage(void) {
       .sub_id = MIDI_GENERAL_INFO,
       .device_inquiry = {
         .sub_id = MIDI_DEVICE_INQUIRY_RESPONSE,
-        .id = {0x00, 0x12, 0x34},
-        .device_family_code = 0x0FFC,
-        .device_family_member_code = 0x3333,
-        .software_revision_level = {'M', 'I', 'D', 'I'}
+        .info = {
+          .id = {0x00, 0x12, 0x34},
+          .device_family_code = 0x0FFC,
+          .device_family_member_code = 0x3333,
+          .software_revision_level = {'M', 'I', 'D', 'I'}
+        }
       }
     }
   };
@@ -316,17 +318,17 @@ static void TestMidiReceiver_SysEx_SmallMessage(void) {
       kDeviceInquiryMessage.sys_ex.device_inquiry.sub_id,
       message.sys_ex.device_inquiry.sub_id);
   TEST_ASSERT_EQUAL_MEMORY(
-      kDeviceInquiryMessage.sys_ex.device_inquiry.id,
-      message.sys_ex.device_inquiry.id, sizeof(midi_manufacturer_id_t));
+      kDeviceInquiryMessage.sys_ex.device_inquiry.info.id,
+      message.sys_ex.device_inquiry.info.id, sizeof(midi_manufacturer_id_t));
   TEST_ASSERT_EQUAL(
-      kDeviceInquiryMessage.sys_ex.device_inquiry.device_family_code,
-      message.sys_ex.device_inquiry.device_family_code);
+      kDeviceInquiryMessage.sys_ex.device_inquiry.info.device_family_code,
+      message.sys_ex.device_inquiry.info.device_family_code);
   TEST_ASSERT_EQUAL(
-      kDeviceInquiryMessage.sys_ex.device_inquiry.device_family_member_code,
-      message.sys_ex.device_inquiry.device_family_member_code);
+      kDeviceInquiryMessage.sys_ex.device_inquiry.info.device_family_member_code,
+      message.sys_ex.device_inquiry.info.device_family_member_code);
   TEST_ASSERT_EQUAL_MEMORY(
-      kDeviceInquiryMessage.sys_ex.device_inquiry.software_revision_level,
-      message.sys_ex.device_inquiry.software_revision_level,
+      kDeviceInquiryMessage.sys_ex.device_inquiry.info.software_revision_level,
+      message.sys_ex.device_inquiry.info.software_revision_level,
       MIDI_SOFTWARE_REVISION_SIZE);
 }
 

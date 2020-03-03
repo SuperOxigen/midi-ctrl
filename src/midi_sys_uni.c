@@ -443,10 +443,10 @@ size_t MidiDeserializeSampleDump(
  * Request and response fields:
  *    tt          - Sub ID, message type (request or response)
  * Response only fields:
- *    mm[nn nn]   - Manufacturer ID
+ *    mm[mm mm]   - Manufacturer ID
  *    ff ff       - Device family.
- *    dd dd       -
- *    ss ss ss ss -
+ *    dd dd       - Device family member code.
+ *    ss ss ss ss - Software revision level.
  */
 
 #define MidiIsValidInquiryDeviceSubId(sub_id) \
@@ -457,13 +457,7 @@ bool_t MidiIsValidDeviceInquiry(midi_device_inquiry_t const *device_inquiry) {
   if (device_inquiry == NULL) return false;
   if (!MidiIsValidInquiryDeviceSubId(device_inquiry->sub_id)) return false;
   if (device_inquiry->sub_id == MIDI_DEVICE_INQUIRY_REQUEST) return true;
-  /* Response. */
-  if (!MidiIsValidManufacturerId(device_inquiry->id)) return false;
-  if (!MidiIsDataWord(device_inquiry->device_family_code) ||
-      !MidiIsDataWord(device_inquiry->device_family_member_code)) return false;
-  if (!MidiIsDataArray(device_inquiry->software_revision_level, 4))
-    return false;
-  return true;
+  return MidiIsValidSystemInfo(&device_inquiry->info);
 }
 
 bool_t MidiInitializeDeviceInquiryRequest(
@@ -475,21 +469,11 @@ bool_t MidiInitializeDeviceInquiryRequest(
 }
 
 bool_t MidiInitializeDeviceInquiryResponse(
-    midi_device_inquiry_t *device_inquiry, midi_manufacturer_id_cref_t man_id,
-    uint16_t device_family_code, uint16_t device_family_member_code,
-    uint8_t const *software_revision_level) {
+    midi_device_inquiry_t *device_inquiry, midi_sys_info_t const *sys_info) {
   if (device_inquiry == NULL) return false;
-  if (!MidiIsValidManufacturerId(man_id) ||
-      !MidiIsDataWord(device_family_code) ||
-      !MidiIsDataWord(device_family_member_code) ||
-      !MidiIsDataArray(software_revision_level, MIDI_SOFTWARE_REVISION_SIZE))
-    return false;
+  if (!MidiIsValidSystemInfo(sys_info)) return false;
   device_inquiry->sub_id = MIDI_DEVICE_INQUIRY_RESPONSE;
-  memcpy(device_inquiry->id, man_id, sizeof(midi_manufacturer_id_t));
-  device_inquiry->device_family_code = device_family_code;
-  device_inquiry->device_family_member_code = device_family_member_code;
-  memcpy(device_inquiry->software_revision_level, software_revision_level,
-         MIDI_SOFTWARE_REVISION_SIZE);
+  memcpy(&device_inquiry->info, sys_info, sizeof(midi_sys_info_t));
   return true;
 }
 
@@ -501,21 +485,20 @@ size_t MidiSerializeDeviceInquiry(
   size_t const expected_size =
       (device_inquiry->sub_id == MIDI_DEVICE_INQUIRY_REQUEST) ?
        MIDI_DEVICE_INQUIRY_REQUEST_PAYLOAD_SIZE :
-       ((device_inquiry->id[0] == 0x00) ?
+       ((device_inquiry->info.id[0] == 0x00) ?
         MIDI_DEVICE_INQUIRY_RESPONSE_LARGE_PAYLOAD_SIZE :
         MIDI_DEVICE_INQUIRY_RESPONSE_SMALL_PAYLOAD_SIZE);
   if (data_size < expected_size) return expected_size;
   data[0] = device_inquiry->sub_id;
   if (device_inquiry->sub_id == MIDI_DEVICE_INQUIRY_RESPONSE) {
+    midi_sys_info_t const *sys_info = &device_inquiry->info;
     size_t const offset =  MidiSerializeManufacturerId(
-        device_inquiry->id, &data[1], data_size - 1);
-    data[offset + 1] = MidiGetDataWordLsb(device_inquiry->device_family_code);
-    data[offset + 2] = MidiGetDataWordMsb(device_inquiry->device_family_code);
-    data[offset + 3] = MidiGetDataWordLsb(
-        device_inquiry->device_family_member_code);
-    data[offset + 4] = MidiGetDataWordMsb(
-        device_inquiry->device_family_member_code);
-    memcpy(&data[offset + 5], device_inquiry->software_revision_level,
+        sys_info->id, &data[1], data_size - 1);
+    data[offset + 1] = MidiGetDataWordLsb(sys_info->device_family_code);
+    data[offset + 2] = MidiGetDataWordMsb(sys_info->device_family_code);
+    data[offset + 3] = MidiGetDataWordLsb(sys_info->device_family_member_code);
+    data[offset + 4] = MidiGetDataWordMsb(sys_info->device_family_member_code);
+    memcpy(&data[offset + 5], sys_info->software_revision_level,
            MIDI_SOFTWARE_REVISION_SIZE);
   }
   return expected_size;
@@ -542,13 +525,14 @@ size_t MidiDeserializeDeviceInquiry(
   if (data_size < expected_size) return expected_size;
   device_inquiry->sub_id = data[0];
   if (!MidiIsDataArray(data, expected_size)) return 0;
+  midi_sys_info_t *sys_info = &device_inquiry->info;
   size_t const offset = MidiDeserializeManufacturerId(
-      &data[1], data_size - 1, device_inquiry->id);
-  device_inquiry->device_family_code = MidiDataWordFromBytes(
+      &data[1], data_size - 1, sys_info->id);
+  sys_info->device_family_code = MidiDataWordFromBytes(
       data[offset + 2], data[offset + 1]);
-  device_inquiry->device_family_member_code = MidiDataWordFromBytes(
+  sys_info->device_family_member_code = MidiDataWordFromBytes(
       data[offset + 4], data[offset + 3]);
-  memcpy(device_inquiry->software_revision_level, &data[offset + 5],
+  memcpy(sys_info->software_revision_level, &data[offset + 5],
          MIDI_SOFTWARE_REVISION_SIZE);
   return expected_size;
 }

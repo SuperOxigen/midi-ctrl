@@ -90,10 +90,12 @@ static midi_sys_ex_t const kDeviceInquiryResponseSysEx = {
   .sub_id = MIDI_GENERAL_INFO,
   .device_inquiry = {
     .sub_id = MIDI_SAMPLE_LOOP_RESPONSE,
-    .id = { 0x00, 0x40, 0x60 },
-    .device_family_code = 0x1133,
-    .device_family_member_code = 0x3311,
-    .software_revision_level = { 0x4D, 0x49, 0x44, 0x49 }
+    .info = {
+      .id = { 0x00, 0x40, 0x60 },
+      .device_family_code = 0x1133,
+      .device_family_member_code = 0x3311,
+      .software_revision_level = { 0x4D, 0x49, 0x44, 0x49 }
+    }
   }
 };
 static uint8_t const kDeviceInquiryResponseSysExData[] = {
@@ -203,7 +205,7 @@ static void TestMidiSysEx_Validator(void) {
   TEST_ASSERT_FALSE(MidiIsValidSysEx(&kInvalidSysEx));
   TEST_ASSERT_FALSE(MidiIsValidSysEx(&kInvalidProprietarySysEx));
   sys_ex = kDeviceInquiryResponseSysEx;
-  sys_ex.device_inquiry.id[1] = 0x90;
+  sys_ex.device_inquiry.info.id[1] = 0x90;
   TEST_ASSERT_FALSE(MidiIsValidSysEx(&sys_ex));
 }
 
@@ -458,17 +460,17 @@ static void TestMidiSysEx_Deserialize(void) {
       kDeviceInquiryResponseSysEx.device_inquiry.sub_id,
       sys_ex.device_inquiry.sub_id);
   TEST_ASSERT_EQUAL_MEMORY(
-      kDeviceInquiryResponseSysEx.device_inquiry.id,
-      sys_ex.device_inquiry.id, sizeof(midi_manufacturer_id_t));
+      kDeviceInquiryResponseSysEx.device_inquiry.info.id,
+      sys_ex.device_inquiry.info.id, sizeof(midi_manufacturer_id_t));
   TEST_ASSERT_EQUAL(
-      kDeviceInquiryResponseSysEx.device_inquiry.device_family_code,
-      sys_ex.device_inquiry.device_family_code);
+      kDeviceInquiryResponseSysEx.device_inquiry.info.device_family_code,
+      sys_ex.device_inquiry.info.device_family_code);
   TEST_ASSERT_EQUAL(
-      kDeviceInquiryResponseSysEx.device_inquiry.device_family_member_code,
-      sys_ex.device_inquiry.device_family_member_code);
+      kDeviceInquiryResponseSysEx.device_inquiry.info.device_family_member_code,
+      sys_ex.device_inquiry.info.device_family_member_code);
   TEST_ASSERT_EQUAL_MEMORY(
-      kDeviceInquiryResponseSysEx.device_inquiry.software_revision_level,
-      sys_ex.device_inquiry.software_revision_level,
+      kDeviceInquiryResponseSysEx.device_inquiry.info.software_revision_level,
+      sys_ex.device_inquiry.info.software_revision_level,
       MIDI_SOFTWARE_REVISION_SIZE);
 
   TEST_ASSERT_EQUAL(sizeof(kGeneralMidiModeOnSysExData), MidiDeserializeSysEx(

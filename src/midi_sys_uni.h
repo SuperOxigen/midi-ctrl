@@ -11,6 +11,7 @@
 #include "base.h"
 #include "midi_bytes.h"
 #include "midi_man_id.h"
+#include "midi_sys_info.h"
 #include "midi_time.h"
 #include "midi_user_bits.h"
 #include "midi_volume.h"
@@ -169,8 +170,6 @@ size_t MidiDeserializeSampleDump(
   midi_sample_dump_t *sample_dump);
 
 /* Device Inquiry */
-#define MIDI_SOFTWARE_REVISION_SIZE 4
-
 #define MIDI_DEVICE_INQUIRY_REQUEST_PAYLOAD_SIZE 1
 #define MIDI_DEVICE_INQUIRY_RESPONSE_SMALL_PAYLOAD_SIZE 10
 #define MIDI_DEVICE_INQUIRY_RESPONSE_LARGE_PAYLOAD_SIZE 12
@@ -178,10 +177,7 @@ typedef struct {
   /* Reply and request. */
   uint8_t sub_id;
   /* Reply only */
-  midi_manufacturer_id_t id;
-  uint16_t device_family_code;
-  uint16_t device_family_member_code;
-  uint8_t software_revision_level[MIDI_SOFTWARE_REVISION_SIZE];
+  midi_sys_info_t info;
 } midi_device_inquiry_t;
 
 bool_t MidiIsValidDeviceInquiry(midi_device_inquiry_t const *device_inquiry);
@@ -189,9 +185,7 @@ bool_t MidiIsValidDeviceInquiry(midi_device_inquiry_t const *device_inquiry);
 bool_t MidiInitializeDeviceInquiryRequest(
   midi_device_inquiry_t *device_inquiry);
 bool_t MidiInitializeDeviceInquiryResponse(
-  midi_device_inquiry_t *device_inquiry, midi_manufacturer_id_cref_t man_id,
-  uint16_t device_family_code, uint16_t device_family_member_code,
-  uint8_t const *software_revision_level);
+  midi_device_inquiry_t *device_inquiry, midi_sys_info_t const *sys_info);
 
 size_t MidiSerializeDeviceInquiry(
   midi_device_inquiry_t const *device_inquiry,
