@@ -20,6 +20,7 @@ int main(void) {
 
   printf("\n==== Misc Utilities Test ====\n");
   BitArrayTest();
+  SystemTimeTest();
 
   /* MIDI test. */
   printf("\n==== MIDI Tests ====\n");
