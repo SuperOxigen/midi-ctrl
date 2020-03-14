@@ -1,5 +1,5 @@
 /*
- * MIDI Controller - System Time
+ * MIDI Controller - System Time Test
  *
  * Copyright (c) 2020 Alex Dale
  * This project is licensed under the terms of the MIT license.
@@ -262,8 +262,10 @@ static void TestSystemTime_SecondsDelta(void) {
   TEST_ASSERT_FALSE(SystemTimeSecondsDelta(&kZeroTime, &kZeroTime, NULL));
   TEST_ASSERT_FALSE(SystemTimeSecondsDelta(NULL, NULL, NULL));
   TEST_ASSERT_FALSE(SystemTimeSecondsDelta(NULL, NULL, &delta));
-  TEST_ASSERT_FALSE(SystemTimeSecondsDelta(&kInvalidTime, &kInvalidTime, NULL));
-  TEST_ASSERT_FALSE(SystemTimeSecondsDelta(&kInvalidTime, &kInvalidTime, &delta));
+  TEST_ASSERT_FALSE(SystemTimeSecondsDelta(
+      &kInvalidTime, &kInvalidTime, NULL));
+  TEST_ASSERT_FALSE(SystemTimeSecondsDelta(
+      &kInvalidTime, &kInvalidTime, &delta));
 
   delta = 0;
   TEST_ASSERT_TRUE(SystemTimeSecondsDelta(&kZeroTime, &kMaxTime, &delta));
@@ -337,11 +339,14 @@ static void TestSystemTime_MillisecondsDelta(void) {
       &kInvalidTime, &kInvalidTime, &delta));
 
   /* Overflows */
-  TEST_ASSERT_FALSE(SystemTimeMillisecondsDelta(&kZeroTime, &kMaxTime, &delta));
-  TEST_ASSERT_FALSE(SystemTimeMillisecondsDelta(&kMaxTime, &kZeroTime, &delta));
+  TEST_ASSERT_FALSE(SystemTimeMillisecondsDelta(
+      &kZeroTime, &kMaxTime, &delta));
+  TEST_ASSERT_FALSE(SystemTimeMillisecondsDelta(
+      &kMaxTime, &kZeroTime, &delta));
 
   /* Equal */
-  TEST_ASSERT_TRUE(SystemTimeMillisecondsDelta(&kZeroTime, &kZeroTime, &delta));
+  TEST_ASSERT_TRUE(SystemTimeMillisecondsDelta(
+      &kZeroTime, &kZeroTime, &delta));
   TEST_ASSERT_EQUAL(0, delta);
   delta = MAX_SECONDS;
   TEST_ASSERT_TRUE(SystemTimeMillisecondsDelta(&kMaxTime, &kMaxTime, &delta));
@@ -586,6 +591,228 @@ static void TestSystemTime_IncrementMilliseconds(void) {
   TEST_ASSERT_TRUE(SystemTimeEqual(&kMaxTime, &time));
 }
 
+static void TestSystemTime_IncrementNanoseconds(void) {
+  TEST_ASSERT_FALSE(SystemTimeIncrementNanoseconds(NULL, 0));
+
+  system_time_t time = kMaxTime;
+  TEST_ASSERT_TRUE(SystemTimeIncrementNanoseconds(&time, 0));
+  TEST_ASSERT_TRUE(SystemTimeEqual(&kMaxTime, &time));
+
+  TEST_ASSERT_TRUE(SystemTimeIncrementNanoseconds(&time, MAX_SECONDS));
+  TEST_ASSERT_TRUE(SystemTimeEqual(&kMaxTime, &time));
+
+  time = kZeroTime;
+  TEST_ASSERT_TRUE(SystemTimeIncrementNanoseconds(&time, 0));
+  TEST_ASSERT_TRUE(SystemTimeEqual(&kZeroTime, &time));
+
+  TEST_ASSERT_TRUE(SystemTimeIncrementNanoseconds(&time, 1001001));
+  TEST_ASSERT_EQUAL(1, time.seconds);
+  TEST_ASSERT_EQUAL(1001, time.nanoseconds);
+
+  time = (system_time_t) {
+    .seconds = 5000,
+    .nanoseconds = 750150
+  };
+  TEST_ASSERT_TRUE(SystemTimeIncrementNanoseconds(&time, 0));
+  TEST_ASSERT_EQUAL(5000, time.seconds);
+  TEST_ASSERT_EQUAL(750150, time.nanoseconds);
+
+  TEST_ASSERT_TRUE(SystemTimeIncrementNanoseconds(&time, 249850));
+  TEST_ASSERT_EQUAL(5001, time.seconds);
+  TEST_ASSERT_EQUAL(0, time.nanoseconds);
+
+  TEST_ASSERT_TRUE(SystemTimeIncrementNanoseconds(&time, 14000500));
+  TEST_ASSERT_EQUAL(5015, time.seconds);
+  TEST_ASSERT_EQUAL(500, time.nanoseconds);
+
+  time = (system_time_t) {
+    .seconds = MAX_SECONDS - 50,
+    .nanoseconds = 0
+  };
+  TEST_ASSERT_TRUE(SystemTimeIncrementNanoseconds(&time, 50000000));
+  TEST_ASSERT_EQUAL(MAX_SECONDS, time.seconds);
+  TEST_ASSERT_EQUAL(0, time.nanoseconds);
+
+  time = (system_time_t) {
+    .seconds = MAX_SECONDS - 1,
+    .nanoseconds = 500000
+  };
+  TEST_ASSERT_TRUE(SystemTimeIncrementNanoseconds(&time, 500001));
+  TEST_ASSERT_EQUAL(MAX_SECONDS, time.seconds);
+  TEST_ASSERT_EQUAL(1, time.nanoseconds);
+
+  time = (system_time_t) {
+    .seconds = MAX_SECONDS - 1,
+    .nanoseconds = 500000
+  };
+  TEST_ASSERT_TRUE(SystemTimeIncrementNanoseconds(&time, 2000000));
+  TEST_ASSERT_TRUE(SystemTimeEqual(&kMaxTime, &time));
+
+  time = (system_time_t) {
+    .seconds = MAX_SECONDS - 5,
+    .nanoseconds = 500000
+  };
+  TEST_ASSERT_TRUE(SystemTimeIncrementNanoseconds(&time, 5500001));
+  TEST_ASSERT_TRUE(SystemTimeEqual(&kMaxTime, &time));
+}
+
+static void TestSystemTime_DecrementSeconds(void) {
+  TEST_ASSERT_FALSE(SystemTimeDecrementSeconds(NULL, 0));
+
+  system_time_t time = kZeroTime;
+  TEST_ASSERT_TRUE(SystemTimeDecrementSeconds(&time, 0));
+  TEST_ASSERT_TRUE(SystemTimeEqual(&kZeroTime, &time));
+
+  TEST_ASSERT_TRUE(SystemTimeDecrementSeconds(&time, MAX_SECONDS));
+  TEST_ASSERT_TRUE(SystemTimeEqual(&kZeroTime, &time));
+
+  time = kMaxTime;
+  TEST_ASSERT_TRUE(SystemTimeDecrementSeconds(&time, 0));
+  TEST_ASSERT_TRUE(SystemTimeEqual(&kMaxTime, &time));
+
+  TEST_ASSERT_TRUE(SystemTimeDecrementSeconds(&time, MAX_SECONDS));
+  TEST_ASSERT_EQUAL(0, time.seconds);
+  TEST_ASSERT_EQUAL(MAX_NANOSECONDS, time.nanoseconds);
+
+  time = (system_time_t) {
+    .seconds = 5000,
+    .nanoseconds = 750000
+  };
+  TEST_ASSERT_TRUE(SystemTimeDecrementSeconds(&time, 0));
+  TEST_ASSERT_EQUAL(5000, time.seconds);
+  TEST_ASSERT_EQUAL(750000, time.nanoseconds);
+
+  TEST_ASSERT_TRUE(SystemTimeDecrementSeconds(&time, 4500));
+  TEST_ASSERT_EQUAL(500, time.seconds);
+  TEST_ASSERT_EQUAL(750000, time.nanoseconds);
+
+  TEST_ASSERT_TRUE(SystemTimeDecrementSeconds(&time, MAX_SECONDS));
+  TEST_ASSERT_TRUE(SystemTimeEqual(&kZeroTime, &time));
+}
+
+static void TestSystemTime_DecrementMilliseconds(void) {
+  TEST_ASSERT_FALSE(SystemTimeDecrementMilliseconds(NULL, 0));
+
+  system_time_t time = kZeroTime;
+  TEST_ASSERT_TRUE(SystemTimeDecrementMilliseconds(&time, 0));
+  TEST_ASSERT_TRUE(SystemTimeEqual(&kZeroTime, &time));
+
+  TEST_ASSERT_TRUE(SystemTimeDecrementMilliseconds(&time, MAX_SECONDS));
+  TEST_ASSERT_TRUE(SystemTimeEqual(&kZeroTime, &time));
+
+  time = kMaxTime;
+  TEST_ASSERT_TRUE(SystemTimeDecrementMilliseconds(&time, 0));
+  TEST_ASSERT_TRUE(SystemTimeEqual(&kMaxTime, &time));
+
+  TEST_ASSERT_TRUE(SystemTimeDecrementMilliseconds(&time, 1001));
+  TEST_ASSERT_EQUAL(MAX_SECONDS - 1, time.seconds);
+  TEST_ASSERT_EQUAL(MAX_NANOSECONDS - 1000, time.nanoseconds);
+
+  time = (system_time_t) {
+    .seconds = 5000,
+    .nanoseconds = 750150
+  };
+  TEST_ASSERT_TRUE(SystemTimeDecrementMilliseconds(&time, 0));
+  TEST_ASSERT_EQUAL(5000, time.seconds);
+  TEST_ASSERT_EQUAL(750150, time.nanoseconds);
+
+  TEST_ASSERT_TRUE(SystemTimeDecrementMilliseconds(&time, 4150));
+  TEST_ASSERT_EQUAL(4996, time.seconds);
+  TEST_ASSERT_EQUAL(600150, time.nanoseconds);
+
+  /* Seconds carry. */
+  TEST_ASSERT_TRUE(SystemTimeDecrementMilliseconds(&time, 800));
+  TEST_ASSERT_EQUAL(4995, time.seconds);
+  TEST_ASSERT_EQUAL(800150, time.nanoseconds);
+
+  TEST_ASSERT_TRUE(SystemTimeDecrementMilliseconds(&time, 4900));
+  TEST_ASSERT_EQUAL(4990, time.seconds);
+  TEST_ASSERT_EQUAL(900150, time.nanoseconds);
+
+  /* Overflow. */
+  time = (system_time_t) {
+    .seconds = 50,
+    .nanoseconds = 0
+  };
+  TEST_ASSERT_TRUE(SystemTimeDecrementMilliseconds(&time, 51000));
+  TEST_ASSERT_TRUE(SystemTimeEqual(&kZeroTime, &time));
+
+  time = (system_time_t) {
+    .seconds = 50,
+    .nanoseconds = 5000
+  };
+  TEST_ASSERT_TRUE(SystemTimeDecrementMilliseconds(&time, 50004));
+  TEST_ASSERT_EQUAL(0, time.seconds);
+  TEST_ASSERT_EQUAL(1000, time.nanoseconds);
+
+  TEST_ASSERT_TRUE(SystemTimeDecrementMilliseconds(&time, 1));
+  TEST_ASSERT_TRUE(SystemTimeEqual(&kZeroTime, &time));
+}
+
+static void TestSystemTime_DecrementNanoseconds(void) {
+  TEST_ASSERT_FALSE(SystemTimeDecrementNanoseconds(NULL, 0));
+
+  system_time_t time = kZeroTime;
+  TEST_ASSERT_TRUE(SystemTimeDecrementNanoseconds(&time, 0));
+  TEST_ASSERT_TRUE(SystemTimeEqual(&kZeroTime, &time));
+
+  TEST_ASSERT_TRUE(SystemTimeDecrementNanoseconds(&time, MAX_SECONDS));
+  TEST_ASSERT_TRUE(SystemTimeEqual(&kZeroTime, &time));
+
+  time = kMaxTime;
+  TEST_ASSERT_TRUE(SystemTimeDecrementNanoseconds(&time, 0));
+  TEST_ASSERT_TRUE(SystemTimeEqual(&kMaxTime, &time));
+
+  TEST_ASSERT_TRUE(SystemTimeDecrementNanoseconds(&time, 1001001));
+  TEST_ASSERT_EQUAL(MAX_SECONDS - 1, time.seconds);
+  TEST_ASSERT_EQUAL(MAX_NANOSECONDS - 1001, time.nanoseconds);
+
+  time = (system_time_t) {
+    .seconds = 5000,
+    .nanoseconds = 750150
+  };
+  TEST_ASSERT_TRUE(SystemTimeDecrementNanoseconds(&time, 0));
+  TEST_ASSERT_EQUAL(5000, time.seconds);
+  TEST_ASSERT_EQUAL(750150, time.nanoseconds);
+
+  TEST_ASSERT_TRUE(SystemTimeDecrementNanoseconds(&time, 750151));
+  TEST_ASSERT_EQUAL(4999, time.seconds);
+  TEST_ASSERT_EQUAL(MAX_NANOSECONDS, time.nanoseconds);
+
+  TEST_ASSERT_TRUE(SystemTimeDecrementNanoseconds(&time, 14000500));
+  TEST_ASSERT_EQUAL(4985, time.seconds);
+  TEST_ASSERT_EQUAL(MAX_NANOSECONDS - 500, time.nanoseconds);
+
+  time = (system_time_t) {
+    .seconds = 50,
+    .nanoseconds = MAX_NANOSECONDS
+  };
+  TEST_ASSERT_TRUE(SystemTimeDecrementNanoseconds(&time, 50000000));
+  TEST_ASSERT_EQUAL(0, time.seconds);
+  TEST_ASSERT_EQUAL(MAX_NANOSECONDS, time.nanoseconds);
+
+  time = (system_time_t) {
+    .seconds = 1,
+    .nanoseconds = 500000
+  };
+  TEST_ASSERT_TRUE(SystemTimeDecrementNanoseconds(&time, 500001));
+  TEST_ASSERT_EQUAL(0, time.seconds);
+  TEST_ASSERT_EQUAL(MAX_NANOSECONDS, time.nanoseconds);
+
+  time = (system_time_t) {
+    .seconds = 1,
+    .nanoseconds = 500000
+  };
+  TEST_ASSERT_TRUE(SystemTimeDecrementNanoseconds(&time, 2000000));
+  TEST_ASSERT_TRUE(SystemTimeEqual(&kZeroTime, &time));
+
+  time = (system_time_t) {
+    .seconds = 5,
+    .nanoseconds = 500000
+  };
+  TEST_ASSERT_TRUE(SystemTimeDecrementNanoseconds(&time, 5500001));
+  TEST_ASSERT_TRUE(SystemTimeEqual(&kZeroTime, &time));
+}
 
 void SystemTimeTest(void) {
   RUN_TEST(TestSystemTime_LessThan);
@@ -600,4 +827,9 @@ void SystemTimeTest(void) {
 
   RUN_TEST(TestSystemTime_IncrementSeconds);
   RUN_TEST(TestSystemTime_IncrementMilliseconds);
+  RUN_TEST(TestSystemTime_IncrementNanoseconds);
+
+  RUN_TEST(TestSystemTime_DecrementSeconds);
+  RUN_TEST(TestSystemTime_DecrementMilliseconds);
+  RUN_TEST(TestSystemTime_DecrementNanoseconds);
 }

@@ -213,7 +213,8 @@ bool_t SystemTimeDecrementSeconds(system_time_t *time, uint32_t seconds) {
   return true;
 }
 
-bool_t SystemTimeIncrementMilliseconds(system_time_t *time, uint32_t milliseconds) {
+bool_t SystemTimeIncrementMilliseconds(
+    system_time_t *time, uint32_t milliseconds) {
   if (!SystemTimeIsValid(time)) return false;
   uint32_t const nanoseconds =
       time->nanoseconds + MilliToNano(milliseconds % 1000);
@@ -240,16 +241,17 @@ bool_t SystemTimeDecrementMilliseconds(
     SystemTimeZero(time);
   } else {
     time->seconds -= seconds;
-    if (nanoseconds < time->nanoseconds) {
-      time->nanoseconds -= nanoseconds;
-    } else {
+    if (nanoseconds > time->nanoseconds) {
       time->nanoseconds += (1000000 - nanoseconds);
+    } else {
+      time->nanoseconds -= nanoseconds;
     }
   }
   return true;
 }
 
-bool_t SystemTimeIncrementNanoseconds(system_time_t *time, uint32_t nanoseconds) {
+bool_t SystemTimeIncrementNanoseconds(
+    system_time_t *time, uint32_t nanoseconds) {
   if (!SystemTimeIsValid(time)) return false;
   uint32_t const new_nanoseconds = time->nanoseconds + (nanoseconds % 1000000);
   uint32_t const new_seconds =
@@ -265,10 +267,13 @@ bool_t SystemTimeIncrementNanoseconds(system_time_t *time, uint32_t nanoseconds)
   return true;
 }
 
-bool_t SystemTimeDecrementNanoseconds(system_time_t *time, uint32_t nanoseconds) {
+bool_t SystemTimeDecrementNanoseconds(
+    system_time_t *time, uint32_t nanoseconds) {
   if (!SystemTimeIsValid(time)) return false;
   uint32_t const new_nanoseconds = nanoseconds % 1000000;
-  uint32_t const seconds = MilliToSeconds(nanoseconds) + (new_nanoseconds > time->nanoseconds ? 1 : 0);
+  uint32_t const seconds =
+      NanoToSeconds(nanoseconds) +
+      (new_nanoseconds > time->nanoseconds ? 1 : 0);
   if (seconds > time->seconds) {
     SystemTimeZero(time);
   } else {
