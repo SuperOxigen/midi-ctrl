@@ -8,10 +8,23 @@
 #ifdef _PLATFORM_NATIVE
 
 #include <errno.h>
+#include <string.h>
 #include <time.h>
 
 #include "logging.h"
+
+#include "system_storage.h"
 #include "system_time.h"
+
+#ifndef NATIVE_STORAGE_SIZE
+#define NATIVE_STORAGE_SIZE 1024u
+#endif
+
+#define NATIVE_STORAGE_MASK (NATIVE_STORAGE_SIZE - 1)
+
+static uint8_t gNativeStorage[NATIVE_STORAGE_SIZE];
+static uint16_t gNativeStorageAddress = 0x0000;
+static bool_t gNativeStorageInitialized = false;
 
 /* System Time. */
 bool_t SystemTimeNow(system_time_t *system_time) {
@@ -30,6 +43,60 @@ bool_t SystemTimeNow(system_time_t *system_time) {
   system_time->nanoseconds = ts.tv_nsec;
   LOG_DEBUG(
       "Now: time = %u.%09u", system_time->seconds, system_time->nanoseconds);
+  return true;
+}
+
+/* System Storage. */
+
+size_t SystemStorageSize(void) {
+  return NATIVE_STORAGE_SIZE;
+}
+
+void SystemInitializeStorage(void) {
+  if (!gNativeStorageInitialized) {
+    memset(gNativeStorage, 0, NATIVE_STORAGE_SIZE);
+    gNativeStorageInitialized = true;
+  }
+}
+
+/* Storage Write. */
+
+bool_t SystemStorageWriteReady(void) {
+  return gNativeStorageInitialized;
+}
+
+bool_t SystemStorageWrite(
+    uint16_t address, uint8_t data) {
+  if (address >= NATIVE_STORAGE_SIZE || !gNativeStorageInitialized)
+    return false;
+  gNativeStorageAddress = address & NATIVE_STORAGE_MASK;
+  gNativeStorage[gNativeStorageAddress] = data;
+  return true;
+}
+
+bool_t SystemStorageIsWriting(void) {
+  return false;
+}
+
+/* Storage Read. */
+
+bool_t SystemStorageReadReady(void) {
+  return gNativeStorageInitialized;
+}
+
+bool_t SystemStorageStartRead(uint16_t address) {
+  if (!gNativeStorageInitialized) return false;
+  gNativeStorageAddress = address & NATIVE_STORAGE_MASK;
+  return true;
+}
+
+bool_t SystemStorageIsReading(void) {
+  return false;
+}
+
+bool_t SystemStorageGetByte(uint8_t *byte) {
+  if (byte == NULL || !gNativeStorageInitialized) return false;
+  *byte = gNativeStorage[gNativeStorageAddress];
   return true;
 }
 
