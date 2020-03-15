@@ -44,6 +44,24 @@ static system_time_t const kInvalidTime = {
   .nanoseconds = MAX_NANOSECONDS + 24u
 };
 
+#ifdef _PLATFORM_NATIVE
+#include <stdio.h>
+#include <unistd.h>
+
+static void TestSystemTime_NativeMonotonic(void)  {
+  TEST_ASSERT_FALSE(SystemTimeNow(NULL));
+  system_time_t start = {};
+  TEST_ASSERT_TRUE(SystemTimeNow(&start));
+  static unsigned int const kOneSecond = 1;
+  printf("Sleeping for %u seconds...\n", kOneSecond);
+  unsigned int const res = sleep(kOneSecond);
+  TEST_ASSERT_EQUAL(0, res);
+  system_time_t end = {};
+  TEST_ASSERT_TRUE(SystemTimeNow(&end));
+  TEST_ASSERT_TRUE(SystemTimeLessThan(&start, &end));
+}
+#endif  /* _PLATFORM_NATIVE */
+
 static void TestSystemTime_LessThan(void) {
   TEST_ASSERT_FALSE(SystemTimeLessThan(NULL, &kZeroTime));
   TEST_ASSERT_FALSE(SystemTimeLessThan(&kInvalidTime, &kZeroTime));
@@ -1151,6 +1169,7 @@ static void TestSystemTime_DecrementNanoseconds(void) {
   TEST_ASSERT_TRUE(SystemTimeEqual(&kZeroTime, &time));
 }
 
+
 void SystemTimeTest(void) {
   RUN_TEST(TestSystemTime_LessThan);
   RUN_TEST(TestSystemTime_LessThanOrEqual);
@@ -1172,4 +1191,8 @@ void SystemTimeTest(void) {
   RUN_TEST(TestSystemTime_DecrementMilliseconds);
   RUN_TEST(TestSystemTime_DecrementMicroseconds);
   RUN_TEST(TestSystemTime_DecrementNanoseconds);
+
+#ifdef _PLATFORM_NATIVE
+  RUN_TEST(TestSystemTime_NativeMonotonic);
+#endif  /* _PLATFORM_NATIVE */
 }
