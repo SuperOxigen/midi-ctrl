@@ -52,9 +52,9 @@ bool_t MidiSetDataWordLsb(uint16_t *word, uint8_t lsb) {
 uint32_t MidiDataTriByteFromBytes(uint8_t msb, uint8_t mid, uint8_t lsb) {
   if (!MidiIsDataByte(msb) || !MidiIsDataByte(mid) ||
       !MidiIsDataByte(lsb)) return 0;
-  return ((msb << MIDI_TRI_BYTE_OFFSET) & MIDI_TRI_BYTE_MASK) |
-         ((mid << MIDI_WORD_OFFSET) & MIDI_WORD_MASK) |
-         (lsb & MIDI_BYTE_MASK);
+  return ((((uint32_t) msb) << MIDI_TRI_BYTE_OFFSET) & MIDI_TRI_BYTE_MASK) |
+         ((((uint32_t) mid) << MIDI_WORD_OFFSET) & MIDI_WORD_MASK) |
+         (((uint32_t) lsb) & MIDI_BYTE_MASK);
 }
 uint8_t MidiGetDataTriByteMsb(uint32_t tri) {
   return (tri >> MIDI_TRI_BYTE_OFFSET) & MIDI_BYTE_MASK;
@@ -81,9 +81,11 @@ bool_t MidiDeserializeTriByte(uint8_t const *data, uint32_t *tri) {
   if (data == NULL || tri == NULL) return false;
   if (!MidiIsDataByte(data[2]) || !MidiIsDataByte(data[1]) ||
       !MidiIsDataByte(data[0])) return 0;
-  *tri = ((data[2] << MIDI_TRI_BYTE_OFFSET) & MIDI_TRI_BYTE_MASK) |
-         ((data[1] << MIDI_WORD_OFFSET) & MIDI_WORD_MASK) |
-         (data[0] & MIDI_BYTE_MASK);
+  *tri = ((((uint32_t) data[2]) << MIDI_TRI_BYTE_OFFSET) &
+            MIDI_TRI_BYTE_MASK) |
+         ((((uint32_t) data[1]) << MIDI_WORD_OFFSET) &
+            MIDI_WORD_MASK) |
+         (((uint32_t) data[0]) & MIDI_BYTE_MASK);
   return true;
 }
 
@@ -91,10 +93,10 @@ uint32_t MidiDataQuadByteFromBytes(
     uint8_t msb, uint8_t mmid, uint8_t lmid, uint8_t lsb) {
   if (!MidiIsDataByte(msb) || !MidiIsDataByte(mmid) ||
       !MidiIsDataByte(lmid) || !MidiIsDataByte(lsb)) return 0;
-  return ((msb << MIDI_QUAD_BYTE_OFFSET) & MIDI_QUAD_BYTE_MASK) |
-         ((mmid << MIDI_TRI_BYTE_OFFSET) & MIDI_TRI_BYTE_MASK) |
-         ((lmid << MIDI_WORD_OFFSET) & MIDI_WORD_MASK) |
-         (lsb & MIDI_BYTE_MASK);
+  return ((((uint32_t) msb) << MIDI_QUAD_BYTE_OFFSET) & MIDI_QUAD_BYTE_MASK) |
+         ((((uint32_t) mmid) << MIDI_TRI_BYTE_OFFSET) & MIDI_TRI_BYTE_MASK) |
+         ((((uint32_t) lmid) << MIDI_WORD_OFFSET) & MIDI_WORD_MASK) |
+         (((uint32_t) lsb) & MIDI_BYTE_MASK);
 }
 
 uint8_t MidiGetDataQuadByteMsb(uint32_t quad) {
@@ -127,10 +129,13 @@ bool_t MidiDeserializeQuadByte(uint8_t const *data, uint32_t *quad) {
   if (data == NULL || quad == NULL) return false;
   if (!MidiIsDataByte(data[3]) || !MidiIsDataByte(data[2]) ||
       !MidiIsDataByte(data[1]) || !MidiIsDataByte(data[0])) return 0;
-  *quad = ((data[3] << MIDI_QUAD_BYTE_OFFSET) & MIDI_QUAD_BYTE_MASK) |
-          ((data[2] << MIDI_TRI_BYTE_OFFSET) & MIDI_TRI_BYTE_MASK) |
-          ((data[1] << MIDI_WORD_OFFSET) & MIDI_WORD_MASK) |
-          (data[0] & MIDI_BYTE_MASK);
+  *quad = ((((uint32_t) data[3]) << MIDI_QUAD_BYTE_OFFSET) &
+            MIDI_QUAD_BYTE_MASK) |
+          ((((uint32_t) data[2]) << MIDI_TRI_BYTE_OFFSET) &
+            MIDI_TRI_BYTE_MASK) |
+          ((((uint32_t) data[1]) << MIDI_WORD_OFFSET) &
+            MIDI_WORD_MASK) |
+          (((uint32_t) data[0]) & MIDI_BYTE_MASK);
   return true;
 }
 
