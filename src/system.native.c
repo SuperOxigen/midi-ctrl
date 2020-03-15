@@ -1,5 +1,5 @@
 /*
- * MIDI Controller - System Time - Native
+ * MIDI Controller - System - Native
  *
  * Copyright (c) 2020 Alex Dale
  * This project is licensed under the terms of the MIT license.
@@ -13,6 +13,7 @@
 #include "logging.h"
 #include "system_time.h"
 
+/* System Time. */
 bool_t SystemTimeNow(system_time_t *system_time) {
   if (system_time == NULL) return false;
   struct timespec ts;
