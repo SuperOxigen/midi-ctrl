@@ -7,30 +7,59 @@
  */
 #include "system_time.h"
 
-#define MAX_NANOSECONDS 999999u
-#define MAX_SECONDS 4294967295u
+/*
+ *  Maximum System Time Values.
+ */
 
-#define SystemTimeMax(time) \
+#define MAX_U32 4294967295u
+#define MAX_NANOSECONDS 999999999u
+#define MAX_SECONDS MAX_U32
+
+#define SystemTimeSetMax(time) \
   (time)->seconds = MAX_SECONDS; \
   (time)->nanoseconds = MAX_NANOSECONDS
 
-#define SystemTimeZero(time) \
-  (time)->seconds = 0; \
-  (time)->nanoseconds = 0
+#define SystemTimeSetZero(time) \
+  (time)->seconds = 0u; \
+  (time)->nanoseconds = 0u
 
-#define NanoToSeconds(ns) ((ns) / 1000000)
-#define NanoToMilli(ns) ((ns) / 1000)
-#define MilliToSeconds(ms) ((ms) / 1000)
-#define MilliToNano(ms) ((ms) * 1000)
-#define SecondsToNano(s) ((s) * 1000000)
-#define SecondsToMilli(s) ((s) * 1000)
+/*
+ *  Time Unit Conversion Macros.
+ */
+
+#define NANO_PER_SECONDS  1000000000u
+#define NANO_PER_MILLI    1000000u
+#define NANO_PER_MICRO    1000u
+#define MICRO_PER_SECONDS 1000000u
+#define MICRO_PER_MILLI   1000u
+#define MILLI_PER_SECONDS 1000u
+
+#define NanoToSeconds(ns)   ((ns) / NANO_PER_SECONDS)
+#define NanoToMilli(ns)     ((ns) / NANO_PER_MILLI)
+#define NanoToMicro(ns)     ((ns) / NANO_PER_MICRO)
+#define MicroToSeconds(us)  ((us) / NANO_PER_MILLI)
+#define MicroToMilli(us)    ((us) / MICRO_PER_MILLI)
+#define MicroToNano(us)     ((us) * NANO_PER_MICRO)
+#define MilliToSeconds(ms)  ((ms) / MILLI_PER_SECONDS)
+#define MilliToMicro(ms)    ((ms) * MICRO_PER_MILLI)
+#define MilliToNano(ms)     ((ms) * NANO_PER_MILLI)
+#define SecondsToMilli(s)   ((s) * MILLI_PER_SECONDS)
+#define SecondsToMicro(s)   ((s) * MICRO_PER_SECONDS)
+#define SecondsToNano(s)    ((s) * NANO_PER_SECONDS)
+
+/*
+ * Validation
+ */
 
 inline static bool_t SystemTimeIsValid(system_time_t const *time) {
   if (time == NULL) return false;
   return time->nanoseconds <= MAX_NANOSECONDS;
 }
 
-/* Total orderings */
+/*
+ * Total Orderings
+ */
+
 bool_t SystemTimeLessThan(system_time_t const *a, system_time_t const *b) {
   if (!SystemTimeIsValid(a) || !SystemTimeIsValid(b)) return false;
   return (a->seconds == b->seconds) ? (a->nanoseconds < b->nanoseconds)
@@ -49,6 +78,8 @@ bool_t SystemTimeEqual(system_time_t const *a, system_time_t const *b) {
   return (a->seconds == b->seconds) && (a->nanoseconds == b->nanoseconds);
 }
 
+/* TODO: Add not equal? */
+
 bool_t SystemTimeGreaterThanOrEqual(
     system_time_t const *a, system_time_t const *b) {
   if (!SystemTimeIsValid(a) || !SystemTimeIsValid(b)) return false;
@@ -62,7 +93,10 @@ bool_t SystemTimeGreaterThan(system_time_t const *a, system_time_t const *b) {
                                     : (a->seconds > b->seconds);
 }
 
-/* Time deltas */
+/*
+ * Time Delta Calculations
+ */
+
 bool_t SystemTimeSecondsDelta(
     system_time_t const *a, system_time_t const *b, uint32_t *seconds) {
   if (!SystemTimeIsValid(a) || !SystemTimeIsValid(b) || seconds == NULL)
@@ -83,8 +117,8 @@ bool_t SystemTimeSecondsDelta(
   return true;
 }
 
-#define MAX_SECONDS_FOR_MILLISECONDS 4294967u
-#define MAX_NANOSECONDS_FOR_MILLISECONDS 295000u
+#define MAX_SECONDS_FOR_MILLI 4294967u
+#define MAX_NANO_FOR_MILLI    295999999u
 
 bool_t SystemTimeMillisecondsDelta(
     system_time_t const *a, system_time_t const *b, uint32_t *milliseconds) {
@@ -101,47 +135,104 @@ bool_t SystemTimeMillisecondsDelta(
   } else if (a->seconds < b->seconds) {
     uint32_t const seconds_delta = b->seconds - a->seconds;
     /* Check for overflow */
-    if (seconds_delta > MAX_SECONDS_FOR_MILLISECONDS) return false;
-    if (seconds_delta == MAX_SECONDS_FOR_MILLISECONDS &&
+    if (seconds_delta > MAX_SECONDS_FOR_MILLI) return false;
+    if (seconds_delta == MAX_SECONDS_FOR_MILLI &&
         (a->nanoseconds < b->nanoseconds) &&
-        (b->nanoseconds - a->nanoseconds) > MAX_NANOSECONDS_FOR_MILLISECONDS) {
+        (b->nanoseconds - a->nanoseconds) > MAX_NANO_FOR_MILLI) {
       return false;
     }
-    *milliseconds = seconds_delta * 1000;
+    *milliseconds = SecondsToMilli(seconds_delta);
     if (a->nanoseconds < b->nanoseconds) {
       *milliseconds += NanoToMilli(b->nanoseconds - a->nanoseconds);
     } else if (a->nanoseconds > b->nanoseconds) {
       uint32_t const nanoseconds_delta = a->nanoseconds - b->nanoseconds;
       *milliseconds -= NanoToMilli(nanoseconds_delta);
-      if ((nanoseconds_delta % 1000) != 0) {
+      if ((nanoseconds_delta % NANO_PER_MILLI) != 0) {
         --(*milliseconds);
       }
     }
   } else /* (a->seconds > b->seconds) */ {
     uint32_t const seconds_delta = a->seconds - b->seconds;
     /* Check for overflow */
-    if (seconds_delta > MAX_SECONDS_FOR_MILLISECONDS) return false;
-    if (seconds_delta == MAX_SECONDS_FOR_MILLISECONDS &&
+    if (seconds_delta > MAX_SECONDS_FOR_MILLI) return false;
+    if (seconds_delta == MAX_SECONDS_FOR_MILLI &&
         (a->nanoseconds > b->nanoseconds) &&
-        (a->nanoseconds - b->nanoseconds) > MAX_NANOSECONDS_FOR_MILLISECONDS) {
+        (a->nanoseconds - b->nanoseconds) > MAX_NANO_FOR_MILLI) {
       return false;
     }
     *milliseconds = SecondsToMilli(seconds_delta);
     if (a->nanoseconds > b->nanoseconds) {
-      *milliseconds += ((a->nanoseconds - b->nanoseconds) / 1000);
+      *milliseconds += NanoToMilli(a->nanoseconds - b->nanoseconds);
     } else if (a->nanoseconds < b->nanoseconds) {
       uint32_t const nanoseconds_delta = b->nanoseconds - a->nanoseconds;
-      *milliseconds -= (nanoseconds_delta / 1000);
-      if ((nanoseconds_delta % 1000) != 0) {
-        *milliseconds -= 1;
+      *milliseconds -= NanoToMilli(nanoseconds_delta);
+      if ((nanoseconds_delta % NANO_PER_MILLI) != 0) {
+        --(*milliseconds);
       }
     }
   }
   return true;
 }
 
-#define MAX_SECONDS_FOR_NANOSECONDS 4294u
-#define MAX_NANOSECONDS_FOR_NANOSECONDS 967295u
+#define MAX_SECONDS_FOR_MICRO 4294u
+#define MAX_NANO_FOR_MICRO    967295999u
+
+bool_t SystemTimeMicrosecondsDelta(
+    system_time_t const *a, system_time_t const *b, uint32_t *microseconds) {
+  if (!SystemTimeIsValid(a) || !SystemTimeIsValid(b) || microseconds == NULL)
+    return false;
+  if (a->seconds == b->seconds) {
+    if (a->nanoseconds != b->nanoseconds) {
+      *microseconds = NanoToMicro(
+          (a->nanoseconds < b->nanoseconds) ? b->nanoseconds - a->nanoseconds
+                                            : a->nanoseconds - b->nanoseconds);
+    } else {
+      *microseconds = 0;
+    }
+  } else if (a->seconds < b->seconds) {
+    uint32_t const seconds_delta = b->seconds - a->seconds;
+    /* Check for overflow */
+    if (seconds_delta > MAX_SECONDS_FOR_MICRO) return false;
+    if (seconds_delta == MAX_SECONDS_FOR_MICRO &&
+        (a->nanoseconds < b->nanoseconds) &&
+        (b->nanoseconds - a->nanoseconds) > MAX_NANO_FOR_MICRO) {
+      return false;
+    }
+    *microseconds = SecondsToMicro(seconds_delta);
+    if (a->nanoseconds < b->nanoseconds) {
+      *microseconds += NanoToMicro(b->nanoseconds - a->nanoseconds);
+    } else if (a->nanoseconds > b->nanoseconds) {
+      uint32_t const nanoseconds_delta = a->nanoseconds - b->nanoseconds;
+      *microseconds -= NanoToMicro(nanoseconds_delta);
+      if ((nanoseconds_delta % NANO_PER_MICRO) != 0) {
+        --(*microseconds);
+      }
+    }
+  } else /* (a->seconds > b->seconds) */ {
+    uint32_t const seconds_delta = a->seconds - b->seconds;
+    /* Check for overflow */
+    if (seconds_delta > MAX_SECONDS_FOR_MICRO) return false;
+    if (seconds_delta == MAX_SECONDS_FOR_MICRO &&
+        (a->nanoseconds > b->nanoseconds) &&
+        (a->nanoseconds - b->nanoseconds) > MAX_NANO_FOR_MICRO) {
+      return false;
+    }
+    *microseconds = SecondsToMicro(seconds_delta);
+    if (a->nanoseconds > b->nanoseconds) {
+      *microseconds += NanoToMicro(a->nanoseconds - b->nanoseconds);
+    } else if (a->nanoseconds < b->nanoseconds) {
+      uint32_t const nanoseconds_delta = b->nanoseconds - a->nanoseconds;
+      *microseconds -= NanoToMicro(nanoseconds_delta);
+      if ((nanoseconds_delta % NANO_PER_MICRO) != 0) {
+        --(*microseconds);
+      }
+    }
+  }
+  return true;
+}
+
+#define MAX_SECONDS_FOR_NANO 4u
+#define MAX_NANO_FOR_NANO    294967295u
 
 bool_t SystemTimeNanosecondsDelta(
     system_time_t const *a, system_time_t const *b, uint32_t *nanoseconds) {
@@ -158,10 +249,10 @@ bool_t SystemTimeNanosecondsDelta(
   } else if (a->seconds < b->seconds) {
     uint32_t const seconds_delta = b->seconds - a->seconds;
     /* Check for overflow */
-    if (seconds_delta > MAX_SECONDS_FOR_NANOSECONDS) return false;
-    if (seconds_delta == MAX_SECONDS_FOR_NANOSECONDS &&
+    if (seconds_delta > MAX_SECONDS_FOR_NANO) return false;
+    if (seconds_delta == MAX_SECONDS_FOR_NANO &&
         (a->nanoseconds < b->nanoseconds) &&
-        (b->nanoseconds - a->nanoseconds) > MAX_NANOSECONDS_FOR_NANOSECONDS) {
+        (b->nanoseconds - a->nanoseconds) > MAX_NANO_FOR_NANO) {
       return false;
     }
     *nanoseconds = SecondsToNano(seconds_delta);
@@ -173,10 +264,10 @@ bool_t SystemTimeNanosecondsDelta(
   } else /* (a->seconds > b->seconds) */ {
     uint32_t const seconds_delta = a->seconds - b->seconds;
     /* Check for overflow */
-    if (seconds_delta > MAX_SECONDS_FOR_NANOSECONDS) return false;
-    if (seconds_delta == MAX_SECONDS_FOR_NANOSECONDS &&
+    if (seconds_delta > MAX_SECONDS_FOR_NANO) return false;
+    if (seconds_delta == MAX_SECONDS_FOR_NANO &&
         (a->nanoseconds > b->nanoseconds) &&
-        (a->nanoseconds - b->nanoseconds) > MAX_NANOSECONDS_FOR_NANOSECONDS) {
+        (a->nanoseconds - b->nanoseconds) > MAX_NANO_FOR_NANO) {
       return false;
     }
     *nanoseconds = SecondsToNano(seconds_delta);
@@ -196,7 +287,7 @@ bool_t SystemTimeIncrementSeconds(system_time_t *time, uint32_t seconds) {
   if (!SystemTimeIsValid(time)) return false;
   uint32_t const new_seconds = time->seconds + seconds;
   if (new_seconds < seconds || new_seconds < time->seconds) {
-    SystemTimeMax(time);
+    SystemTimeSetMax(time);
   } else {
     time->seconds = new_seconds;
   }
@@ -206,7 +297,7 @@ bool_t SystemTimeIncrementSeconds(system_time_t *time, uint32_t seconds) {
 bool_t SystemTimeDecrementSeconds(system_time_t *time, uint32_t seconds) {
   if (!SystemTimeIsValid(time)) return false;
   if (time->seconds < seconds) {
-    SystemTimeZero(time);
+    SystemTimeSetZero(time);
   } else {
     time->seconds -= seconds;
   }
@@ -217,16 +308,16 @@ bool_t SystemTimeIncrementMilliseconds(
     system_time_t *time, uint32_t milliseconds) {
   if (!SystemTimeIsValid(time)) return false;
   uint32_t const nanoseconds =
-      time->nanoseconds + MilliToNano(milliseconds % 1000);
+      time->nanoseconds + MilliToNano(milliseconds % MILLI_PER_SECONDS);
   uint32_t const seconds =
       time->seconds + MilliToSeconds(milliseconds) +
       (nanoseconds > MAX_NANOSECONDS ? 1 : 0);
   if (seconds < time->seconds) {
-    SystemTimeMax(time);
+    SystemTimeSetMax(time);
   } else {
     time->seconds = seconds;
     time->nanoseconds =
-        nanoseconds - (nanoseconds > MAX_NANOSECONDS ? 1000000 : 0);
+        nanoseconds - (nanoseconds > MAX_NANOSECONDS ? NANO_PER_SECONDS : 0);
   }
   return true;
 }
@@ -234,15 +325,53 @@ bool_t SystemTimeIncrementMilliseconds(
 bool_t SystemTimeDecrementMilliseconds(
     system_time_t *time, uint32_t milliseconds) {
   if (!SystemTimeIsValid(time)) return false;
-  uint32_t const nanoseconds = MilliToNano(milliseconds % 1000);
-  uint32_t const seconds = MilliToSeconds(milliseconds)
-      + (nanoseconds > time->nanoseconds ? 1 : 0);
+  uint32_t const nanoseconds = MilliToNano(milliseconds % MILLI_PER_SECONDS);
+  uint32_t const seconds = MilliToSeconds(milliseconds);
   if (seconds > time->seconds) {
-    SystemTimeZero(time);
+    SystemTimeSetZero(time);
   } else {
     time->seconds -= seconds;
     if (nanoseconds > time->nanoseconds) {
-      time->nanoseconds += (1000000 - nanoseconds);
+      --(time->seconds);
+      time->nanoseconds += (NANO_PER_SECONDS - nanoseconds);
+    } else {
+      time->nanoseconds -= nanoseconds;
+    }
+  }
+  return true;
+}
+
+bool_t SystemTimeIncrementMicroseconds(
+    system_time_t *time, uint32_t microseconds) {
+  if (!SystemTimeIsValid(time)) return false;
+  uint32_t const nanoseconds =
+      time->nanoseconds + MicroToNano(microseconds % MICRO_PER_SECONDS);
+  uint32_t const seconds =
+      time->seconds + MicroToSeconds(microseconds) +
+      (nanoseconds > MAX_NANOSECONDS ? 1 : 0);
+  if (seconds < time->seconds) {
+    SystemTimeSetMax(time);
+  } else {
+    time->seconds = seconds;
+    time->nanoseconds =
+        nanoseconds - (nanoseconds > MAX_NANOSECONDS ? NANO_PER_SECONDS : 0);
+  }
+  return true;
+}
+
+bool_t SystemTimeDecrementMicroseconds(
+    system_time_t *time, uint32_t microseconds) {
+  if (!SystemTimeIsValid(time)) return false;
+  uint32_t const nanoseconds = MicroToNano(microseconds % MICRO_PER_SECONDS);
+  uint32_t const seconds =
+      MicroToSeconds(microseconds) +
+      (nanoseconds > time->nanoseconds ? 1 : 0);
+  if (seconds > time->seconds) {
+    SystemTimeSetZero(time);
+  } else {
+    time->seconds -= seconds;
+    if (nanoseconds > time->nanoseconds) {
+      time->nanoseconds += (NANO_PER_SECONDS - nanoseconds);
     } else {
       time->nanoseconds -= nanoseconds;
     }
@@ -253,16 +382,18 @@ bool_t SystemTimeDecrementMilliseconds(
 bool_t SystemTimeIncrementNanoseconds(
     system_time_t *time, uint32_t nanoseconds) {
   if (!SystemTimeIsValid(time)) return false;
-  uint32_t const new_nanoseconds = time->nanoseconds + (nanoseconds % 1000000);
+  uint32_t const new_nanoseconds =
+      time->nanoseconds + (nanoseconds % NANO_PER_SECONDS);
   uint32_t const new_seconds =
       time->seconds + NanoToSeconds(nanoseconds) +
       (new_nanoseconds > MAX_NANOSECONDS ? 1 : 0);
   if (new_seconds < time->seconds) {
-    SystemTimeMax(time);
+    SystemTimeSetMax(time);
   } else {
     time->seconds = new_seconds;
     time->nanoseconds =
-      new_nanoseconds - ((new_nanoseconds > MAX_NANOSECONDS) ? 1000000 : 0);
+      new_nanoseconds -
+      ((new_nanoseconds > MAX_NANOSECONDS) ? NANO_PER_SECONDS : 0);
   }
   return true;
 }
@@ -270,16 +401,16 @@ bool_t SystemTimeIncrementNanoseconds(
 bool_t SystemTimeDecrementNanoseconds(
     system_time_t *time, uint32_t nanoseconds) {
   if (!SystemTimeIsValid(time)) return false;
-  uint32_t const new_nanoseconds = nanoseconds % 1000000;
+  uint32_t const new_nanoseconds = nanoseconds % NANO_PER_SECONDS;
   uint32_t const seconds =
       NanoToSeconds(nanoseconds) +
       (new_nanoseconds > time->nanoseconds ? 1 : 0);
   if (seconds > time->seconds) {
-    SystemTimeZero(time);
+    SystemTimeSetZero(time);
   } else {
     time->seconds -= seconds;
     if (new_nanoseconds > time->nanoseconds) {
-      time->nanoseconds += (1000000 - new_nanoseconds);
+      time->nanoseconds += (NANO_PER_SECONDS - new_nanoseconds);
     } else {
       time->nanoseconds -= new_nanoseconds;
     }
