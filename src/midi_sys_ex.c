@@ -23,7 +23,7 @@ static bool_t MidiIsValidNonRealtimeSubId(uint8_t sub_id) {
     case MIDI_DUMP_HEADER:
     case MIDI_DUMP_REQUEST:
     case MIDI_DATA_PACKET:
-    case MIDI_SAMPLE_DUMP:
+    case MIDI_SAMPLE_DUMP_EXT:
     case MIDI_GENERAL_INFO:
     case MIDI_GENERAL_MIDI:
     case MIDI_EOF:
@@ -76,7 +76,7 @@ bool_t MidiIsValidSysEx(midi_sys_ex_t const *sys_ex) {
       return MidiIsValidDumpRequest(&sys_ex->dump_request);
     case MIDI_DATA_PACKET:
       return MidiIsValidDataPacket(&sys_ex->data_packet);
-    case MIDI_SAMPLE_DUMP:
+    case MIDI_SAMPLE_DUMP_EXT:
       return MidiIsValidSampleDump(&sys_ex->sample_dump);
     case MIDI_GENERAL_INFO:
       return MidiIsValidDeviceInquiry(&sys_ex->device_inquiry);
@@ -189,7 +189,7 @@ size_t MidiSerializeSysEx(
       sub_response = MidiSerializeDataPacket(
           &sys_ex->data_packet, &sys_ex->device_id, &data[di], data_size - di);
       break;
-    case MIDI_SAMPLE_DUMP:
+    case MIDI_SAMPLE_DUMP_EXT:
       sub_response = MidiSerializeSampleDump(
           &sys_ex->sample_dump, &data[di], data_size - di);
       break;
@@ -276,7 +276,7 @@ size_t MidiDeserializeSysEx(
       sub_response = MidiDeserializeDataPacket(
           &data[3], data_size - 3, &sys_ex->data_packet, NULL, 0u);
       break;
-    case MIDI_SAMPLE_DUMP:
+    case MIDI_SAMPLE_DUMP_EXT:
       sub_response = MidiDeserializeSampleDump(
           &data[3], data_size - 3, &sys_ex->sample_dump);
       break;

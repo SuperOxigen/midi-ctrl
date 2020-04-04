@@ -52,22 +52,6 @@ size_t MidiDeserializeDumpHeader(
   uint8_t const *data, size_t data_size,
   midi_dump_header_t *dump_header);
 
-/* Dump Request Message. */
-#define MIDI_DUMP_REQUEST_PAYLOAD_SIZE 2
-typedef struct {
-  uint16_t sample_number;
-} midi_dump_request_t;
-
-bool_t MidiIsValidDumpRequest(midi_dump_request_t const *dump_request);
-bool_t MidiInitializeDumpRequest(
-  midi_dump_request_t *dump_request, uint16_t sample);
-size_t MidiSerializeDumpRequest(
-  midi_dump_request_t const *dump_request,
-  uint8_t *data, size_t data_size);
-size_t MidiDeserializeDumpRequest(
-  uint8_t const *data, size_t data_size,
-  midi_dump_request_t *dump_request);
-
 /* Data Packet Message. */
 #define MIDI_DATA_PACKET_PAYLOAD_SIZE 122
 typedef struct {
@@ -137,7 +121,23 @@ size_t MidiDeserializeDataPacket(
 bool_t MidiPushGlobalDataPacketBuffer(uint8_t *buffer, size_t buffer_size);
 uint8_t *MidiGetGlobalDataPacketBuffer(void);
 
-/* Sample Dump: Loop Points. */
+/* Dump Request Message. */
+#define MIDI_DUMP_REQUEST_PAYLOAD_SIZE 2
+typedef struct {
+  uint16_t sample_number;
+} midi_dump_request_t;
+
+bool_t MidiIsValidDumpRequest(midi_dump_request_t const *dump_request);
+bool_t MidiInitializeDumpRequest(
+  midi_dump_request_t *dump_request, uint16_t sample);
+size_t MidiSerializeDumpRequest(
+  midi_dump_request_t const *dump_request,
+  uint8_t *data, size_t data_size);
+size_t MidiDeserializeDumpRequest(
+  uint8_t const *data, size_t data_size,
+  midi_dump_request_t *dump_request);
+
+/* Sample Dump Ext: Loop Points. */
 #define MIDI_SAMPLE_LOOP_REQUEST_PAYLOAD_SIZE 5
 #define MIDI_SAMPLE_LOOP_RESPONSE_PAYLOAD_SIZE 12
 typedef struct {
@@ -169,7 +169,7 @@ size_t MidiDeserializeSampleDump(
   uint8_t const *data, size_t data_size,
   midi_sample_dump_t *sample_dump);
 
-/* Device Inquiry */
+/* General Information */
 #define MIDI_DEVICE_INQUIRY_REQUEST_PAYLOAD_SIZE 1
 #define MIDI_DEVICE_INQUIRY_RESPONSE_SMALL_PAYLOAD_SIZE 10
 #define MIDI_DEVICE_INQUIRY_RESPONSE_LARGE_PAYLOAD_SIZE 12

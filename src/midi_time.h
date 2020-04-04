@@ -64,6 +64,12 @@ bool_t MidiIncrementTimeSeconds(midi_time_t *time);
 bool_t MidiIncrementTimeMinutes(midi_time_t *time);
 bool_t MidiIncrementTimeHours(midi_time_t *time);
 
+typedef enum {
+  MIDI_TIME_UNKNOWN,
+  MIDI_TIME_FORWARD,
+  MIDI_TIME_REVERSE
+} midi_time_direction_t;
+
 C_SECTION_END;
 
 #endif  /* _MIDI_TIME_H_ */

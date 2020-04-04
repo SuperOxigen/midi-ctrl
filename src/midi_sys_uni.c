@@ -129,49 +129,6 @@ size_t MidiDeserializeDumpHeader(
 }
 
 /*
- * Sample Dump Request Message.
- *  Format: ss|ss
- *    ss ss    - Sample number
- */
-
-bool_t MidiIsValidDumpRequest(midi_dump_request_t const *dump_request) {
-  if (dump_request == NULL) return false;
-  return MidiIsDataWord(dump_request->sample_number);
-}
-
-bool_t MidiInitializeDumpRequest(
-    midi_dump_request_t *request, uint16_t sample) {
-  if (request == NULL) return false;
-  if (!MidiIsDataWord(sample)) return false;
-  request->sample_number = sample;
-  return true;
-}
-
-size_t MidiSerializeDumpRequest(
-    midi_dump_request_t const *request,
-    uint8_t *data, size_t data_size) {
-  if (data == NULL && data_size > 0) return 0;
-  if (!MidiIsValidDumpRequest(request)) return 0;
-  if (data_size >= MIDI_DUMP_REQUEST_PAYLOAD_SIZE) {
-    data[0] = MidiGetDataWordLsb(request->sample_number);
-    data[1] = MidiGetDataWordMsb(request->sample_number);
-  }
-  return MIDI_DUMP_REQUEST_PAYLOAD_SIZE;
-}
-
-size_t MidiDeserializeDumpRequest(
-    uint8_t const *data, size_t data_size,
-    midi_dump_request_t *request) {
-  if (request == NULL) return 0;
-  if (data == NULL && data_size > 0) return 0;
-  if (data_size < MIDI_DUMP_REQUEST_PAYLOAD_SIZE)
-    return MIDI_DUMP_REQUEST_PAYLOAD_SIZE;
-  if (!MidiIsDataArray(data, MIDI_DUMP_REQUEST_PAYLOAD_SIZE)) return 0;
-  request->sample_number = MidiDataWordFromBytes(data[1], data[0]);
-  return MIDI_DUMP_REQUEST_PAYLOAD_SIZE;
-}
-
-/*
  * Data Packet Message.
  *  Format: pp|dd<120>|ll
  *    pp      - Packet number
@@ -314,6 +271,49 @@ size_t MidiDeserializeDataPacket(
     memcpy(packet->data, &data[1], packet->length);
   }
   return MIDI_DATA_PACKET_PAYLOAD_SIZE;
+}
+
+/*
+ * Sample Dump Request Message.
+ *  Format: ss|ss
+ *    ss ss    - Sample number
+ */
+
+bool_t MidiIsValidDumpRequest(midi_dump_request_t const *dump_request) {
+  if (dump_request == NULL) return false;
+  return MidiIsDataWord(dump_request->sample_number);
+}
+
+bool_t MidiInitializeDumpRequest(
+    midi_dump_request_t *request, uint16_t sample) {
+  if (request == NULL) return false;
+  if (!MidiIsDataWord(sample)) return false;
+  request->sample_number = sample;
+  return true;
+}
+
+size_t MidiSerializeDumpRequest(
+    midi_dump_request_t const *request,
+    uint8_t *data, size_t data_size) {
+  if (data == NULL && data_size > 0) return 0;
+  if (!MidiIsValidDumpRequest(request)) return 0;
+  if (data_size >= MIDI_DUMP_REQUEST_PAYLOAD_SIZE) {
+    data[0] = MidiGetDataWordLsb(request->sample_number);
+    data[1] = MidiGetDataWordMsb(request->sample_number);
+  }
+  return MIDI_DUMP_REQUEST_PAYLOAD_SIZE;
+}
+
+size_t MidiDeserializeDumpRequest(
+    uint8_t const *data, size_t data_size,
+    midi_dump_request_t *request) {
+  if (request == NULL) return 0;
+  if (data == NULL && data_size > 0) return 0;
+  if (data_size < MIDI_DUMP_REQUEST_PAYLOAD_SIZE)
+    return MIDI_DUMP_REQUEST_PAYLOAD_SIZE;
+  if (!MidiIsDataArray(data, MIDI_DUMP_REQUEST_PAYLOAD_SIZE)) return 0;
+  request->sample_number = MidiDataWordFromBytes(data[1], data[0]);
+  return MIDI_DUMP_REQUEST_PAYLOAD_SIZE;
 }
 
 /*

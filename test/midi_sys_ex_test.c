@@ -64,7 +64,7 @@ static uint8_t const kDumpRequestSysExData[] = {
 static midi_sys_ex_t const kSampleDumpResponseSysEx = {
   .id = { MIDI_NON_REAL_TIME_ID, 0x00, 0x00 },
   .device_id = 0x2F,
-  .sub_id = MIDI_SAMPLE_DUMP,
+  .sub_id = MIDI_SAMPLE_DUMP_EXT,
   .sample_dump = {
     .sub_id = MIDI_SAMPLE_LOOP_RESPONSE,
     .sample_number = 0x040A,
@@ -75,7 +75,7 @@ static midi_sys_ex_t const kSampleDumpResponseSysEx = {
   }
 };
 static uint8_t const kSampleDumpResponseSysExData[] = {
-  MIDI_NON_REAL_TIME_ID, 0x2F, MIDI_SAMPLE_DUMP,
+  MIDI_NON_REAL_TIME_ID, 0x2F, MIDI_SAMPLE_DUMP_EXT,
   MIDI_SAMPLE_LOOP_RESPONSE,
   0x0A, 0x08,
   0x7F, 0x03,
@@ -247,7 +247,7 @@ static void TestMidiHandShakeSysEx_Initializer(void) {
   TEST_ASSERT_FALSE(MidiHandShakeSysEx(
       &sys_ex, 0x80, MIDI_CANCEL, 0x30));
   TEST_ASSERT_FALSE(MidiHandShakeSysEx(
-      &sys_ex, 0x40, MIDI_SAMPLE_DUMP, 0x30));
+      &sys_ex, 0x40, MIDI_SAMPLE_DUMP_EXT, 0x30));
   TEST_ASSERT_FALSE(MidiHandShakeSysEx(
       &sys_ex, 0x40, MIDI_CANCEL, 0x8F));
 
@@ -292,11 +292,11 @@ static void TestMidiStandardSysEx_Initializer(void) {
 
   /* Non-realtime. */
   TEST_ASSERT_TRUE(MidiInitializeSysUni(
-      &sys_ex, false, 0x60, MIDI_SAMPLE_DUMP));
+      &sys_ex, false, 0x60, MIDI_SAMPLE_DUMP_EXT));
   TEST_ASSERT_EQUAL_MEMORY(
       kNonRealTimeManId, sys_ex.id, sizeof(kNonRealTimeManId));
   TEST_ASSERT_EQUAL(0x60, sys_ex.device_id);
-  TEST_ASSERT_EQUAL(MIDI_SAMPLE_DUMP, sys_ex.sub_id);
+  TEST_ASSERT_EQUAL(MIDI_SAMPLE_DUMP_EXT, sys_ex.sub_id);
 
   /* TODO: Test realtime. */
 }

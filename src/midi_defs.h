@@ -465,26 +465,32 @@
 #define MIDI_DUMP_HEADER                  0x01
 #define MIDI_DATA_PACKET                  0x02
 #define MIDI_DUMP_REQUEST                 0x03
-#define MIDI_SAMPLE_DUMP                  0x05
+#define MIDI_NRT_TIME_CODE                0x04
+#define MIDI_SAMPLE_DUMP_EXT              0x05
 #define MIDI_GENERAL_INFO                 0x06
 #define MIDI_FILE_DUMP                    0x07
 #define MIDI_TUNING_DUMP                  0x08
 #define MIDI_GENERAL_MIDI                 0x09
+#define MIDI_DOWNLOADABLE_SOUNDS          0x0A
+#define MIDI_FILE_REFERENCE               0x0B
+#define MIDI_VISUAL_CONTROL               0x0C
+#define MIDI_CAPABILITY_INFO              0x0D
 #define MIDI_EOF                          0x7B
 #define MIDI_WAIT                         0x7C
 #define MIDI_CANCEL                       0x7D
 #define MIDI_NAK                          0x7E
 #define MIDI_ACK                          0x7F
-/* Realtime Sub Id */
-#define MIDI_RT_TIME_CODE                 0x01
-#define MIDI_NOTATION_INFO                0x03
-#define MIDI_DEVICE_CONTROL               0x04
 
-/* Sample Loop Sub ID */
+/* Sample Dump Ext Sub-ID */
 #define MIDI_SAMPLE_LOOP_RESPONSE         0x01
 #define MIDI_SAMPLE_LOOP_REQUEST          0x02
+#define MIDI_SAMPLE_NAME_RESPONSE         0x03
+#define MIDI_SAMPLE_NAME_REQUEST          0x04
+#define MIDI_EXT_DUMP_HEADER              0x05
+#define MIDI_EXT_LOOP_RESPONSE            0x06
+#define MIDI_EXT_LOOP_REQUEST             0x07
 
-/* Device Inquiry Sub ID */
+/* General Information Sub ID */
 #define MIDI_DEVICE_INQUIRY_RESPONSE      0x01
 #define MIDI_DEVICE_INQUIRY_REQUEST       0x02
 
@@ -496,6 +502,20 @@
 /* General MIDI Sub ID */
 #define MIDI_GENERAL_MIDI_ON              0x01
 #define MIDI_GENERAL_MIDI_OFF             0x02
+
+/* Realtime Sub Id */
+#define MIDI_RT_TIME_CODE                 0x01
+#define MIDI_SHOW_CONTROL                 0x02
+#define MIDI_NOTATION_INFO                0x03
+#define MIDI_DEVICE_CONTROL               0x04
+#define MIDI_CUEING                       0x05
+#define MIDI_MMC_COMMANDS                 0x06
+#define MIDI_MMC_RESPONSES                0x07
+#define MIDI_TUNING_STANDARD              0x08
+#define MIDI_CONTROLLER_DEST              0x09
+#define MIDI_KEY_BASED_CONTROL            0x0A
+#define MIDI_SCALABLE_POLYPHONY           0x0B
+#define MIDI_MOBILE_PHONE_CONTROL         0x0C
 
 /* RT Time Code Messages */
 #define MIDI_FULL_TIME_CODE               0x01
