@@ -31,6 +31,7 @@ void MidiProgramTest(void);
 void MidiMessageTest(void);
 
 void MidiSerializeTest(void);
+void MidiCallbackTest(void);
 
 void MidiTransceiverTest(void);
 

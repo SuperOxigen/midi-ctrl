@@ -39,6 +39,7 @@ int main(void) {
   MidiProgramTest();
   MidiMessageTest();
   MidiSerializeTest();
+  MidiCallbackTest();
 
   MidiTransceiverTest();
   UNITY_END();
