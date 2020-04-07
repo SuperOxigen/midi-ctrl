@@ -31,6 +31,45 @@ static void TestBitArray_Initialize(void) {
   TEST_ASSERT_EQUAL(8 * BIT_ARRAY_MAX_BUFFER_SIZE, array.bit_size);
 }
 
+static void TestBitArray_InitializeAsIs(void) {
+  bit_array_t array;
+  uint8_t buffer[BIT_ARRAY_MAX_BUFFER_SIZE + 2];
+  TEST_ASSERT_FALSE(
+      BitArrayInitializeAsIs(NULL, buffer, BIT_ARRAY_MAX_BUFFER_SIZE));
+  TEST_ASSERT_FALSE(
+      BitArrayInitializeAsIs(&array, NULL, BIT_ARRAY_MAX_BUFFER_SIZE));
+  TEST_ASSERT_FALSE(BitArrayInitializeAsIs(&array, buffer, 0));
+  TEST_ASSERT_FALSE(BitArrayInitializeAsIs(
+      &array, buffer, BIT_ARRAY_MAX_BUFFER_SIZE + 2));
+
+  uint8_t buffer2[2] = {0xF0, 0x0F};
+  TEST_ASSERT_TRUE(BitArrayInitializeAsIs(&array, buffer2, sizeof(buffer2)));
+
+  size_t i = 0;
+  do {
+    TEST_ASSERT_FALSE(BitArrayTestBit(&array, i));
+  } while (++i < 4);
+  do {
+    TEST_ASSERT_TRUE(BitArrayTestBit(&array, i));
+  } while (++i < 12);
+  do {
+    TEST_ASSERT_FALSE(BitArrayTestBit(&array, i));
+  } while (++i < 16);
+  TEST_ASSERT_TRUE(BitArrayClear(&array));
+  TEST_ASSERT_TRUE(BitArrayNone(&array));
+
+  i = 0;
+  do {
+    TEST_ASSERT_TRUE(BitArrayClearBit(&array,  i));
+  } while (++i < 8);
+  do {
+    TEST_ASSERT_TRUE(BitArraySetBit(&array, i));
+  } while (++i < 16);
+  TEST_ASSERT_TRUE(BitArrayInitializeAsIs(&array, buffer2, sizeof(buffer2)));
+  uint8_t const kExpected[2] = {0x00, 0xFF};
+  TEST_ASSERT_EQUAL_MEMORY(kExpected, buffer2, 2);
+}
+
 static void TestBitArray_BitWiseOperations(void) {
   bit_array_t array;
   uint8_t buffer[2];
@@ -128,4 +167,5 @@ void BitArrayTest(void) {
   RUN_TEST(TestBitArray_Initialize);
   RUN_TEST(TestBitArray_BitWiseOperations);
   RUN_TEST(TestBitArray_SetWiseOperations);
+  RUN_TEST(TestBitArray_InitializeAsIs);
 }

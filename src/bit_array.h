@@ -25,6 +25,9 @@ typedef struct {
 /* |buffer_size| is in bytes. */
 bool_t BitArrayInitialize(
   bit_array_t *array, uint8_t *buffer, size_t buffer_size);
+/* Similar to BitArrayInitialize(), but does not clear the array. */
+bool_t BitArrayInitializeAsIs(
+  bit_array_t *array, uint8_t *buffer, size_t buffer_size);
 
 bool_t BitArrayClear(bit_array_t *array);
 

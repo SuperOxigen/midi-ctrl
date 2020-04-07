@@ -11,13 +11,21 @@
 
 bool_t BitArrayInitialize(
     bit_array_t *array, uint8_t *buffer, size_t buffer_size) {
+  if (!BitArrayInitializeAsIs(array, buffer, buffer_size))
+    return false;
+  memset(buffer, 0, buffer_size);
+  return true;
+}
+
+bool_t BitArrayInitializeAsIs(
+    bit_array_t *array, uint8_t *buffer, size_t buffer_size) {
   if (array == NULL || buffer == NULL) return false;
   if (buffer_size == 0 || buffer_size > BIT_ARRAY_MAX_BUFFER_SIZE)
     return false;
-  memset(array, 0, sizeof(bit_array_t));
-  memset(buffer, 0, buffer_size);
-  array->buffer = buffer;
-  array->bit_size = buffer_size * 8;
+  *array = (bit_array_t) {
+    .buffer = buffer,
+    .bit_size = (buffer_size << 3)
+  };
   return true;
 }
 
