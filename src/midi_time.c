@@ -298,13 +298,17 @@ bool_t MidiExtractTimeCode(
 }
 
 size_t MidiSerializeTime(
-    midi_time_t const *time, bool_t backwards, uint8_t *data, size_t data_size) {
+    midi_time_t const *time, midi_time_direction_t direction,
+    uint8_t *data, size_t data_size) {
   if (data == NULL && data_size > 0) return 0;
+  if (direction != MIDI_TIME_FORWARD && direction != MIDI_TIME_REVERSE)
+    return 0;
   if (!MidiIsValidTime(time)) return 0;
   if (data_size < MIDI_SERIALIZED_TIME_PAYLOAD_SIZE)
     return MIDI_SERIALIZED_TIME_PAYLOAD_SIZE;
   /* Time code index, data index, data used (if fully serialize) */
   size_t tci = 0, di = 0, data_used = 0;
+  bool_t const backwards = (direction == MIDI_TIME_REVERSE);
   while (tci < kMidiTimeCodeTypeCount) {
     midi_time_code_type_t const type = backwards
         ? kMidiTimeCodeTypes[kMidiTimeCodeTypeCount - tci - 1]

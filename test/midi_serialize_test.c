@@ -512,12 +512,14 @@ static void TestMidiSerialize_TimePacket(void) {
   uint8_t time_packet[12];
   MidiInitializeTime(&time);
   TEST_ASSERT_EQUAL(0, MidiSerializeTimeAsPacket(
-      NULL, true, time_packet,  sizeof(time_packet)));
+      NULL, MIDI_TIME_REVERSE, time_packet,  sizeof(time_packet)));
   TEST_ASSERT_EQUAL(0, MidiSerializeTimeAsPacket(
-      &time, false, NULL,  sizeof(time_packet)));
+      &time, MIDI_TIME_UNKNOWN, time_packet, sizeof(time_packet)));
+  TEST_ASSERT_EQUAL(0, MidiSerializeTimeAsPacket(
+      &time, MIDI_TIME_FORWARD, NULL,  sizeof(time_packet)));
   time.hours = 24;
   TEST_ASSERT_EQUAL(0, MidiSerializeTimeAsPacket(
-      &time, true, time_packet,  sizeof(time_packet)));
+      &time, MIDI_TIME_REVERSE, time_packet,  sizeof(time_packet)));
 
   MidiInitializeTime(&time);
   time.frame = /* 22 */ 0x16;
@@ -536,7 +538,7 @@ static void TestMidiSerialize_TimePacket(void) {
     MIDI_HOURS_COUNT_LSN | 0xD,
     MIDI_HOURS_COUNT_MSN | 0x0 | 0x6
   };
-  static uint8_t const kBackwardTimeData[] = {
+  static uint8_t const kReverseTimeData[] = {
     MIDI_TIME_CODE,
     MIDI_HOURS_COUNT_MSN | 0x0 | 0x6,
     MIDI_HOURS_COUNT_LSN | 0xD,
@@ -550,16 +552,16 @@ static void TestMidiSerialize_TimePacket(void) {
   TEST_ASSERT_EQUAL(
       sizeof(kForwardTimePacket),
       MidiSerializeTimeAsPacket(
-          &time, false, time_packet,  sizeof(time_packet)));
+          &time, MIDI_TIME_FORWARD, time_packet,  sizeof(time_packet)));
   TEST_ASSERT_EQUAL_MEMORY(
       kForwardTimePacket, time_packet, sizeof(kForwardTimePacket));
 
   TEST_ASSERT_EQUAL(
-      sizeof(kBackwardTimeData),
+      sizeof(kReverseTimeData),
       MidiSerializeTimeAsPacket(
-          &time, true, time_packet,  sizeof(time_packet)));
+          &time, MIDI_TIME_REVERSE, time_packet,  sizeof(time_packet)));
   TEST_ASSERT_EQUAL_MEMORY(
-      kBackwardTimeData, time_packet, sizeof(kBackwardTimeData));
+      kReverseTimeData, time_packet, sizeof(kReverseTimeData));
 }
 
 static void TestMidiDeserialize_Invalid(void) {

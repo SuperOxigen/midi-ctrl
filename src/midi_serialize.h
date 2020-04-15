@@ -30,7 +30,8 @@ size_t MidiSerializeMessage(
 
 /* Special serialization for MIDI time. */
 size_t MidiSerializeTimeAsPacket(
-  midi_time_t const *time, bool_t backwards, uint8_t *data, size_t data_size);
+  midi_time_t const *time, midi_time_direction_t direction,
+  uint8_t *data, size_t data_size);
 
 /* Deserialize.
  * Returns the number of bytes that have been consumed in populating

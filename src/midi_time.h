@@ -55,20 +55,21 @@ bool_t MidiExtractTimeCode(
   midi_time_t const *time, midi_time_code_type_t type,
   midi_time_code_t *time_code);
 
-#define MIDI_SERIALIZED_TIME_PAYLOAD_SIZE 8
-size_t MidiSerializeTime(
-  midi_time_t const *time, bool_t backwards, uint8_t *data, size_t data_size);
-
-bool_t MidiIncrementTimeFrame(midi_time_t *time);
-bool_t MidiIncrementTimeSeconds(midi_time_t *time);
-bool_t MidiIncrementTimeMinutes(midi_time_t *time);
-bool_t MidiIncrementTimeHours(midi_time_t *time);
-
 typedef enum {
   MIDI_TIME_UNKNOWN,
   MIDI_TIME_FORWARD,
   MIDI_TIME_REVERSE
 } midi_time_direction_t;
+
+#define MIDI_SERIALIZED_TIME_PAYLOAD_SIZE 8
+size_t MidiSerializeTime(
+  midi_time_t const *time, midi_time_direction_t direction,
+  uint8_t *data, size_t data_size);
+
+bool_t MidiIncrementTimeFrame(midi_time_t *time);
+bool_t MidiIncrementTimeSeconds(midi_time_t *time);
+bool_t MidiIncrementTimeMinutes(midi_time_t *time);
+bool_t MidiIncrementTimeHours(midi_time_t *time);
 
 C_SECTION_END;
 

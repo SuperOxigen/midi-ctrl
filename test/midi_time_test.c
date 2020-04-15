@@ -522,21 +522,24 @@ static void TestMidiTime_Serialize(void) {
   MidiInitializeTime(&time);
   /* Invalid inputs. */
   TEST_ASSERT_EQUAL(0, MidiSerializeTime(
-      NULL, false, time_data, sizeof(time_data)));
+      NULL, MIDI_TIME_FORWARD, time_data, sizeof(time_data)));
   TEST_ASSERT_EQUAL(0, MidiSerializeTime(
-      &time, false, NULL, sizeof(time_data)));
+      &time, MIDI_TIME_UNKNOWN, time_data, sizeof(time_data)));
+  TEST_ASSERT_EQUAL(0, MidiSerializeTime(
+      &time, MIDI_TIME_FORWARD, NULL, sizeof(time_data)));
   time.hours = 25;
   TEST_ASSERT_EQUAL(0, MidiSerializeTime(
-      &time, false, time_data, sizeof(time_data)));
+      &time, MIDI_TIME_FORWARD, time_data, sizeof(time_data)));
 
   /* Incomplete serialization. */
   MidiInitializeTime(&time);
   TEST_ASSERT_EQUAL(MIDI_SERIALIZED_TIME_PAYLOAD_SIZE, MidiSerializeTime(
-      &time, false, NULL, 0));
+      &time, MIDI_TIME_FORWARD, NULL, 0));
   TEST_ASSERT_EQUAL(MIDI_SERIALIZED_TIME_PAYLOAD_SIZE, MidiSerializeTime(
-      &time, false, time_data, 0));
+      &time, MIDI_TIME_FORWARD, time_data, 0));
   TEST_ASSERT_EQUAL(MIDI_SERIALIZED_TIME_PAYLOAD_SIZE, MidiSerializeTime(
-      &time, false, time_data, MIDI_SERIALIZED_TIME_PAYLOAD_SIZE / 2));
+      &time, MIDI_TIME_FORWARD, time_data,
+      MIDI_SERIALIZED_TIME_PAYLOAD_SIZE / 2));
 
   time.frame = /* 22 */ 0x16;
   time.seconds = /* 41 */ 0x2A;
@@ -553,7 +556,7 @@ static void TestMidiTime_Serialize(void) {
     MIDI_HOURS_COUNT_LSN | 0xD,
     MIDI_HOURS_COUNT_MSN | 0x0 | 0x6
   };
-  static uint8_t const kBackwardTimeData[] = {
+  static uint8_t const kReverseTimeData[] = {
     MIDI_HOURS_COUNT_MSN | 0x0 | 0x6,
     MIDI_HOURS_COUNT_LSN | 0xD,
     MIDI_MINUTES_COUNT_MSN | 0x0,
@@ -566,16 +569,16 @@ static void TestMidiTime_Serialize(void) {
   TEST_ASSERT_EQUAL(
       sizeof(kForwardTimeData),
       MidiSerializeTime(
-          &time, false /* Forward */, time_data, sizeof(time_data)));
+          &time, MIDI_TIME_FORWARD, time_data, sizeof(time_data)));
   TEST_ASSERT_EQUAL_MEMORY(
       kForwardTimeData, time_data, sizeof(kForwardTimeData));
 
   TEST_ASSERT_EQUAL(
-      sizeof(kBackwardTimeData),
+      sizeof(kReverseTimeData),
       MidiSerializeTime(
-          &time, true /* Backward */, time_data, sizeof(time_data)));
+          &time, MIDI_TIME_REVERSE, time_data, sizeof(time_data)));
   TEST_ASSERT_EQUAL_MEMORY(
-      kBackwardTimeData, time_data, sizeof(kBackwardTimeData));
+      kReverseTimeData, time_data, sizeof(kReverseTimeData));
 }
 
 static void TestMidiTime_Increment(void) {

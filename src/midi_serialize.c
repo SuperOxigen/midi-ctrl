@@ -147,14 +147,16 @@ size_t MidiSerializeMessage(
 }
 
 size_t MidiSerializeTimeAsPacket(
-    midi_time_t const *time, bool_t backwards,
+    midi_time_t const *time, midi_time_direction_t direction,
     uint8_t *data, size_t data_size) {
   if (!MidiIsValidTime(time) || data == NULL) return 0;
+  if (direction != MIDI_TIME_FORWARD && direction != MIDI_TIME_REVERSE)
+    return 0;
   if (data_size > 0) {
     data[0] = MIDI_TIME_CODE;
   }
   return MidiSerializeTime(
-      time, backwards, &data[1], data_size > 0 ? data_size - 1 : 0) + 1;
+      time, direction, &data[1], data_size > 0 ? data_size - 1 : 0) + 1;
 }
 
 size_t MidiDeserializeMessage(
