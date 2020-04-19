@@ -6,6 +6,7 @@
  * See LICENSE for details.
  */
 #include <ctype.h>
+
 #include "smart_string.h"
 
 /* The max string size is used to prevent bad source buffers from
@@ -164,6 +165,32 @@ size_t SmartStringHexFormat(
     }
   }
   return total_width;
+}
+
+inline static uint32_t DecFormatDigitWidth(uint32_t value) {
+  if (value == 0) return 1;
+  uint32_t width = 0;
+  while (value > 0) {
+    value /= 10;
+    ++width;
+  }
+  return width;
+}
+
+size_t SmartStringDecFormat(uint32_t value, char *dest, size_t dest_size) {
+  if (dest == NULL || dest_size == 0) return 0;
+  size_t const digit_width = DecFormatDigitWidth(value);
+  dest[digit_width >= dest_size ? dest_size - 1 : digit_width] = 0;
+  size_t i = digit_width;
+  while (i >= dest_size) {
+    value /= 10;
+    --i;
+  }
+  while (i > 0) {
+    dest[(i--) - 1] = (value % 10) + '0';
+    value /= 10;
+  }
+  return digit_width;
 }
 
 /* Raw data encoding. */

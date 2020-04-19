@@ -13,6 +13,7 @@
 C_SECTION_BEGIN;
 
 #define SS_MAX_STRING_LENGTH 127
+#define SS_MAX_STRING_BUFFER_SIZE (SS_MAX_STRING_LENGTH + 1)
 
 size_t SmartStringLength(char const *src);
 size_t SmartStringSet(char ch, size_t count, char *dest, size_t dest_size);
@@ -31,6 +32,8 @@ void SmartStringClear(char *dest, size_t dest_size);
 size_t SmartStringHexFormat(
     uint32_t value, uint8_t flags,
     char *dest, size_t dest_size);
+
+size_t SmartStringDecFormat(uint32_t value, char *dest, size_t dest_size);
 
 void SmartStringSetHexEncodeCase(bool_t lower);
 size_t SmartStringHexEncode(
