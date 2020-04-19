@@ -306,6 +306,42 @@ static void TestStringHexFormat_LowerCase(void) {
   TEST_ASSERT_EQUAL_STRING("deadbeef", buffer);
 }
 
+static void TestStringDecFormat_InvalidInput(void) {
+  TEST_ASSERT_EQUAL(0u, SmartStringDecFormat(1337, NULL, 10));
+  char buffer[16];
+  TEST_ASSERT_EQUAL(0u, SmartStringDecFormat(1337, buffer, 0));
+}
+
+static void TestStringDecFormat_Regular(void) {
+  char buffer[16];
+  TEST_ASSERT_EQUAL(1, SmartStringDecFormat(0, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("0", buffer);
+  TEST_ASSERT_EQUAL(1, SmartStringDecFormat(1, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("1", buffer);
+  TEST_ASSERT_EQUAL(4, SmartStringDecFormat(1337, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("1337", buffer);
+  TEST_ASSERT_EQUAL(10, SmartStringDecFormat(1234567890, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("1234567890", buffer);
+  TEST_ASSERT_EQUAL(2, SmartStringDecFormat(69, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_STRING("69", buffer);
+}
+
+static void TestStringDecFormat_Truncated(void) {
+  char buffer[16];
+  TEST_ASSERT_EQUAL(1, SmartStringDecFormat(0, buffer, 1));
+  TEST_ASSERT_EQUAL_STRING("", buffer);
+  TEST_ASSERT_EQUAL(4, SmartStringDecFormat(1337, buffer, 1));
+  TEST_ASSERT_EQUAL_STRING("", buffer);
+
+  TEST_ASSERT_EQUAL(4, SmartStringDecFormat(1337, buffer, 3));
+  TEST_ASSERT_EQUAL_STRING("13", buffer);
+  TEST_ASSERT_EQUAL(4, SmartStringDecFormat(1337, buffer, 4));
+  TEST_ASSERT_EQUAL_STRING("133", buffer);
+
+  TEST_ASSERT_EQUAL(10, SmartStringDecFormat(1234567890, buffer, 10));
+  TEST_ASSERT_EQUAL_STRING("123456789", buffer);
+}
+
 /* Hex Encoding Test */
 
 static void TestStringHexEncode_InvalidInput(void) {
@@ -390,6 +426,10 @@ void SmartStringTest(void) {
   RUN_TEST(TestStringHexFormat_AutoWidth);
   RUN_TEST(TestStringHexFormat_ZeroXPrefixed);
   RUN_TEST(TestStringHexFormat_LowerCase);
+
+  RUN_TEST(TestStringDecFormat_InvalidInput);
+  RUN_TEST(TestStringDecFormat_Regular);
+  RUN_TEST(TestStringDecFormat_Truncated);
   /* Encoding / Decoding */
   RUN_TEST(TestStringHexEncode_InvalidInput);
   RUN_TEST(TestStringHexEncode_ValidInput);
