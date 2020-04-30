@@ -380,7 +380,7 @@
 #define MIDI_SIDE_STICK                   36
 #define MIDI_ACOUSTIC_SNARE               37
 #define MIDI_HAND_CLAP                    38
-#define MIDI_ELECTRIC_SNAR                39
+#define MIDI_ELECTRIC_SNARE               39
 #define MIDI_LOW_FLOOR_TOM                40
 #define MIDI_CLOSED_HI_HAT                41
 #define MIDI_HIGH_FLOOR_TOM               42
@@ -421,7 +421,7 @@
 #define MIDI_MUTE_CUICA                   77
 #define MIDI_OPEN_CUICA                   78
 #define MIDI_MUTE_TRIANGLE                79
-#define MIDI_OPEN_TRIANLE                 80
+#define MIDI_OPEN_TRIANGLE                80
 
 /*
  *    MIDI Time Code
