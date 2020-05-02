@@ -13,6 +13,7 @@
 
 #include "logging.h"
 
+#include "system_interrupt.h"
 #include "system_storage.h"
 #include "system_time.h"
 
@@ -44,6 +45,19 @@ bool_t SystemTimeNow(system_time_t *system_time) {
   LOG_DEBUG(
       "Now: time = %u.%09u", system_time->seconds, system_time->nanoseconds);
   return true;
+}
+
+/* Interrupts */
+static bool_t gSignalEnabled = true;
+
+void SystemDisableInterrupt(void) {
+  if (!gSignalEnabled) return;
+  gSignalEnabled = false;
+}
+
+void SystemEnableInterrupt(void) {
+  if (gSignalEnabled) return;
+  gSignalEnabled = true;
 }
 
 /* System Storage. */
