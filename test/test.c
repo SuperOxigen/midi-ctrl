@@ -21,6 +21,7 @@ int main(void) {
   printf("\n==== Misc Utilities Test ====\n");
   BitArrayTest();
   SystemTimeTest();
+  SchedulerTest();
 
   /* MIDI test. */
   printf("\n==== MIDI Tests ====\n");

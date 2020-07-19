@@ -12,6 +12,7 @@ void SmartStringTest(void);
 void PlatformAttributesTest(void);
 void BitArrayTest(void);
 void SystemTimeTest(void);
+void SchedulerTest(void);
 
 /* MIDI Tests */
 void MidiBytesTest(void);
