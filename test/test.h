@@ -11,6 +11,7 @@
 void SmartStringTest(void);
 void PlatformAttributesTest(void);
 void BitArrayTest(void);
+void ByteBufferTest(void);
 void SystemTimeTest(void);
 void SchedulerTest(void);
 

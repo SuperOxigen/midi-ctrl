@@ -20,6 +20,7 @@ int main(void) {
 
   printf("\n==== Misc Utilities Test ====\n");
   BitArrayTest();
+  ByteBufferTest();
   SystemTimeTest();
   SchedulerTest();
 
