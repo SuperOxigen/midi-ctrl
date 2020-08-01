@@ -66,7 +66,7 @@ size_t SystemStorageSize(void) {
   return NATIVE_STORAGE_SIZE;
 }
 
-void SystemInitializeStorage(void) {
+void SystemStorageInitialize(void) {
   if (!gNativeStorageInitialized) {
     memset(gNativeStorage, 0, NATIVE_STORAGE_SIZE);
     gNativeStorageInitialized = true;

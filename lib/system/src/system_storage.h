@@ -20,7 +20,7 @@ C_SECTION_BEGIN;
  */
 /* Returns true if platform has persistent storage. */
 size_t SystemStorageSize(void);
-void SystemInitializeStorage(void);
+void SystemStorageInitialize(void);
 
 /* Returns true if a call to SystemWriteStorage() will result in at
  * least one byte. */

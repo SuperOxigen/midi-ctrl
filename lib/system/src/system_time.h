@@ -12,6 +12,9 @@
 
 C_SECTION_BEGIN;
 
+/* Initializes system time hardware.  Platform specific. */
+void SystemTimeInitialize(void);
+
 /* The system time is a platform-specific monotonically increasing
  * time measure.  This is intended to be used to calculate durations
  * and used for timer events. */
