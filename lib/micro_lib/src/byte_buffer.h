@@ -30,7 +30,7 @@ bool_t ByteBufferIsFull(byte_buffer_t const *buffer);
 
 bool_t ByteBufferEnqueueByte(byte_buffer_t *buffer, uint8_t byte);
 size_t ByteBufferEnqueueBytes(
-  byte_buffer_t *buffer, uint8_t *data, size_t count);
+  byte_buffer_t *buffer, uint8_t const *data, size_t count);
 
 bool_t ByteBufferPeakByte(byte_buffer_t *buffer, uint8_t *byte);
 size_t ByteBufferPeakBytes(byte_buffer_t *buffer, uint8_t *data, size_t count);

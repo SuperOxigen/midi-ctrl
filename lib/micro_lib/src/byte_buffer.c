@@ -68,7 +68,7 @@ bool_t ByteBufferEnqueueByte(byte_buffer_t *buffer, uint8_t byte) {
 }
 
 size_t ByteBufferEnqueueBytes(
-    byte_buffer_t *buffer, uint8_t *data, size_t count) {
+    byte_buffer_t *buffer, uint8_t const *data, size_t count) {
   if (!ByteBufferIsValid(buffer)) return 0;
   if (data == NULL || count == 0) return 0;
   size_t const to_copy = (count > (buffer->capacity - buffer->size))
