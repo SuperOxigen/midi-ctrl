@@ -47,6 +47,8 @@ bool_t SystemTimeNow(system_time_t *system_time) {
   return true;
 }
 
+void SystemTimeInitialize(void) {}
+
 /* Interrupts */
 static bool_t gSignalEnabled = true;
 
