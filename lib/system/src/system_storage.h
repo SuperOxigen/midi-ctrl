@@ -22,17 +22,17 @@ C_SECTION_BEGIN;
 size_t SystemStorageSize(void);
 void SystemStorageInitialize(void);
 
+bool_t SystemStorageIsReady(void);
+
 /* Returns true if a call to SystemWriteStorage() will result in at
  * least one byte. */
-bool_t SystemStorageWriteReady(void);
-bool_t SystemStorageWrite(
-  uint16_t address, uint8_t data);
-bool_t SystemStorageIsWriting(void);
+bool_t SystemStorageWrite(uint16_t address, uint8_t byte);
+bool_t SystemStorageWriteBuffer(
+  uint16_t address, uint8_t const *buffer, size_t size);
 
-bool_t SystemStorageReadReady(void);
-bool_t SystemStorageStartRead(uint16_t address);
-bool_t SystemStorageIsReading(void);
-bool_t SystemStorageGetByte(uint8_t *byte);
+bool_t SystemStorageRead(uint16_t address, uint8_t *byte);
+bool_t SystemStorageReadBuffer(
+  uint16_t address, uint8_t *buffer, size_t count);
 
 C_SECTION_END;
 

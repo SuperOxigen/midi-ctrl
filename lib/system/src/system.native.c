@@ -23,9 +23,8 @@
 
 #define NATIVE_STORAGE_MASK (NATIVE_STORAGE_SIZE - 1)
 
-static uint8_t gNativeStorage[NATIVE_STORAGE_SIZE];
-static uint16_t gNativeStorageAddress = 0x0000;
-static bool_t gNativeStorageInitialized = false;
+static uint8_t sNativeStorage[NATIVE_STORAGE_SIZE];
+static bool_t sNativeStorageInitialized = false;
 
 /* System Time. */
 bool_t SystemTimeNow(system_time_t *system_time) {
@@ -69,50 +68,49 @@ size_t SystemStorageSize(void) {
 }
 
 void SystemStorageInitialize(void) {
-  if (!gNativeStorageInitialized) {
-    memset(gNativeStorage, 0, NATIVE_STORAGE_SIZE);
-    gNativeStorageInitialized = true;
+  if (!sNativeStorageInitialized) {
+    memset(sNativeStorage, 0, NATIVE_STORAGE_SIZE);
+    sNativeStorageInitialized = true;
   }
 }
 
-/* Storage Write. */
-
-bool_t SystemStorageWriteReady(void) {
-  return gNativeStorageInitialized;
+bool_t SystemStorageIsReady(void) {
+  return sNativeStorageInitialized;
 }
 
-bool_t SystemStorageWrite(
-    uint16_t address, uint8_t data) {
-  if (address >= NATIVE_STORAGE_SIZE || !gNativeStorageInitialized)
+bool_t SystemStorageWrite(uint16_t address, uint8_t byte) {
+  if (address >= NATIVE_STORAGE_SIZE || !sNativeStorageInitialized)
     return false;
-  gNativeStorageAddress = address & NATIVE_STORAGE_MASK;
-  gNativeStorage[gNativeStorageAddress] = data;
+  sNativeStorage[address] = byte;
   return true;
 }
 
-bool_t SystemStorageIsWriting(void) {
-  return false;
-}
-
-/* Storage Read. */
-
-bool_t SystemStorageReadReady(void) {
-  return gNativeStorageInitialized;
-}
-
-bool_t SystemStorageStartRead(uint16_t address) {
-  if (!gNativeStorageInitialized) return false;
-  gNativeStorageAddress = address & NATIVE_STORAGE_MASK;
+bool_t SystemStorageWriteBuffer(
+    uint16_t address, uint8_t const *buffer, size_t size) {
+  if (!sNativeStorageInitialized) return false;
+  if (address >= NATIVE_STORAGE_SIZE || buffer == NULL || size == 0)
+    return false;
+  for (size_t i = 0; i < size; ++i) {
+    sNativeStorage[(address + i) & NATIVE_STORAGE_MASK] = buffer[i];
+  }
   return true;
 }
 
-bool_t SystemStorageIsReading(void) {
-  return false;
+bool_t SystemStorageRead(uint16_t address, uint8_t *byte) {
+  if (!sNativeStorageInitialized) return false;
+  if (address >= NATIVE_STORAGE_SIZE || byte == NULL)
+  *byte = sNativeStorage[address];
+  return true;
 }
 
-bool_t SystemStorageGetByte(uint8_t *byte) {
-  if (byte == NULL || !gNativeStorageInitialized) return false;
-  *byte = gNativeStorage[gNativeStorageAddress];
+bool_t SystemStorageReadBuffer(
+    uint16_t address, uint8_t *buffer, size_t count) {
+  if (!sNativeStorageInitialized) return false;
+  if (address >= NATIVE_STORAGE_SIZE || buffer == NULL || count == 0)
+    return false;
+  for (size_t i = 0; i < count; ++i) {
+    buffer[i] = sNativeStorage[(address + i) & NATIVE_STORAGE_MASK];
+  }
   return true;
 }
 
