@@ -62,11 +62,11 @@
 #endif
 
 #ifndef SYSTEM_RX_SIZE
-#define SYSTEM_RX_SIZE  64
+#define SYSTEM_RX_SIZE  128
 #endif
 
 #ifndef SYSTEM_TX_SIZE
-#define SYSTEM_TX_SIZE  32
+#define SYSTEM_TX_SIZE  128
 #endif
 
 static uint8_t sSystemRxData[SYSTEM_RX_SIZE];
