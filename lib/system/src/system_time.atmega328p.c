@@ -22,12 +22,12 @@
  * |COM0A1|COM0A0|COM0B1|COM0B0|  --  |  --  | WGM01| WGM00|
  *    Compare Match Output A Mode (COM0A[1:0]) = 00 -> No output
  *    Compare Match Output B Mode (COM0B[1:0]) = 00 -> No output
- *    Waveform Generation Mode (WGM0[1:0])     = 00 -> Normal Mode
+ *    Waveform Generation Mode (WGM0[1:0])     = 10 -> CTC Mode
  * Timer/Counter Control Register B (TCCR0B) = 00
  * | FOC0A| FOC0B|  --  |  --  | WGM02| CS02 | CS01 | CS00 |
  *    Force Output Compare A (FOC0A)   = 0  -- No function in Normal Mode
  *    Force Output Compare B (FOC0B)   = 0  -- No function in Normal Mode
- *    Waveform Generation Mode (WGM02) = 0  -> Normal Mode
+ *    Waveform Generation Mode (WGM02) = 0  -> CTC Mode
  *    Clock Select (CS0[2:0])          = T0_CLOCK_SELECT
  *        001 - F_CPU (no prescaler)
  *        010 - F_CPU/8
@@ -48,15 +48,16 @@
  *    Output Compare Match A Flag (OCF0A): overflow -> 1, ISR -> 0
  *    Timer Overflow Flag (TOV0)
  *
- * F_T0 = F_CPU / (2 * N * (1 + OCR0A))
+ * Interrupt Frequency:
+ *    F_T0 = F_CPU / (N * (1 + OCR0A))
  */
 #if F_CPU == 16000000L
-#define RESOLUTION_NS   50000L /* 50us -> F_T0 = 20 kHz */
-#define T0_CLOCK_SELECT 1      /* Div 8 prescaler */
+#define RESOLUTION_NS   25000L /* 25us -> F_T0 = 40 kHz */
+#define T0_CLOCK_SELECT 0x2    /* Div 8 prescaler */
 #define T0_COMPARE      49
 #elif F_CPU == 1000000L
-#define RESOLUTION_NS   400000L  /* 400us -> F_T0 = 2.5 kHz*/
-#define T0_CLOCK_SELECT 1        /* Div 8 prescaler */
+#define RESOLUTION_NS   200000L  /* 200us -> F_T0 = 5.0 kHz*/
+#define T0_CLOCK_SELECT 0x2      /* Div 8 prescaler */
 #define T0_COMPARE 24
 #else
 #error "Unsupported CPU speed"
@@ -76,10 +77,10 @@ ISR(TIMER0_COMPA_vect) {
 void SystemTimeInitialize(void) {
   if (sSystemTimeInitialized) return;
   cli();
-  TCCR0A = 0;
+  TCCR0A = _BV(WGM01);
   OCR0A = T0_COMPARE;
   TIFR0 = 0;
-  TIMSK0 = _BV(OCF0A);
+  TIMSK0 = _BV(OCIE0A);
   /* Set last, enables timer. */
   TCCR0B = (T0_CLOCK_SELECT << CS00);
   sei();
