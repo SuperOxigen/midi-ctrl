@@ -87,7 +87,7 @@ ISR(USART_RX_vect) {
 ISR(USART_UDRE_vect) {
   if (ByteBufferIsEmpty(&sSystemTxBuffer)) {
     /* If no data to transmit, disable interrupt. */
-    UCSR0B &= ~(_BV(UDRIE0));
+    UCSR0B &= ~_BV(UDRIE0);
     return;
   }
   uint8_t data = 0x00;
@@ -115,20 +115,28 @@ void SystemSerialInitialize(void) {
 }
 
 size_t SystemSerialWrite(uint8_t const *data, size_t count) {
-  if (data == NULL || count == 0) return 0;
+  if (data == NULL || count == 0 || !sSystemSerialInitialized) return 0;
   cli();
   size_t const queued = ByteBufferEnqueueBytes(&sSystemTxBuffer, data, count);
+  UCSR0B |= _BV(UDRIE0);
   sei();
   return queued;
 }
 
 size_t SystemSerialRead(uint8_t *data, size_t data_size) {
-  if (data == NULL || data_size == 0) return 0;
+  if (data == NULL || data_size == 0 || !sSystemSerialInitialized) return 0;
   cli();
   size_t const dequeued = ByteBufferDequeueBytes(
       &sSystemRxBuffer, data, data_size);
   sei();
   return dequeued;
+}
+
+void SystemSerialFlush(void) {
+  if (!sSystemSerialInitialized) return;
+  cli();
+  ByteBufferClear(&sSystemRxBuffer);
+  sei();
 }
 
 #endif  /* _PLATFORM_ARDUINO */

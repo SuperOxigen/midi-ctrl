@@ -19,6 +19,9 @@ void SystemSerialInitialize(void);
 size_t SystemSerialWrite(uint8_t const *data, size_t count);
 size_t SystemSerialRead(uint8_t *data, size_t data_size);
 
+/* Flushes the read buffer. */
+void SystemSerialFlush(void);
+
 C_SECTION_END;
 
 #endif  /* _SYSTEM_SERIAL_H_ */
