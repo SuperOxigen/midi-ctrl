@@ -8,8 +8,8 @@
 #ifdef _PLATFORM_AVR
 #ifndef _PLATFORM_ARDUINO
 
-#include <avr/io.h>
 #include <avr/interrupt.h>
+#include <avr/io.h>
 
 #include "byte_buffer.h"
 #include "system_serial.h"
@@ -17,7 +17,7 @@
 /*
  *  ATmega328 Serial
  *    Set USART port to operate at 31250 bps.
- *    MIDI frame: 8 data bits, 1 stop bit, no parity.
+ *    MIDI frame: 1 start bit, 8 data bits, no parity, 1 stop bit.
  *
  * USART I/O Data Register (UDR0): Write -> Tx, Read -> Rx
  * USART Control and Status Register A (UCSR0A) = ------00
@@ -44,19 +44,32 @@
  * |UMSEL01|UMSEL00|  UPM01|  UPM00|  USBS0| UCSZ01| UCSZ00| UCPOL0|
  *    USART Mode Select (UMSEL0[1:0]) = 00 -> Asynchronous
  *    Parity Mode (UPM0[1:0]) = 00 -> Disabled
- *    Stop Bit Selec (USBS0) = 0 -> Disabled
+ *    Stop Bit Select (USBS0) = 0 -> 1-bit
  *    Character Size (UCSZ0[1:0]) = 11 -> 8-bit
  *    Clock Polarity (UCPOL0) = 0 -> Disabled (only used in synchronous mode)
  * USART Baud Rate Registers (UBRR0 = UBRR0H|UBRR0L)
  *    UBRR0 = (F_CPU / (16 * BAUD_RATE)) - 1
  */
-
-#if F_CPU == 16000000ul
-#define HIGH_COUNT 0u
-#define LOW_COUNT 31u
-#elif F_CPU == 1000000ul
-#define HIGH_COUNT 0u
-#define LOW_COUNT 1u
+#if F_CPU == 20000000L
+#define USART_COUNTER 39u
+#elif F_CPU == 16000000L
+#define USART_COUNTER 31u
+#elif F_CPU == 12000000L
+#define USART_COUNTER 23u
+#elif F_CPU == 10000000L
+#define USART_COUNTER 19u
+#elif F_CPU == 8000000L
+#define USART_COUNTER 15u
+#elif F_CPU == 6000000L
+#define USART_COUNTER 11u
+#elif F_CPU == 5000000L
+#define USART_COUNTER 9u
+#elif F_CPU == 4000000L
+#define USART_COUNTER 7u
+#elif F_CPU == 2000000L
+#define USART_COUNTER 3u
+#elif F_CPU == 1000000L
+#define USART_COUNTER 1u
 #else
 #error Unsupported CPU speed F_CPU
 #endif
@@ -100,16 +113,14 @@ void SystemSerialInitialize(void) {
   cli();
   ByteBufferInitialize(&sSystemRxBuffer, sSystemRxData, SYSTEM_RX_SIZE);
   ByteBufferInitialize(&sSystemTxBuffer, sSystemTxData, SYSTEM_TX_SIZE);
-  /* UBRR0 */
-  UBRR0H = HIGH_COUNT;
-  UBRR0L = LOW_COUNT;
+  /* Baud Rate Counter */
+  UBRR0 = USART_COUNTER;
   /* Control Register A */
   UCSR0A = ~(_BV(U2X0) | _BV(MPCM0));
   /* Control Register C */
   UCSR0C = _BV(UCSZ01) | _BV(UCSZ00);
   /* Control Register B (enables the interrupts) */
-  UCSR0B = _BV(RXCIE0) | _BV(UDRIE0) | _BV(RXEN0) | _BV(TXEN0);
-
+  UCSR0B = _BV(RXCIE0) | _BV(RXEN0) | _BV(TXEN0);
   sSystemSerialInitialized = true;
   sei();
 }

@@ -8,8 +8,8 @@
 #ifdef _PLATFORM_AVR
 #ifndef _PLATFORM_ARDUINO
 
-#include <avr/io.h>
 #include <avr/interrupt.h>
+#include <avr/io.h>
 
 #include "base.h"
 #include "system_time.h"
@@ -51,14 +51,46 @@
  * Interrupt Frequency:
  *    F_T0 = F_CPU / (N * (1 + OCR0A))
  */
-#if F_CPU == 16000000L
+#if F_CPU == 20000000L
+#define RESOLUTION_NS   20000L /* 20us -> F_T0 = 50 kHz */
+#define T0_CLOCK_SELECT 0x2
+#define T0_COMPARE 49
+#elif F_CPU == 16000000L
 #define RESOLUTION_NS   25000L /* 25us -> F_T0 = 40 kHz */
-#define T0_CLOCK_SELECT 0x2    /* Div 8 prescaler */
-#define T0_COMPARE      49
+#define T0_CLOCK_SELECT 0x2
+#define T0_COMPARE 49
+#elif F_CPU == 12000000L
+#define RESOLUTION_NS   50000L /* 50us -> F_T0 = 20 kHz */
+#define T0_CLOCK_SELECT 0x2
+#define T0_COMPARE 74
+#elif F_CPU == 10000000L
+#define RESOLUTION_NS   40000L /* 40us -> F_T0 = 25 kHz */
+#define T0_CLOCK_SELECT 0x2
+#define T0_COMPARE 49
+#elif F_CPU == 8000000L
+#define RESOLUTION_NS   50000L /* 50us -> F_T0 = 20 kHz */
+#define T0_CLOCK_SELECT 0x2
+#define T0_COMPARE 49
+#elif F_CPU == 6000000L
+#define RESOLUTION_NS   100000L /* 100us -> F_T0 = 10 kHz */
+#define T0_CLOCK_SELECT 0x2
+#define T0_COMPARE 74
+#elif F_CPU == 5000000L
+#define RESOLUTION_NS   80000L /* 80us -> F_T0 = 12.5 kHz */
+#define T0_CLOCK_SELECT 0x2
+#define T0_COMPARE 49
+#elif F_CPU == 4000000L
+#define RESOLUTION_NS   100000L /* 100us -> F_T0 = 10.0 kHz */
+#define T0_CLOCK_SELECT 0x2
+#define T0_COMPARE 49
+#elif F_CPU == 2000000L
+#define RESOLUTION_NS   200000L /* 200us -> F_T0 = 5.0 kHz */
+#define T0_CLOCK_SELECT 0x2
+#define T0_COMPARE 49
 #elif F_CPU == 1000000L
-#define RESOLUTION_NS   200000L  /* 200us -> F_T0 = 5.0 kHz*/
-#define T0_CLOCK_SELECT 0x2      /* Div 8 prescaler */
-#define T0_COMPARE 24
+#define RESOLUTION_NS   400000L  /* 400us -> F_T0 = 2.5 kHz*/
+#define T0_CLOCK_SELECT 0x2
+#define T0_COMPARE 49
 #else
 #error "Unsupported CPU speed"
 #endif
@@ -87,7 +119,7 @@ void SystemTimeInitialize(void) {
 }
 
 bool_t SystemTimeNow(system_time_t *time) {
-  if (time == NULL) return false;
+  if (time == NULL || !sSystemTimeInitialized) return false;
   cli();
   time->seconds = sSystemTime.seconds;
   time->nanoseconds = sSystemTime.nanoseconds;
