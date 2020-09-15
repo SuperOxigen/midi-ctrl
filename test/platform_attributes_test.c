@@ -11,12 +11,15 @@
 #include "platform_attributes.h"
 
 static void TestAttributeStrings(void) {
-  TEST_ASSERT_NOT_NULL(kPlatformName);
-  printf("Platform name = \"%s\"\n", kPlatformName);
-  TEST_ASSERT_NOT_NULL(kFrameworkName);
-  printf("Framework name = \"%s\"\n", kFrameworkName);
-  TEST_ASSERT_NOT_NULL(kBuildTimeRepr);
-  printf("Build time = \"%s\"\n", kBuildTimeRepr);
+  char buffer[16];
+  TEST_ASSERT_GREATER_THAN(
+      0, PlatformGetPlatform(buffer, sizeof(buffer)));
+  printf("Platform name = \"%s\"\n", buffer);
+  PlatformGetFramework(buffer, sizeof(buffer));  /* None for native. */
+  printf("Framework name = \"%s\"\n", buffer);
+  TEST_ASSERT_GREATER_THAN(
+      0, PlatformGetBuildTimeStamp(buffer, sizeof(buffer)));
+  printf("Build time = \"%s\"\n", buffer);
 }
 
 void PlatformAttributesTest(void) {

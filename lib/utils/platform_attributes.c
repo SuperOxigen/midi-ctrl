@@ -6,29 +6,42 @@
  * See LICENSE for details.
  */
 #include "platform_attributes.h"
-
-static char const kUnknown[] __ROM_SECTION __UNUSED = "UNKNOWN";
+#include "program_memory.h"
 
 #ifdef PLATFORM_NAME
-static char const kPlatformNameBuf[] __ROM_SECTION = __STRINIFY_MACRO(PLATFORM_NAME);
-char const *kPlatformName = kPlatformNameBuf;
+static char const kPlatformName[] __ROM_SECTION =
+    __STRINIFY_MACRO(PLATFORM_NAME);
 #else
 #warning "Platform not specified"
-char const *kPlatformName = kUnknown;
+static char const kPlatformName[] __ROM_SECTION = "UNKNOWN";
 #endif
 
 #ifdef FRAMWORK_NAME
-static char const kFrameworkNameBuf[] __ROM_SECTION = __STRINIFY_MACRO(FRAMWORK_NAME);
-char const *kFrameworkName = kFrameworkNameBuf;
+static char const kFrameworkName[] __ROM_SECTION =
+    __STRINIFY_MACRO(FRAMWORK_NAME);
 #else
 #warning "Framework not specified"
-char const *kFrameworkName = kUnknown;
+static char const kFrameworkName[] = "UNKNOWN";
 #endif
 
 #ifdef BUILD_TIME
-static char const kBuildTimeReprBuf[] __ROM_SECTION = __STRINIFY_MACRO(BUILD_TIME);
-char const *kBuildTimeRepr = kBuildTimeReprBuf;
+static char const kBuildTimeRepr[] __ROM_SECTION = __STRINIFY_MACRO(BUILD_TIME);
 #else
 #warning "Build time not specified"
-char const *kBuildTimeRepr = kUnknown;
+static char const kBuildTimeRepr[] = "UNKNOWN";
 #endif
+
+size_t PlatformGetPlatform(char *name, size_t name_size) {
+  if (name == NULL && name_size > 0) return 0;
+  return ProgMemoryCopyString(kPlatformName, name, name_size);
+}
+
+size_t PlatformGetFramework(char *name, size_t name_size) {
+  if (name == NULL && name_size > 0) return 0;
+  return ProgMemoryCopyString(kFrameworkName, name, name_size);
+}
+
+size_t PlatformGetBuildTimeStamp(char *name, size_t name_size) {
+  if (name == NULL && name_size > 0) return 0;
+  return ProgMemoryCopyString(kBuildTimeRepr, name, name_size);
+}

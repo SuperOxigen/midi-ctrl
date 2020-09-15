@@ -8,10 +8,11 @@
 #include <ctype.h>
 #include <string.h>
 
+#include "program_memory.h"
+#include "smart_string.h"
+
 #include "midi_defs.h"
 #include "midi_gm1.h"
-#include "platform_attributes.h"
-#include "smart_string.h"
 
 #ifdef _MIDI_SHORT_PROGRAM_NAME
 #define NAME_SELECT(reg_name, short_name) \
@@ -385,7 +386,8 @@ static char const kMidiOpenTriangle[] __ROM_SECTION = "Open Triangle";
 #define MidiIsPercussionNote(note) \
     ((note) >= MIDI_ACOUSTIC_BASS_DRUM && (note) <= MIDI_OPEN_TRIANGLE)
 
-static char const * const kMidiGm1PercussionNameMap[PERCUSSION_MAP_SIZE] __ROM_SECTION = {
+static char const * const
+kMidiGm1PercussionNameMap[PERCUSSION_MAP_SIZE] __ROM_SECTION = {
   [PERCUSSION_INDEX(MIDI_ACOUSTIC_BASS_DRUM)] = kMidiAcousticBassDrum,
   [PERCUSSION_INDEX(MIDI_BASS_DRUM_1)] = kMidiBassDrumOne,
   [PERCUSSION_INDEX(MIDI_SIDE_STICK)] = kMidiSideStick,
@@ -441,7 +443,7 @@ static char const * const kMidiGm1PercussionNameMap[PERCUSSION_MAP_SIZE] __ROM_S
 #define NUMBER_BUFFER_SIZE  6
 
 static size_t FormatString(
-    uint8_t number, uint8_t flags, char const *src,
+    uint8_t number, uint8_t flags, char const *pm_src,
     char *buffer, size_t buffer_size) {
   size_t i = 0;
   if (MIDI_GM1_WITH_NUMBER & flags) {
@@ -449,43 +451,53 @@ static size_t FormatString(
         ((uint32_t) number) + 1u, buffer, buffer_size);
     buffer[i++] = ' ';
   }
-  char const *pptr = src;
   switch (flags & MIDI_GM1_CAPITALIZATION) {
     case MIDI_GM1_CAPITALIZATION: {
       /* Ex. Synth Guitar */
-      i = SmartStringAppend(pptr, buffer, buffer_size);
+      i = ProgMemoryAppendString(pm_src, buffer, buffer_size);
     } break;
     case MIDI_GM1_UPPER_CASE: {
       /* Ex. ALTO SAX */
-      while (*pptr) {
-        if (islower(*pptr)) {
-          buffer[i++] = toupper(*pptr++);
+      char const *pm_ptr = pm_src;
+      char c = 0;
+      ProgMemoryCopy(pm_ptr, &c, sizeof(char));
+      while (c) {
+        if (islower(c)) {
+          buffer[i++] = toupper(c);
         } else {
-          buffer[i++] = *pptr++;
+          buffer[i++] = c;
         }
+        ProgMemoryCopy(++pm_ptr, &c, sizeof(char));
       }
     } break;
     case MIDI_GM1_LOWER_CASE: {
       /* Ex. electric piano 1 */
-      while (*pptr) {
-        if (isupper(*pptr)) {
-          buffer[i++] = tolower(*pptr++);
+      char const *pm_ptr = pm_src;
+      char c = 0;
+      ProgMemoryCopy(pm_ptr, &c, sizeof(char));
+      while (c) {
+        if (isupper(c)) {
+          buffer[i++] = tolower(c);
         } else {
-          buffer[i++] = *pptr++;
+          buffer[i++] = c;
         }
+        ProgMemoryCopy(++pm_ptr, &c, sizeof(char));
       }
     } break;
     default: {
+      char const *pm_ptr = pm_src;
+      char c = 0;
+      ProgMemoryCopy(pm_ptr, &c, sizeof(char));
       /* Ex. SLAP_BASS_1 */
-      while (*pptr) {
-        if (islower(*pptr)) {
-          buffer[i++] = toupper(*pptr);
-        } else if (*pptr == ' ') {
+      while (c) {
+        if (islower(c)) {
+          buffer[i++] = toupper(c);
+        } else if (c == ' ') {
           buffer[i++] = '_';
         } else {
-          buffer[i++] = *pptr;
+          buffer[i++] = c;
         }
-        ++pptr;
+        ProgMemoryCopy(++pm_ptr, &c, sizeof(char));
       }
     }
   }
@@ -503,8 +515,10 @@ size_t MidiGetGeneralMidiProgramName(
   if (name == NULL && name_size > 0) return 0;
   char buffer[PROGRAM_NAME_BUFFER_SIZE];
   memset(buffer, 0, sizeof(buffer));
+  const char *name_ptr = NULL;
+  ProgMemoryCopy(&kMidiGm1ProgramNameMap[program], &name_ptr, sizeof(char*));
   size_t const char_count = FormatString(
-      program, flags, kMidiGm1ProgramNameMap[program], buffer, sizeof(buffer));
+      program, flags, name_ptr, buffer, sizeof(buffer));
   if (name == NULL) {
     return char_count;
   }
@@ -517,8 +531,12 @@ size_t MidiGetGeneralMidiPercussionName(
   if (name == NULL && name_size > 0) return 0;
   char buffer[PERCUSSION_NAME_BUFFER_SIZE];
   memset(buffer, 0, sizeof(buffer));
+  const char *name_ptr = NULL;
+  ProgMemoryCopy(
+      &kMidiGm1PercussionNameMap[PERCUSSION_INDEX(key)],
+      &name_ptr, sizeof(char*));
   size_t const char_count = FormatString(
-      key, flags, kMidiGm1PercussionNameMap[PERCUSSION_INDEX(key)],
+      key, flags, name_ptr,
       buffer, sizeof(buffer));
   if (name == NULL) {
     return char_count;

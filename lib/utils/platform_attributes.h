@@ -10,23 +10,16 @@
 
 #include "base.h"
 
-#ifdef _PLATFORM_AVR
-#include <avr/pgmspace.h>
-#define __ROM_SECTION PROGMEM
-#endif
-
-#ifdef _PLATFORM_NATIVE
-#define __ROM_SECTION
-#endif
-
 #define __STRINIFY(X) #X
 #define __STRINIFY_MACRO_INTERNAL(X...) #X
 #define __STRINIFY_MACRO(X...) __STRINIFY_MACRO_INTERNAL(X)
 
 C_SECTION_BEGIN;
-extern char const *kPlatformName;
-extern char const *kFrameworkName;
-extern char const *kBuildTimeRepr;
+
+size_t PlatformGetPlatform(char *name, size_t name_size);
+size_t PlatformGetFramework(char *name, size_t name_size);
+size_t PlatformGetBuildTimeStamp(char *name, size_t name_size);
+
 C_SECTION_END;
 
 #endif  /* _PLATFORM_ATTRIBUTES_H_ */
