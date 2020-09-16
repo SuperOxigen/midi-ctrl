@@ -212,8 +212,37 @@ static void TestMidiControlChange_IsValid(void) {
   TEST_ASSERT_FALSE(MidiIsValidControlChange(&cc));
   cc.number = 0x7F;
   TEST_ASSERT_FALSE(MidiIsValidControlChange(&cc));
-  cc.value = 0x10;
+  cc.value = 0x00;
   TEST_ASSERT_TRUE(MidiIsValidControlChange(&cc));
+
+  /* Channel modes message have restricted value ranges. */
+  cc.number = MIDI_MONO_MODE_ON;  /* Expects number of channel */
+  cc.value = 0;
+  TEST_ASSERT_TRUE(MidiIsValidControlChange(&cc));
+  cc.value = 16;
+  TEST_ASSERT_TRUE(MidiIsValidControlChange(&cc));
+  cc.value = 17;
+  TEST_ASSERT_FALSE(MidiIsValidControlChange(&cc));
+
+  cc.number = MIDI_ALL_NOTES_OFF;  /* Zero only. */
+  cc.value = 0;
+  TEST_ASSERT_TRUE(MidiIsValidControlChange(&cc));
+  cc.value = 3;
+  TEST_ASSERT_FALSE(MidiIsValidControlChange(&cc));
+
+  cc.number = MIDI_LOCAL_CONTROL; /* Expects on or off. */
+  cc.value = MIDI_CONTROL_OFF;
+  TEST_ASSERT_TRUE(MidiIsValidControlChange(&cc));
+  cc.value = MIDI_CONTROL_ON;
+  TEST_ASSERT_TRUE(MidiIsValidControlChange(&cc));
+  cc.value = 30;
+  TEST_ASSERT_FALSE(MidiIsValidControlChange(&cc));
+
+  cc.number = MIDI_RESET_ALL_CONTROLLERS;  /* Zero only. */
+  cc.value = 0;
+  TEST_ASSERT_TRUE(MidiIsValidControlChange(&cc));
+  cc.value = 88;
+  TEST_ASSERT_FALSE(MidiIsValidControlChange(&cc));
 }
 
 static void TestMidiControlChange_Constructor(void) {
@@ -234,6 +263,29 @@ static void TestMidiControlChange_Constructor(void) {
   TEST_ASSERT_TRUE(MidiIsValidControlChange(&cc));
   TEST_ASSERT_EQUAL(MIDI_BANK_SELECT_LSB, cc.number);
   TEST_ASSERT_EQUAL(0x02, cc.value);
+
+  /* Channel modes message have restricted value ranges. */
+  TEST_ASSERT_TRUE(MidiControlChange(&cc, MIDI_ALL_SOUND_OFF, 0));
+  TEST_ASSERT_EQUAL(MIDI_ALL_SOUND_OFF, cc.number);
+  TEST_ASSERT_EQUAL(0, cc.value);
+  TEST_ASSERT_FALSE(MidiControlChange(&cc, MIDI_ALL_SOUND_OFF, 0x30));
+
+  TEST_ASSERT_TRUE(MidiControlChange(&cc, MIDI_MONO_MODE_ON, 4));
+  TEST_ASSERT_EQUAL(MIDI_MONO_MODE_ON, cc.number);
+  TEST_ASSERT_EQUAL(4, cc.value);
+  TEST_ASSERT_TRUE(MidiControlChange(&cc, MIDI_MONO_MODE_ON, 16));
+  TEST_ASSERT_EQUAL(MIDI_MONO_MODE_ON, cc.number);
+  TEST_ASSERT_EQUAL(16, cc.value);
+  TEST_ASSERT_FALSE(MidiControlChange(&cc, MIDI_MONO_MODE_ON, 17));
+
+  TEST_ASSERT_TRUE(MidiControlChange(&cc, MIDI_LOCAL_CONTROL, MIDI_CONTROL_ON));
+  TEST_ASSERT_EQUAL(MIDI_LOCAL_CONTROL, cc.number);
+  TEST_ASSERT_EQUAL(MIDI_CONTROL_ON, cc.value);
+  TEST_ASSERT_FALSE(MidiControlChange(&cc, MIDI_LOCAL_CONTROL, 0x30));
+  TEST_ASSERT_TRUE(MidiControlChange(
+      &cc, MIDI_LOCAL_CONTROL, MIDI_CONTROL_OFF));
+  TEST_ASSERT_EQUAL(MIDI_LOCAL_CONTROL, cc.number);
+  TEST_ASSERT_EQUAL(MIDI_CONTROL_OFF, cc.value);
 }
 
 void MidiControlTest(void) {

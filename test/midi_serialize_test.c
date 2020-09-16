@@ -65,6 +65,78 @@ static midi_message_t const kControlChangeMessage = {
   }
 };
 
+static uint8_t const kResetAllControllersPacket[] = {
+  MIDI_CONTROL_CHANGE | MIDI_CHANNEL_3, MIDI_RESET_ALL_CONTROLLERS, 0x00
+};
+static midi_message_t const kResetAllControllersMessage = {
+  .type = MIDI_CONTROL_CHANGE,
+  .channel = MIDI_CHANNEL_3,
+  .control = {
+    .number = MIDI_RESET_ALL_CONTROLLERS
+  }
+};
+
+static uint8_t const kLocalControlPacket[] = {
+  MIDI_CONTROL_CHANGE | MIDI_CHANNEL_12, MIDI_LOCAL_CONTROL, MIDI_CONTROL_ON
+};
+static midi_message_t const kLocalControlMessage = {
+  .type = MIDI_CONTROL_CHANGE,
+  .channel = MIDI_CHANNEL_12,
+  .control = {
+    .number = MIDI_LOCAL_CONTROL,
+    .value = MIDI_CONTROL_ON
+  }
+};
+
+static uint8_t const kMonoModeOnPacket[] = {
+  MIDI_CONTROL_CHANGE | MIDI_CHANNEL_9, MIDI_MONO_MODE_ON, 15
+};
+static midi_message_t const kMonoModeOnMessage = {
+  .type = MIDI_CONTROL_CHANGE,
+  .channel = MIDI_CHANNEL_9,
+  .control = {
+    .number = MIDI_MONO_MODE_ON,
+    .value = 15
+  }
+};
+
+static uint8_t const kInvalidResetAllControllersPacket[] = {
+  MIDI_CONTROL_CHANGE | MIDI_CHANNEL_5, MIDI_RESET_ALL_CONTROLLERS,
+  0x10  /* Should be 0 */
+};
+static midi_message_t const kInvalidResetAllControllersMessage = {
+  .type = MIDI_CONTROL_CHANGE,
+  .channel = MIDI_CHANNEL_5,
+  .control = {
+    .number = MIDI_RESET_ALL_CONTROLLERS,
+    .value = 0x10
+  }
+};
+
+static uint8_t const kInvalidLocalControlPacket[] = {
+  MIDI_CONTROL_CHANGE | MIDI_CHANNEL_11, MIDI_LOCAL_CONTROL, 0x60
+};
+static midi_message_t const kInvalidLocalControlMessage = {
+  .type = MIDI_CONTROL_CHANGE,
+  .channel = MIDI_CHANNEL_11,
+  .control = {
+    .number = MIDI_LOCAL_CONTROL,
+    .value = 0x60
+  }
+};
+
+static uint8_t const kInvalidMonoModeOnPacket[] = {
+  MIDI_CONTROL_CHANGE | MIDI_CHANNEL_3, MIDI_MONO_MODE_ON, 30
+};
+static midi_message_t const kInvalidMonoModeOnMessage = {
+  .type = MIDI_CONTROL_CHANGE,
+  .channel = MIDI_CHANNEL_3,
+  .control = {
+    .number = MIDI_MONO_MODE_ON,
+    .value = 30
+  }
+};
+
 static uint8_t const kProgramChangePacket[] = {
   MIDI_PROGRAM_CHANGE | MIDI_CHANNEL_1, MIDI_FLUTE
 };
@@ -333,8 +405,15 @@ static void TestMidiSerialize_Invalid(void) {
       NULL, false, buffer, sizeof(buffer)));
   TEST_ASSERT_EQUAL(0, MidiSerializeMessage(
       &kNoteOnMessage, false, NULL, sizeof(buffer)));
+  /* Bad messages. */
   TEST_ASSERT_EQUAL(0, MidiSerializeMessage(
       &kNoneMessage, false, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(0, MidiSerializeMessage(
+      &kInvalidResetAllControllersMessage, false, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(0, MidiSerializeMessage(
+      &kInvalidLocalControlMessage, false, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL(0, MidiSerializeMessage(
+      &kInvalidMonoModeOnMessage, false, buffer, sizeof(buffer)));
   TEST_ASSERT_EQUAL(0, MidiSerializeMessage(
       &kInvalidSysExMessage, false, buffer, sizeof(buffer)));
 }
@@ -367,13 +446,36 @@ static void TestMidiSerialize_KnownMessage(void) {
       sizeof(kKeyPressurePacket),
       MidiSerializeMessage(
           &kKeyPressureMessage, false, buffer, sizeof(buffer)));
-  TEST_ASSERT_EQUAL_MEMORY(kKeyPressurePacket, buffer, sizeof(kKeyPressurePacket));
+  TEST_ASSERT_EQUAL_MEMORY(
+      kKeyPressurePacket, buffer, sizeof(kKeyPressurePacket));
 
   TEST_ASSERT_EQUAL(
       sizeof(kControlChangePacket),
       MidiSerializeMessage(
           &kControlChangeMessage, false, buffer, sizeof(buffer)));
-  TEST_ASSERT_EQUAL_MEMORY(kControlChangePacket, buffer, sizeof(kControlChangePacket));
+  TEST_ASSERT_EQUAL_MEMORY(
+      kControlChangePacket, buffer, sizeof(kControlChangePacket));
+
+  TEST_ASSERT_EQUAL(
+      sizeof(kResetAllControllersPacket),
+      MidiSerializeMessage(
+          &kResetAllControllersMessage, false, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_MEMORY(
+      kResetAllControllersPacket, buffer, sizeof(kResetAllControllersPacket));
+
+  TEST_ASSERT_EQUAL(
+      sizeof(kLocalControlPacket),
+      MidiSerializeMessage(
+          &kLocalControlMessage, false, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_MEMORY(
+      kLocalControlPacket, buffer, sizeof(kLocalControlPacket));
+
+  TEST_ASSERT_EQUAL(
+      sizeof(kMonoModeOnPacket),
+      MidiSerializeMessage(
+          &kMonoModeOnMessage, false, buffer, sizeof(buffer)));
+  TEST_ASSERT_EQUAL_MEMORY(
+      kMonoModeOnPacket, buffer, sizeof(kMonoModeOnPacket));
 
   TEST_ASSERT_EQUAL(
       sizeof(kProgramChangePacket),
@@ -572,8 +674,18 @@ static void TestMidiDeserialize_Invalid(void) {
       kNoteOffPacket, 0, MIDI_NONE, NULL));
   TEST_ASSERT_EQUAL(0, MidiDeserializeMessage(
       kNoteOffPacket, sizeof(kNoteOffPacket), MIDI_NONE, NULL));
+  /* Invalid packets */
   TEST_ASSERT_EQUAL(0, MidiDeserializeMessage(
       kUnknownPacket, sizeof(kUnknownPacket), MIDI_NONE, &message));
+  TEST_ASSERT_EQUAL(0, MidiDeserializeMessage(
+      kInvalidResetAllControllersPacket,
+      sizeof(kInvalidResetAllControllersPacket), MIDI_NONE, &message));
+  TEST_ASSERT_EQUAL(0, MidiDeserializeMessage(
+      kInvalidLocalControlPacket, sizeof(kInvalidLocalControlPacket),
+      MIDI_NONE, &message));
+  TEST_ASSERT_EQUAL(0, MidiDeserializeMessage(
+      kInvalidMonoModeOnPacket, sizeof(kInvalidMonoModeOnPacket),
+      MIDI_NONE, &message));
   TEST_ASSERT_EQUAL(0, MidiDeserializeMessage(
       kInvalidSysExPacket, sizeof(kInvalidSysExPacket), MIDI_NONE, &message));
 }
@@ -618,6 +730,39 @@ static void TestMidiDeserialize_KnownMessage(void) {
       kControlChangeMessage.control.number, message.control.number);
   TEST_ASSERT_EQUAL(
       kControlChangeMessage.control.value, message.control.value);
+
+  TEST_ASSERT_EQUAL(
+      sizeof(kResetAllControllersPacket),
+      MidiDeserializeMessage(
+          kResetAllControllersPacket, sizeof(kResetAllControllersPacket),
+          MIDI_NONE, &message));
+  TEST_ASSERT_EQUAL(kResetAllControllersMessage.type, message.type);
+  TEST_ASSERT_EQUAL(kResetAllControllersMessage.channel, message.channel);
+  TEST_ASSERT_EQUAL(
+      kResetAllControllersMessage.control.number, message.control.number);
+  TEST_ASSERT_EQUAL(
+      kResetAllControllersMessage.control.value, message.control.value);
+
+  TEST_ASSERT_EQUAL(
+      sizeof(kLocalControlPacket),
+      MidiDeserializeMessage(
+          kLocalControlPacket, sizeof(kLocalControlPacket), MIDI_NONE,
+          &message));
+  TEST_ASSERT_EQUAL(kLocalControlMessage.type, message.type);
+  TEST_ASSERT_EQUAL(kLocalControlMessage.channel, message.channel);
+  TEST_ASSERT_EQUAL(
+      kLocalControlMessage.control.number, message.control.number);
+  TEST_ASSERT_EQUAL(kLocalControlMessage.control.value, message.control.value);
+
+  TEST_ASSERT_EQUAL(
+      sizeof(kMonoModeOnPacket),
+      MidiDeserializeMessage(
+          kMonoModeOnPacket, sizeof(kMonoModeOnPacket), MIDI_NONE,
+          &message));
+  TEST_ASSERT_EQUAL(kMonoModeOnMessage.type, message.type);
+  TEST_ASSERT_EQUAL(kMonoModeOnMessage.channel, message.channel);
+  TEST_ASSERT_EQUAL(kMonoModeOnMessage.control.number, message.control.number);
+  TEST_ASSERT_EQUAL(kMonoModeOnMessage.control.value, message.control.value);
 
   TEST_ASSERT_EQUAL(
       sizeof(kProgramChangePacket),
@@ -874,7 +1019,8 @@ static void TestMidiDeserialize_SysEx(void) {
       sizeof(midi_manufacturer_id_t));
   TEST_ASSERT_EQUAL(
       kDataPacketSysExMessage.sys_ex.device_id, message.sys_ex.device_id);
-  TEST_ASSERT_EQUAL(kDataPacketSysExMessage.sys_ex.sub_id, message.sys_ex.sub_id);
+  TEST_ASSERT_EQUAL(
+      kDataPacketSysExMessage.sys_ex.sub_id, message.sys_ex.sub_id);
   TEST_ASSERT_EQUAL(
       kDataPacketSysExMessage.sys_ex.data_packet.number,
       message.sys_ex.data_packet.number);

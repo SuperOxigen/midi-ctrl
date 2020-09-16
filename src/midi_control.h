@@ -30,12 +30,13 @@ C_SECTION_BEGIN;
  * 120 to 127  - Channel Mode
  *    120        - All sound off
  *    121        - Reset all controllers
- *    122        - Local control
+ *    122        - Local control (value is on (0x7F) or off (0x00))
  *    123        - All notes off
  *    124/125    - Omni mode off/on
- *    126/127    - Mono/poly mode
+ *    126/127    - Mono/poly mode (mono mode value is number of channels)
  */
 typedef uint8_t midi_control_number_t;
+#define MidiIsValidControlNumber(number) MidiIsDataByte(number)
 
 /* Ranges of controller numbers. */
 #define MidiControlNumberIsController(control_number) ((control_number) < 0x78)
@@ -54,15 +55,17 @@ typedef uint8_t midi_control_number_t;
 /* Checks if the control number is defined in MIDI standard. */
 bool_t MidiControlNumberIsDefined(midi_control_number_t control_number);
 
+/* Most control change values just need to be a MIDI data byte, however,
+ * channel mode messages have specific values/ranges that are allowed. */
+bool_t MidiIsValidControlChangeValue(
+    midi_control_number_t number, uint8_t value);
+
 /* Data from a control change message. */
 typedef struct {
   midi_control_number_t number;
   uint8_t value;
 } midi_control_change_t;
 
-/* Validity checks. */
-#define MidiIsValidControlNumber(number) MidiIsDataByte(number)
-#define MidiIsValidControlValue(value) MidiIsDataByte(value)
 bool_t MidiIsValidControlChange(midi_control_change_t const *control_change);
 
 /* Inintializes control so long as the parameters are valid. */
