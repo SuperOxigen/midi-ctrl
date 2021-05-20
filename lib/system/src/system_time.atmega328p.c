@@ -115,6 +115,7 @@ void SystemTimeInitialize(void) {
   TIMSK0 = _BV(OCIE0A);
   /* Set last, enables timer. */
   TCCR0B = (T0_CLOCK_SELECT << CS00);
+  sSystemTimeInitialized = true;
   sei();
 }
 

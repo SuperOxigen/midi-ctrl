@@ -44,12 +44,12 @@
 #define MIDI_PITCH_WHEEL                  0xE0
 /* System Exclusive */
 #define MIDI_SYSTEM_EXCLUSIVE             0xF0
+#define MIDI_END_SYSTEM_EXCLUSIVE         0xF7
 /* System Common Messages */
 #define MIDI_TIME_CODE                    0xF1
 #define MIDI_SONG_POSITION_POINTER        0xF2
 #define MIDI_SONG_SELECT                  0xF3
 #define MIDI_TUNE_REQUEST                 0xF6
-#define MIDI_END_SYSTEM_EXCLUSIVE         0xF7
 /* System Real-Time Messages */
 #define MIDI_TIMING_CLOCK                 0xF8
 #define MIDI_START                        0xFA
@@ -160,16 +160,12 @@
 #define MIDI_DATA_INCREMENT               0x60
 #define MIDI_DATA_DECREMENT               0x61
 /* Parameter Numbers */
-#define MIDI_NON_REGISTERED_PARAMETER_NUMBER_LSB \
-                                          0x62
-#define MIDI_NON_REGISTERED_PARAMETER_NUMBER_MSB \
-                                          0x63
+#define MIDI_NON_REGISTERED_PARAMETER_NUMBER_LSB 0x62
+#define MIDI_NON_REGISTERED_PARAMETER_NUMBER_MSB 0x63
 #define MIDI_NRPN_LSB MIDI_NON_REGISTERED_PARAMETER_NUMBER_LSB
 #define MIDI_NRPN_MSB MIDI_NON_REGISTERED_PARAMETER_NUMBER_MSB
-#define MIDI_REGISTERED_PARAMETER_NUMBER_LSB \
-                                          0x64
-#define MIDI_REGISTERED_PARAMETER_NUMBER_MSB \
-                                          0x65
+#define MIDI_REGISTERED_PARAMETER_NUMBER_LSB 0x64
+#define MIDI_REGISTERED_PARAMETER_NUMBER_MSB 0x65
 #define MIDI_RPN_LSB MIDI_REGISTERED_PARAMETER_NUMBER_LSB
 #define MIDI_RPN_MSB MIDI_REGISTERED_PARAMETER_NUMBER_MSB
 /* Channel Mode Controls */
@@ -205,7 +201,7 @@
  *    Registered Parameter Numbers
  */
 #define MIDI_PITCH_BEND_SENSITIVITY_MSB   0x00
-#define MIDI_PITCH_BEND_SENSITIVITY_LSB   0x00
+#define MIDI_PITCH_BEND_SENSITIVITY_LSB   0x01
 #define MIDI_CHANNEL_FINE_TUNING_MSB      0x00
 #define MIDI_CHANNEL_FINE_TUNING_LSB      0x01
 #define MIDI_CHANNEL_COARSE_TUNING_MSB    0x00
@@ -502,6 +498,30 @@
 /* General MIDI Sub ID */
 #define MIDI_GENERAL_MIDI_ON              0x01
 #define MIDI_GENERAL_MIDI_OFF             0x02
+
+/* Capabilities Inquiry Sub-Id */
+#define MIDI_CI_NEGOTIATION_ID            0x10
+#define MIDI_CI_REPLY_CAPABILITIES        0x11
+#define MIDI_CI_SET_NEW_PROTOCOL          0x12
+#define MIDI_CI_TEST_NEW_PROTOCOL         0x13
+#define MIDI_CI_TEST_NEW_PROTOCOL_REPLY   0x14
+#define MIDI_CI_CONFIRM_NEW_PROTOCOL      0x15
+#define MIDI_CI_NAK                       0x7F
+
+/* Capabilities Inquiry Definitions. */
+#define MIDI_CI_VERSION_1                 0x00
+
+#define MIDI_CI_LOWEST_AUTHORITY          0x10
+#define MIDI_CI_HIGHEST_AUTHORITY         0x6F
+
+#define MIDI_CI_PROTOCOL_SYS_EX           0x00
+#define MIDI_CI_PROTOCOL_MIDI_1           0x01
+#define MIDI_CI_PROTOCOL_MIDI_1_0         MIDI_CI_PROTOCOL_MIDI_1
+#define MIDI_CI_PROTOCOL_AMEI_MMA         0x02
+
+#define MIDI_CI_EXTENDED_AMEI_MMA         0x00
+#define MIDI_CI_EXTENDED_WITH_32B_TS      0x01
+#define MIDI_CI_EXTENDED_WITH_32B_TIMESTAMPS MIDI_CI_EXTENDED_WITH_32B_TS
 
 /* Realtime Sub Id */
 #define MIDI_RT_TIME_CODE                 0x01
