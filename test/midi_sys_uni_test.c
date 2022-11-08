@@ -343,7 +343,7 @@ static void TestMidiDataPacket_Initialize(void) {
   midi_data_packet_t packet;
   TEST_ASSERT_FALSE(MidiInitializeDataPacket(NULL, 0x30));
   TEST_ASSERT_FALSE(MidiInitializeDataPacket(&packet, 0x80));
-  TEST_ASSERT_TRUE(MidiInitializeDataPacket(&packet, 0x47))
+  TEST_ASSERT_TRUE(MidiInitializeDataPacket(&packet, 0x47));
   TEST_ASSERT_EQUAL(0x47, packet.number);
   TEST_ASSERT_EQUAL(NULL, packet.data);
   TEST_ASSERT_EQUAL(0, packet.length);
@@ -1197,7 +1197,7 @@ static void TestMidiDeviceInquiry_Deserialize(void) {
 /* General MIDI Mode */
 
 static void TestMidiGeneralMidi_Validator(void) {
-  TEST_ASSERT_FALSE(MidiIsValidGeneralMidiMode(0x00))
+  TEST_ASSERT_FALSE(MidiIsValidGeneralMidiMode(0x00));
   TEST_ASSERT_TRUE(MidiIsValidGeneralMidiMode(MIDI_GENERAL_MIDI_OFF));
   TEST_ASSERT_TRUE(MidiIsValidGeneralMidiMode(MIDI_GENERAL_MIDI_ON));
   TEST_ASSERT_FALSE(MidiIsValidGeneralMidiMode(0x10));

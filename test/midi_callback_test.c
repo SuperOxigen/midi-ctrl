@@ -633,7 +633,7 @@ static void TestMidiCallback_TimeUpdate(void) {
     .time_code = {}
   };
   TEST_ASSERT_FALSE(MidiCallOnMessageCallback(
-      &callbacks, &kTime, &kTimeCodeMessage))
+      &callbacks, &kTime, &kTimeCodeMessage));
   TEST_ASSERT_FALSE(MidiCallOnTimeSynchronizeCallback(
       &callbacks, NULL, MIDI_TIME_FORWARD));
   TEST_ASSERT_EQUAL(1000, callbacks.next_event_id);
@@ -673,7 +673,7 @@ static void TestMidiCallback_SystemReset(void) {
     .channel = MIDI_CHANNEL_14
   };
   bool_t soft_reset = false;
-  memset(&message_ctx, 0, sizeof(midi_message_t));
+  memset(&message_ctx, 0, sizeof(message_ctx));
   TEST_ASSERT_FALSE(MidiCallOnMessageCallback(
       &callbacks, NULL, &kSystemResetMessage));
   TEST_ASSERT_NULL(message_ctx.message);
